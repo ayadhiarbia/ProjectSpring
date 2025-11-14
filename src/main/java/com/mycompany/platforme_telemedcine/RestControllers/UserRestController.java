@@ -31,7 +31,7 @@ public class UserRestController {
     @PostMapping
     public ResponseEntity<?> addUser(@RequestBody Map<String, Object> requestBody) {
         try {
-            // Validate input
+
             if (requestBody == null || !requestBody.containsKey("role")) {
                 return new ResponseEntity<>("Role is required", HttpStatus.BAD_REQUEST);
             }
@@ -46,7 +46,7 @@ public class UserRestController {
             
             User savedUser = null;
             
-            // Create the appropriate subclass based on role
+
             if (role == UserRole.PATIENT) {
                 Patient patient = new Patient();
                 patient.setName(requestBody.get("name") != null ? requestBody.get("name").toString() : null);
