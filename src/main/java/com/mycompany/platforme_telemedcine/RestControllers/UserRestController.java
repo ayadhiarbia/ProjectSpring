@@ -34,6 +34,7 @@ public class UserRestController {
     @Autowired
     private AdministrateurService administrateurService;
 
+
     @PostMapping
     public ResponseEntity<?> addUser(@RequestBody Map<String, Object> requestBody) {
         try {
@@ -53,52 +54,33 @@ public class UserRestController {
 
             if (role == UserRole.PATIENT) {
                 Patient patient = new Patient();
-
-                // Common User fields
-                patient.setName(requestBody.get("name") != null ? requestBody.get("name").toString() : null);
-                patient.setPrenom(requestBody.get("prenom") != null ? requestBody.get("prenom").toString() : null);
-                patient.setEmail(requestBody.get("email") != null ? requestBody.get("email").toString() : null);
-                patient.setPassword(requestBody.get("password") != null ? requestBody.get("password").toString() : null);
+                patient.setName((String) requestBody.get("name"));
+                patient.setPrenom((String) requestBody.get("prenom"));
+                patient.setEmail((String) requestBody.get("email"));
+                patient.setPassword((String) requestBody.get("password"));
                 patient.setRole(UserRole.PATIENT);
 
-                // Optional fields
-                if (requestBody.get("age") != null) {
+                if (requestBody.get("dateNaissance") != null) {
                     try {
-                        patient.setAge(Integer.parseInt(requestBody.get("age").toString()));
-                    } catch (NumberFormatException ignored) {}
+                        patient.setDataNaissance(java.sql.Date.valueOf(requestBody.get("dateNaissance").toString()));
+                    } catch (Exception ignored) {}
                 }
 
-                if (requestBody.get("adresse") != null) {
-                    patient.setAdresse(requestBody.get("adresse").toString());
-                }
-                if (requestBody.get("antecedentsMedicaux") != null) {
-                    patient.setAntecedentsMedicaux(requestBody.get("antecedentsMedicaux").toString());
-                }
+                patient.setAdresse((String) requestBody.get("adresse"));
+                patient.setAntecedentsMedicaux((String) requestBody.get("antecedentsMedicaux"));
 
                 savedUser = patientService.createPatient(patient);
 
             } else if (role == UserRole.MEDECIN) {
                 Medecin medecin = new Medecin();
-
-                // Common User fields
-                medecin.setName(requestBody.get("name") != null ? requestBody.get("name").toString() : null);
-                medecin.setPrenom(requestBody.get("prenom") != null ? requestBody.get("prenom").toString() : null);
-                medecin.setEmail(requestBody.get("email") != null ? requestBody.get("email").toString() : null);
-                medecin.setPassword(requestBody.get("password") != null ? requestBody.get("password").toString() : null);
+                medecin.setName((String) requestBody.get("name"));
+                medecin.setPrenom((String) requestBody.get("prenom"));
+                medecin.setEmail((String) requestBody.get("email"));
+                medecin.setPassword((String) requestBody.get("password"));
                 medecin.setRole(UserRole.MEDECIN);
 
-                // Optional fields
-                if (requestBody.get("age") != null) {
-                    try {
-                        medecin.setAge(Integer.parseInt(requestBody.get("age").toString()));
-                    } catch (NumberFormatException ignored) {}
-                }
-                if (requestBody.get("specialte") != null) {
-                    medecin.setSpecialte(requestBody.get("specialte").toString());
-                }
-                if (requestBody.get("disponibilite") != null) {
-                    medecin.setDisponibilite(requestBody.get("disponibilite").toString());
-                }
+                medecin.setSpecialte((String) requestBody.get("specialte"));
+                medecin.setDisponibilite((String) requestBody.get("disponibilite"));
 
                 savedUser = medecinService.createMedecin(medecin);
             }
@@ -110,8 +92,6 @@ public class UserRestController {
             return new ResponseEntity<>("Error creating user: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
@@ -150,7 +130,6 @@ public class UserRestController {
             }
             
             if (newRole != existingUser.getRole()) {
-                // Delete the old entity
                 if (existingUser.getRole() == UserRole.PATIENT) {
                     patientService.deletePatientById(id);
                 } else if (existingUser.getRole() == UserRole.MEDECIN) {

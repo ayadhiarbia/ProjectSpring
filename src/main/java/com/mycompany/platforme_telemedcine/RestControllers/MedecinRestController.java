@@ -1,6 +1,7 @@
 package com.mycompany.platforme_telemedcine.RestControllers;
 
 import com.mycompany.platforme_telemedcine.Models.Medecin;
+import com.mycompany.platforme_telemedcine.Models.UserRole;
 import com.mycompany.platforme_telemedcine.Services.MedecinService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/medecins")
@@ -16,15 +18,39 @@ public class MedecinRestController {
     @Autowired
     MedecinService medecinService;
 
-    @PostMapping
-    public ResponseEntity<Medecin> addMedecin(@RequestBody Medecin medecin) {
-        try{
-            Medecin med = medecinService.createMedecin(medecin);
-            return new ResponseEntity<>(med, HttpStatus.CREATED);
-        }catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    @PostMapping("/add")
+    public ResponseEntity<?> addMedecin(@RequestBody Map<String, Object> requestBody) {
+        try {
+            if (requestBody == null) {
+                return new ResponseEntity<>("Request body is required", HttpStatus.BAD_REQUEST);
+            }
+
+            Medecin medecin = new Medecin();
+
+            medecin.setName(requestBody.get("name") != null ? requestBody.get("name").toString() : null);
+            medecin.setPrenom(requestBody.get("prenom") != null ? requestBody.get("prenom").toString() : null);
+            medecin.setEmail(requestBody.get("email") != null ? requestBody.get("email").toString() : null);
+            medecin.setPassword(requestBody.get("password") != null ? requestBody.get("password").toString() : null);
+            medecin.setRole(UserRole.MEDECIN);
+
+            if (requestBody.get("specialte") != null) {
+                medecin.setSpecialte(requestBody.get("specialte").toString());
+            }
+
+            if (requestBody.get("disponibilite") != null) {
+                medecin.setDisponibilite(requestBody.get("disponibilite").toString());
+            }
+
+            Medecin savedMedecin = medecinService.createMedecin(medecin);
+
+            return new ResponseEntity<>(savedMedecin, HttpStatus.CREATED);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Error creating medecin: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @GetMapping
     public ResponseEntity<List<Medecin>> getAllMedecins() {

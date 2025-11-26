@@ -15,7 +15,6 @@ public class User {
     private UserRole role;
     private String password;
     @Column(nullable = true)
-    private Integer age;
 
 
     public String getPrenom() {
@@ -65,12 +64,5 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
-
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
+    
 }
