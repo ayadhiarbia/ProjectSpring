@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telemedicine Platform - Virtual Healthcare</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>/* ===== RESET & BASE STYLES ===== */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary-color: #4a6fff;
+        --secondary-color: #6c63ff;
+        --accent-color: #ff6b8b;
+        --success-color: #2ecc71;
+        --warning-color: #f39c12;
+        --danger-color: #e74c3c;
+        --dark-color: #2c3e50;
+        --light-color: #f8f9fa;
+        --gray-color: #95a5a6;
+        --text-color: #333;
+        --text-light: #666;
+        --border-color: #e1e8ed;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.12);
+        --transition: all 0.3s ease;
+        --border-radius: 12px;
+        --border-radius-sm: 8px;
+    }
+
+    body {
+        font-family: 'Roboto', sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: #ffffff;
+        overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    a {
+        text-decoration: none;
+        color: inherit;
+        transition: var(--transition);
+    }
+
+    .container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 28px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 500;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(74, 111, 255, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(74, 111, 255, 0.4);
+    }
+
+    .btn-secondary {
+        background: white;
+        color: var(--primary-color);
+        border: 2px solid var(--primary-color);
+    }
+
+    .btn-secondary:hover {
+        background: var(--primary-color);
+        color: white;
+        transform: translateY(-3px);
+    }
+
+    .btn-large {
+        padding: 18px 36px;
+        font-size: 18px;
+    }
+
+    .section-title {
+        font-size: 2.5rem;
+        text-align: center;
+        margin-bottom: 15px;
+        color: var(--dark-color);
+    }
+
+    .section-subtitle {
+        text-align: center;
+        color: var(--text-light);
+        font-size: 1.1rem;
+        margin-bottom: 60px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .highlight {
+        color: var(--primary-color);
+        position: relative;
+    }
+
+    .highlight::after {
+        content: '';
+        position: absolute;
+        bottom: 5px;
+        left: 0;
+        width: 100%;
+        height: 8px;
+        background: rgba(74, 111, 255, 0.2);
+        z-index: -1;
+    }
+
+    /* ===== HEADER & NAVIGATION ===== */
+    .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .navbar {
+        padding: 20px 0;
+    }
+
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--dark-color);
+    }
+
+    .logo i {
+        color: var(--primary-color);
+        font-size: 2rem;
+    }
+
+    .logo-highlight {
+        color: var(--accent-color);
+    }
+
+    .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+    }
+
+    .nav-link {
+        color: var(--text-color);
+        font-weight: 500;
+        padding: 8px 0;
+        position: relative;
+    }
+
+    .nav-link:hover {
+        color: var(--primary-color);
+    }
+
+    .nav-link.active {
+        color: var(--primary-color);
+    }
+
+    .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: var(--primary-color);
+        border-radius: 3px;
+    }
+
+    .nav-btn {
+        padding: 10px 24px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: var(--border-radius-sm);
+        font-weight: 500;
+    }
+
+    .nav-btn:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    .mobile-menu-btn {
+        display: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--dark-color);
+    }
+
+    /* ===== HERO SECTION ===== */
+    .hero {
+        padding: 180px 0 100px;
+        background: linear-gradient(135deg, #f5f7ff 0%, #eef1ff 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 40%;
+        height: 100%;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800"><circle cx="400" cy="400" r="200" fill="%234a6fff" opacity="0.05"/></svg>') no-repeat;
+        background-size: cover;
+    }
+
+    .hero-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+        align-items: center;
+    }
+
+    .hero-content {
+        z-index: 1;
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        margin-bottom: 20px;
+        color: var(--dark-color);
+    }
+
+    .hero-subtitle {
+        font-size: 1.2rem;
+        color: var(--text-light);
+        margin-bottom: 40px;
+        line-height: 1.8;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 50px;
+        flex-wrap: wrap;
+    }
+
+    .hero-stats {
+        display: flex;
+        gap: 40px;
+        margin-top: 30px;
+    }
+
+    .stat {
+        text-align: center;
+    }
+
+    .stat-number {
+        display: block;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        line-height: 1;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .hero-image {
+        position: relative;
+        height: 400px;
+    }
+
+    .floating-card {
+        position: absolute;
+        background: white;
+        padding: 20px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        width: 200px;
+        text-align: center;
+        transition: var(--transition);
+    }
+
+    .floating-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .floating-card:nth-child(1) {
+        top: 0;
+        left: 0;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .floating-card:nth-child(2) {
+        top: 100px;
+        right: 0;
+        animation: float 3s ease-in-out infinite 0.5s;
+    }
+
+    .floating-card:nth-child(3) {
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        animation: float 3s ease-in-out infinite 1s;
+    }
+
+    .floating-card i {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+    }
+
+    .floating-card h3 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+
+    .floating-card p {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    /* ===== FEATURES SECTION ===== */
+    .features {
+        padding: 100px 0;
+        background: white;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-top: 50px;
+    }
+
+    .feature-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+        text-align: center;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .feature-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+    }
+
+    .feature-icon i {
+        font-size: 2rem;
+        color: white;
+    }
+
+    .feature-card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+        color: var(--dark-color);
+    }
+
+    .feature-card p {
+        color: var(--text-light);
+        line-height: 1.7;
+    }
+
+    /* ===== SERVICES SECTION ===== */
+    .services {
+        padding: 100px 0;
+        background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+    }
+
+    .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 30px;
+        margin-top: 50px;
+    }
+
+    .service-card {
+        background: white;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+    }
+
+    .service-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .service-image {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .service-image i {
+        font-size: 4rem;
+        color: white;
+    }
+
+    .service-content {
+        padding: 30px;
+    }
+
+    .service-content h3 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+        color: var(--dark-color);
+    }
+
+    .service-content p {
+        color: var(--text-light);
+        margin-bottom: 20px;
+        line-height: 1.7;
+    }
+
+    .service-link {
+        color: var(--primary-color);
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .service-link:hover {
+        gap: 10px;
+    }
+
+    /* ===== CTA SECTION ===== */
+    .cta {
+        padding: 100px 0;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        text-align: center;
+    }
+
+    .cta-content h2 {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+    }
+
+    .cta-content p {
+        font-size: 1.2rem;
+        margin-bottom: 40px;
+        opacity: 0.9;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .cta-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+        background: var(--dark-color);
+        color: white;
+        padding: 80px 0 30px;
+    }
+
+    .footer-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 40px;
+        margin-bottom: 50px;
+    }
+
+    .footer-col h3 {
+        font-size: 1.3rem;
+        margin-bottom: 25px;
+        position: relative;
+        padding-bottom: 10px;
+    }
+
+    .footer-col h3::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 40px;
+        height: 3px;
+        background: var(--primary-color);
+    }
+
+    .footer-col ul {
+        list-style: none;
+    }
+
+    .footer-col ul li {
+        margin-bottom: 12px;
+    }
+
+    .footer-col ul li a {
+        color: #bdc3c7;
+        transition: var(--transition);
+    }
+
+    .footer-col ul li a:hover {
+        color: white;
+        padding-left: 5px;
+    }
+
+    .contact-info li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .contact-info i {
+        color: var(--primary-color);
+        margin-top: 5px;
+    }
+
+    .social-links {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .social-links a {
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition);
+    }
+
+    .social-links a:hover {
+        background: var(--primary-color);
+        transform: translateY(-3px);
+    }
+
+    .footer-bottom {
+        text-align: center;
+        padding-top: 30px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        color: #95a5a6;
+        font-size: 0.9rem;
+    }
+
+    .footer-bottom a {
+        color: var(--primary-color);
+    }
+
+    .footer-bottom p {
+        margin-bottom: 10px;
+    }
+
+    /* ===== RESPONSIVE DESIGN ===== */
+    @media (max-width: 992px) {
+        .hero-container {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+        }
+
+        .hero-stats {
+            justify-content: center;
+        }
+
+        .hero-image {
+            height: 300px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .nav-links {
+            display: none;
+        }
+
+        .mobile-menu-btn {
+            display: block;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+        }
+
+        .hero-buttons {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hero-stats {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section-title {
+            font-size: 2rem;
+        }
+
+        .services-grid,
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cta-buttons {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-title {
+            font-size: 2rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }</style>
+</head>
+<body>
+<!-- Header/Navigation -->
+<header class="header">
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>TeleHealth<span class="logo-highlight">+</span></span>
+            </div>
+            <div class="nav-links">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#services" class="nav-link">Services</a>
+                <a href="#contact" class="nav-link">Contact</a>
+                <a th:href="@{/login}" class="nav-btn">Login</a>
+            </div>
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Hero Section -->
+<section class="hero" id="home">
+    <div class="hero-container">
+        <div class="hero-content">
+            <h1 class="hero-title">Healthcare <span class="highlight">Redefined</span> for the Digital Age</h1>
+            <p class="hero-subtitle">Connect with certified healthcare professionals from the comfort of your home. Quality care, just a click away.</p>
+            <div class="hero-buttons">
+                <a th:href="@{/auth/register/patient}" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Get Started as Patient
+                </a>
+                <a th:href="@{/auth/register/medecin}" class="btn btn-secondary">
+                    <i class="fas fa-stethoscope"></i> Join as Healthcare Provider
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-number">500+</span>
+                    <span class="stat-label">Certified Doctors</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">10,000+</span>
+                    <span class="stat-label">Patients Served</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">24/7</span>
+                    <span class="stat-label">Available Support</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="floating-card">
+                <i class="fas fa-video"></i>
+                <h3>Video Consultations</h3>
+                <p>HD quality video calls</p>
+            </div>
+            <div class="floating-card">
+                <i class="fas fa-prescription"></i>
+                <h3>E-Prescriptions</h3>
+                <p>Digital prescriptions</p>
+            </div>
+            <div class="floating-card">
+                <i class="fas fa-shield-alt"></i>
+                <h3>Secure & Private</h3>
+                <p>HIPAA compliant</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features" id="features">
+    <div class="container">
+        <h2 class="section-title">Why Choose Our Platform</h2>
+        <p class="section-subtitle">Experience healthcare that comes to you</p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3>24/7 Accessibility</h3>
+                <p>Access healthcare services anytime, anywhere. No more waiting rooms or scheduling conflicts.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <h3>Expert Doctors</h3>
+                <p>Consult with board-certified specialists across various medical fields with extensive experience.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-file-medical"></i>
+                </div>
+                <h3>Digital Records</h3>
+                <p>Securely store and access your medical history, prescriptions, and test results online.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h3>Instant Messaging</h3>
+                <p>Chat directly with your healthcare provider for quick questions and follow-ups.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3>Mobile Friendly</h3>
+                <p>Access our platform on any device - desktop, tablet, or smartphone.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-euro-sign"></i>
+                </div>
+                <h3>Affordable Care</h3>
+                <p>Transparent pricing with various insurance options accepted. No hidden fees.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section class="services" id="services">
+    <div class="container">
+        <h2 class="section-title">Our Services</h2>
+        <p class="section-subtitle">Comprehensive healthcare solutions</p>
+
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="service-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="fas fa-video"></i>
+                </div>
+                <div class="service-content">
+                    <h3>Virtual Consultations</h3>
+                    <p>Schedule video appointments with specialists across 50+ medical specialties.</p>
+                    <a th:href="@{/auth/register/patient}" class="service-link">Book Now →</a>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="service-image" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <i class="fas fa-prescription-bottle-alt"></i>
+                </div>
+                <div class="service-content">
+                    <h3>Online Pharmacy</h3>
+                    <p>Get prescriptions delivered to your doorstep within 24 hours.</p>
+                    <a th:href="@{/login}" class="service-link">Order Now →</a>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="service-image" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="service-content">
+                    <h3>Appointment Management</h3>
+                    <p>Easy scheduling, reminders, and rescheduling of all your medical appointments.</p>
+                    <a th:href="@{/login}" class="service-link">Manage →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta">
+    <div class="container">
+        <div class="cta-content">
+            <h2>Ready to Transform Your Healthcare Experience?</h2>
+            <p>Join thousands of satisfied patients and doctors who trust our platform.</p>
+            <div class="cta-buttons">
+                <a th:href="@{/auth/register/patient}" class="btn btn-primary btn-large">
+                    <i class="fas fa-user-injured"></i> I'm a Patient
+                </a>
+                <a th:href="@{/auth/register/medecin}" class="btn btn-secondary btn-large">
+                    <i class="fas fa-user-md"></i> I'm a Doctor
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <div class="logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth<span class="logo-highlight">+</span></span>
+                </div>
+                <p>Revolutionizing healthcare through technology, one consultation at a time.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a th:href="@{/}">Home</a></li>
+                    <li><a th:href="@{/login}">Login</a></li>
+                    <li><a th:href="@{/auth/register/patient}">Patient Registration</a></li>
+                    <li><a th:href="@{/auth/register/medecin}">Doctor Registration</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h3>Services</h3>
+                <ul>
+                    <li><a href="#">Teleconsultation</a></li>
+                    <li><a href="#">E-Prescription</a></li>
+                    <li><a href="#">Medical Records</a></li>
+                    <li><a href="#">Health Monitoring</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h3>Contact Us</h3>
+                <ul class="contact-info">
+                    <li><i class="fas fa-map-marker-alt"></i> 123 Health Street, Medical City</li>
+                    <li><i class="fas fa-phone"></i> +1 234 567 890</li>
+                    <li><i class="fas fa-envelope"></i> support@telehealth.com</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2024 TeleHealth+. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+            <p>This platform complies with HIPAA regulations for patient data security.</p>
+        </div>
+    </div>
+</footer>
+
+<!-- JavaScript -->
+<script >// Main JavaScript for Telemedicine Platform
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Telemedicine Platform loaded successfully!');
+
+    // Mobile Menu Toggle
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    const navLinks = document.querySelector('.nav-links');
+
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function() {
+            navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+            if (navLinks.style.display === 'flex') {
+                navLinks.style.flexDirection = 'column';
+                navLinks.style.position = 'absolute';
+                navLinks.style.top = '100%';
+                navLinks.style.left = '0';
+                navLinks.style.width = '100%';
+                navLinks.style.background = 'white';
+                navLinks.style.padding = '20px';
+                navLinks.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+            }
+        });
+    }
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
+
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                e.preventDefault();
+                window.scrollTo({
+                    top: targetElement.offsetTop - 80,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+
+    // Navbar scroll effect
+    window.addEventListener('scroll', function() {
+        const header = document.querySelector('.header');
+        if (window.scrollY > 100) {
+            header.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.1)';
+            header.style.background = 'rgba(255, 255, 255, 0.98)';
+        } else {
+            header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.05)';
+            header.style.background = 'rgba(255, 255, 255, 0.95)';
+        }
+    });
+
+    // Animate elements on scroll
+    const animateOnScroll = function() {
+        const elements = document.querySelectorAll('.feature-card, .service-card');
+
+        elements.forEach(element => {
+            const elementPosition = element.getBoundingClientRect().top;
+            const screenPosition = window.innerHeight / 1.2;
+
+            if (elementPosition < screenPosition) {
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }
+        });
+    };
+
+    // Set initial state for animation
+    document.querySelectorAll('.feature-card, .service-card').forEach(element => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+        element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    });
+
+    window.addEventListener('scroll', animateOnScroll);
+    animateOnScroll(); // Initial check
+
+    // Form validation for registration forms
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const requiredFields = this.querySelectorAll('[required]');
+            let isValid = true;
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('error');
+                    isValid = false;
+                } else {
+                    field.classList.remove('error');
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+                alert('Please fill in all required fields.');
+            }
+        });
+    });
+
+    // Add error styling
+    const style = document.createElement('style');
+    style.textContent = `
+        .error {
+            border-color: #e74c3c !important;
+            background-color: #ffe6e6 !important;
+        }
+
+        .error:focus {
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2) !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Counter animation for stats
+    const stats = document.querySelectorAll('.stat-number');
+    if (stats.length > 0) {
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.5
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const stat = entry.target;
+                    const target = parseInt(stat.textContent.replace('+', ''));
+                    let current = 0;
+                    const increment = target / 50;
+                    const timer = setInterval(() => {
+                        current += increment;
+                        if (current >= target) {
+                            stat.textContent = target.toLocaleString() + '+';
+                            clearInterval(timer);
+                        } else {
+                            stat.textContent = Math.floor(current).toLocaleString();
+                        }
+                    }, 30);
+                    observer.unobserve(stat);
+                }
+            });
+        }, observerOptions);
+
+        stats.forEach(stat => observer.observe(stat));
+    }
+
+    // Add active class to nav links based on scroll position
+    const sections = document.querySelectorAll('section[id]');
+    window.addEventListener('scroll', function() {
+        const scrollY = window.pageYOffset;
+
+        sections.forEach(section => {
+            const sectionHeight = section.offsetHeight;
+            const sectionTop = section.offsetTop - 100;
+            const sectionId = section.getAttribute('id');
+            const navLink = document.querySelector(`.nav-link[href="#${sectionId}"]`);
+
+            if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
+                if (navLink) {
+                    document.querySelectorAll('.nav-link').forEach(link => {
+                        link.classList.remove('active');
+                    });
+                    navLink.classList.add('active');
+                }
+            }
+        });
+    });
+});</script>
+</body>
+</html>

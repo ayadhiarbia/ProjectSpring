@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Our Medical Team | Doctor Registration</title>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Inline CSS for cuteness -->
+    <style>
+        :root {
+            --primary-color: #4cd9c5;
+            --secondary-color: #6a82fb;
+            --accent-color: #ff9a8b;
+            --success-color: #38b2ac;
+            --light-color: #f7f9fc;
+            --dark-color: #2d3748;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--dark-color);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .registration-wrapper {
+            display: flex;
+            background: white;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .registration-wrapper:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .welcome-section {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 40px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+        }
+
+        .welcome-section::after {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            bottom: -50px;
+            left: -50px;
+        }
+
+        .doctor-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .welcome-title {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-text {
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .features-list {
+            list-style: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .features-list li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 15px;
+        }
+
+        .features-list i {
+            margin-right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-section {
+            flex: 1.5;
+            padding: 40px;
+        }
+
+        .form-header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-title {
+            font-family: 'Quicksand', sans-serif;
+            color: var(--dark-color);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .form-title::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 4px;
+            background: var(--accent-color);
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .form-subtitle {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-color);
+            font-size: 18px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px 15px 15px 50px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: var(--transition);
+            background: var(--light-color);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(76, 217, 197, 0.2);
+            background: white;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 15px;
+        }
+
+        .required-star {
+            color: #f56565;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0aec0;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .specialty-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%234cd9c5' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+        }
+
+        .availability-input {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .terms-checkbox {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+        }
+
+        .terms-checkbox input {
+            margin-top: 5px;
+            margin-right: 10px;
+            accent-color: var(--primary-color);
+        }
+
+        .terms-label {
+            font-size: 14px;
+            color: #718096;
+            line-height: 1.5;
+        }
+
+        .terms-label a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .terms-label a:hover {
+            text-decoration: underline;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(76, 217, 197, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 15px;
+            color: #718096;
+        }
+
+        .login-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #e2e8f0;
+            z-index: 0;
+        }
+
+        .progress-step {
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 3px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #a0aec0;
+            position: relative;
+            z-index: 1;
+            transition: var(--transition);
+        }
+
+        .progress-step.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .step-label {
+            position: absolute;
+            top: 35px;
+            font-size: 12px;
+            color: #a0aec0;
+            white-space: nowrap;
+        }
+
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .step-btn {
+            padding: 12px 25px;
+            border: 2px solid var(--primary-color);
+            background: white;
+            color: var(--primary-color);
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .step-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .step-btn.next {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .step-btn.next:hover {
+            background: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .registration-wrapper {
+                flex-direction: column;
+            }
+
+            .welcome-section {
+                padding: 30px;
+            }
+
+            .form-section {
+                padding: 30px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .progress-bar {
+                margin-bottom: 40px;
+            }
+
+            .step-label {
+                display: none;
+            }
+        }
+
+        /* Success animation */
+        .success-animation {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            background: var(--success-color);
+            animation: scaleIn 0.5s ease;
+        }
+
+        .checkmark i {
+            font-size: 40px;
+            color: white;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="registration-wrapper">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="doctor-icon">
+                <i class="fas fa-user-md"></i>
+            </div>
+            <h2 class="welcome-title">Join Our Medical Family! 👩‍⚕️👨‍⚕️</h2>
+            <p class="welcome-text">
+                Welcome to our telehealth platform! We're excited to have skilled professionals like you join our community to provide exceptional care to patients worldwide.
+            </p>
+            <ul class="features-list">
+                <li><i class="fas fa-check-circle"></i> Connect with patients globally</li>
+                <li><i class="fas fa-check-circle"></i> Flexible working hours</li>
+                <li><i class="fas fa-check-circle"></i> Secure video consultations</li>
+                <li><i class="fas fa-check-circle"></i> Digital prescription system</li>
+                <li><i class="fas fa-check-circle"></i> 24/7 technical support</li>
+            </ul>
+        </div>
+
+        <!-- Registration Form Section -->
+        <div class="form-section">
+            <div class="form-header">
+                <h2 class="form-title">Doctor Registration</h2>
+                <p class="form-subtitle">Complete your profile in just a few steps</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-step active">
+                    <span>1</span>
+                    <div class="step-label">Personal</div>
+                </div>
+                <div class="progress-step">
+                    <span>2</span>
+                    <div class="step-label">Professional</div>
+                </div>
+                <div class="progress-step">
+                    <span>3</span>
+                    <div class="step-label">Complete</div>
+                </div>
+            </div>
+
+            <!-- Registration Form -->
+            <form id="registerForm">
+                <!-- Step 1: Personal Information -->
+                <div class="form-step active" id="step1">
+                    <h3 class="mb-4" style="color: var(--primary-color);">
+                        <i class="fas fa-user-circle me-2"></i>Personal Information
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">First Name <span class="required-star">*</span></label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" class="form-control" id="name" name="name" required
+                                       placeholder="Enter your first name">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Last Name <span class="required-star">*</span></label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-user-tag input-icon"></i>
+                                <input type="text" class="form-control" id="prenom" name="prenom" required
+                                       placeholder="Enter your last name">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address <span class="required-star">*</span></label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" class="form-control" id="email" name="email" required
+                                   placeholder="your.email@example.com">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password <span class="required-star">*</span></label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" class="form-control" id="password" name="password" required
+                                   placeholder="Create a strong password">
+                            <button type="button" class="password-toggle" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted" style="display: block; margin-top: 5px; font-size: 12px;">
+                            Must be at least 8 characters with letters and numbers
+                        </small>
+                    </div>
+
+                    <div class="step-navigation">
+                        <button type="button" class="step-btn next" onclick="nextStep()">
+                            Next <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Professional Information -->
+                <div class="form-step" id="step2">
+                    <h3 class="mb-4" style="color: var(--secondary-color);">
+                        <i class="fas fa-stethoscope me-2"></i>Professional Details
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Specialization <span class="required-star">*</span></label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-heartbeat input-icon"></i>
+                            <select class="form-control specialty-select" id="specialte" name="specialte" required>
+                                <option value="">Select your specialization</option>
+                                <option value="Cardiology">Cardiology</option>
+                                <option value="Dermatology">Dermatology</option>
+                                <option value="Pediatrics">Pediatrics</option>
+                                <option value="Neurology">Neurology</option>
+                                <option value="Orthopedics">Orthopedics</option>
+                                <option value="Psychiatry">Psychiatry</option>
+                                <option value="Dentistry">Dentistry</option>
+                                <option value="Ophthalmology">Ophthalmology</option>
+                                <option value="Gynecology">Gynecology</option>
+                                <option value="General Practice">General Practice</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Medical License Number</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-id-card input-icon"></i>
+                            <input type="text" class="form-control" id="license" name="license"
+                                   placeholder="Enter your medical license number">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Years of Experience</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-briefcase-medical input-icon"></i>
+                            <input type="number" class="form-control" id="experience" name="experience"
+                                   placeholder="e.g., 5" min="0" max="50">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Availability</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-calendar-alt input-icon"></i>
+                            <textarea class="form-control availability-input" id="disponibilite" name="disponibilite"
+                                      placeholder="e.g., Mon-Fri: 9:00 AM - 5:00 PM, Weekends: Emergency calls only"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="step-navigation">
+                        <button type="button" class="step-btn" onclick="prevStep()">
+                            <i class="fas fa-arrow-left me-2"></i> Back
+                        </button>
+                        <button type="button" class="step-btn next" onclick="nextStep()">
+                            Review <i class="fas fa-check-circle ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Review and Submit -->
+                <div class="form-step" id="step3">
+                    <h3 class="mb-4" style="color: var(--accent-color);">
+                        <i class="fas fa-clipboard-check me-2"></i>Review & Submit
+                    </h3>
+
+                    <div class="review-summary" style="background: var(--light-color); padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+                        <h5 style="margin-bottom: 15px;">Registration Summary</h5>
+                        <div id="reviewDetails">
+                            <!-- Filled dynamically by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="terms-checkbox">
+                        <input type="checkbox" id="terms" name="terms" required>
+                        <label class="terms-label" for="terms">
+                            I agree to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Policy</a>.
+                            I confirm that all information provided is accurate and I possess valid medical credentials.
+                        </label>
+                    </div>
+
+                    <div class="step-navigation">
+                        <button type="button" class="step-btn" onclick="prevStep()">
+                            <i class="fas fa-arrow-left me-2"></i> Back
+                        </button>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-paper-plane me-2"></i> Complete Registration
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Success Message (Hidden by default) -->
+                <div class="success-animation" id="successMessage">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h3 style="color: var(--success-color); margin-bottom: 10px;">Registration Successful! 🎉</h3>
+                    <p style="color: #718096; margin-bottom: 20px;">
+                        Welcome to our medical team! Your account is being verified. You'll receive a confirmation email shortly.
+                    </p>
+                    <a th:href="@{/login}" style="display: inline-block; padding: 12px 25px; background: var(--primary-color); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                        <i class="fas fa-sign-in-alt me-2"></i> Go to Login
+                    </a>
+                </div>
+
+                <div class="login-link">
+                    Already have an account? <a th:href="@{/login}">Sign in here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    let currentStep = 1;
+
+    function showStep(step) {
+        // Hide all steps
+        document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.progress-step').forEach(el => el.classList.remove('active'));
+
+        // Show current step
+        document.getElementById(`step${step}`).classList.add('active');
+        document.querySelectorAll('.progress-step')[step - 1].classList.add('active');
+
+        // Update current step variable
+        currentStep = step;
+
+        // Update review section if we're on step 3
+        if (step === 3) {
+            updateReviewSection();
+        }
+    }
+
+    function nextStep() {
+        // Validate current step before proceeding
+        if (validateStep(currentStep)) {
+            if (currentStep < 3) {
+                showStep(currentStep + 1);
+            }
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            showStep(currentStep - 1);
+        }
+    }
+
+    function validateStep(step) {
+        const stepEl = document.getElementById(`step${step}`);
+        const inputs = stepEl.querySelectorAll('input[required], select[required]');
+
+        let isValid = true;
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                isValid = false;
+                input.style.borderColor = '#f56565';
+                input.focus();
+
+                // Reset border color after 2 seconds
+                setTimeout(() => {
+                    input.style.borderColor = '#e2e8f0';
+                }, 2000);
+            }
+        });
+
+        if (!isValid) {
+            alert('Please fill in all required fields before continuing.');
+        }
+
+        return isValid;
+    }
+
+    function updateReviewSection() {
+        const reviewDetails = document.getElementById('reviewDetails');
+        const formData = {
+            name: document.getElementById('name').value,
+            prenom: document.getElementById('prenom').value,
+            email: document.getElementById('email').value,
+            specialte: document.getElementById('specialte').value,
+            license: document.getElementById('license').value || 'Not provided',
+            experience: document.getElementById('experience').value || 'Not provided',
+            disponibilite: document.getElementById('disponibilite').value || 'Not specified'
+        };
+
+        reviewDetails.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div><strong>Name:</strong></div><div>${formData.name} ${formData.prenom}</div>
+                <div><strong>Email:</strong></div><div>${formData.email}</div>
+                <div><strong>Specialization:</strong></div><div>${formData.specialte}</div>
+                <div><strong>License:</strong></div><div>${formData.license}</div>
+                <div><strong>Experience:</strong></div><div>${formData.experience} years</div>
+                <div><strong>Availability:</strong></div><div>${formData.disponibilite}</div>
+            </div>
+        `;
+    }
+
+    // Password toggle functionality
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordInput = document.getElementById('password');
+        const icon = this.querySelector('i');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+
+    // Form submission
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Show loading state
+        const submitBtn = this.querySelector('.submit-btn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
+        submitBtn.disabled = true;
+
+        const formData = {
+            name: document.getElementById('name').value,
+            prenom: document.getElementById('prenom').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            specialte: document.getElementById('specialte').value,
+            license: document.getElementById('license').value,
+            experience: parseInt(document.getElementById('experience').value) || 0,
+            disponibilite: document.getElementById('disponibilite').value,
+            role: 'MEDECIN'
+        };
+
+        try {
+            const response = await fetch('/api/medecins/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                // Show success animation
+                document.querySelectorAll('.form-step').forEach(el => el.style.display = 'none');
+                document.getElementById('successMessage').style.display = 'block';
+
+                // Auto-redirect after 5 seconds
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 5000);
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Registration failed');
+            }
+        } catch (error) {
+            alert(`Registration failed: ${error.message}`);
+
+            // Reset button state
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Form input animations
+    document.querySelectorAll('.form-control').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
+        });
+
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+    });
+
+    // Initialize tooltips for icons
+    document.querySelectorAll('.input-icon').forEach(icon => {
+        const input = icon.parentElement.querySelector('.form-control');
+        icon.title = input.placeholder || input.getAttribute('title') || '';
+    });
+</script>
+</body>
+</html>

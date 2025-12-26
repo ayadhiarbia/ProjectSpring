@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Records | TeleHealth Patient</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --light: #f8fafc;
+            --dark: #1e293b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; }
+
+        .dashboard-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); position: fixed; height: 100vh; }
+        .main-content { flex: 1; margin-left: 250px; padding: 30px; }
+
+        .sidebar-header { padding: 25px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .sidebar-nav { padding: 20px 0; }
+        .nav-item { display: flex; align-items: center; padding: 15px 25px; color: #64748b; text-decoration: none; transition: all 0.3s; }
+        .nav-item:hover, .nav-item.active { background: #f1f5f9; color: var(--primary); border-left: 4px solid var(--primary); }
+        .nav-item i { margin-right: 12px; width: 20px; }
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-header h1 { color: var(--dark); font-size: 28px; }
+
+        .upload-btn { background: var(--primary); color: white; border: none; padding: 15px 30px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.3s; }
+        .upload-btn:hover { background: var(--secondary); transform: translateY(-2px); }
+
+        .records-categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .category-card { background: white; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.3s; }
+        .category-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(79, 70, 229, 0.15); }
+        .category-icon { width: 70px; height: 70px; background: rgba(79, 70, 229, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+        .category-icon i { font-size: 30px; color: var(--primary); }
+        .count { display: inline-block; background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; margin-top: 10px; }
+
+        .records-table { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        .table-header { background: #f8fafc; padding: 20px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; font-weight: 600; color: var(--dark); border-bottom: 2px solid #e2e8f0; }
+        .table-row { padding: 20px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; align-items: center; border-bottom: 1px solid #e2e8f0; transition: all 0.3s; }
+        .table-row:hover { background: #f8fafc; }
+        .table-row:last-child { border-bottom: none; }
+
+        .file-icon { width: 40px; height: 40px; background: rgba(79, 70, 229, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px; }
+        .file-info { display: flex; align-items: center; }
+        .file-type { font-size: 12px; color: #64748b; margin-top: 5px; }
+
+        .btn-small { padding: 8px 15px; border-radius: 6px; font-size: 14px; cursor: pointer; border: none; transition: all 0.3s; }
+        .btn-view { background: rgba(16, 185, 129, 0.1); color: #065f46; }
+        .btn-download { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+        .btn-share { background: rgba(245, 158, 11, 0.1); color: #92400e; }
+
+        .emergency-section { background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 30px; border-radius: 12px; margin-top: 40px; }
+        .emergency-section h3 { color: #92400e; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-heartbeat"></i> TeleHealth</h2>
+            <p>Patient Portal</p>
+        </div>
+
+        <div class="sidebar-nav">
+            <a href="/patient/dashboard" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a th:href="@{/patient/profile/{id}(id=${patient.id})}" class="nav-item">
+                <i class="fas fa-user"></i> My Profile
+            </a>
+            <a href="/patient/rendezvous" class="nav-item">
+                <i class="fas fa-calendar-check"></i> Appointments
+            </a>
+            <a href="/patient/dossier" class="nav-item active">
+                <i class="fas fa-file-medical"></i> Medical Records
+            </a>
+            <a href="/patient/chat" class="nav-item">
+                <i class="fas fa-comments"></i> Chat with Doctor
+            </a>
+            <a href="/logout" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-file-medical-alt"></i> Medical Records</h1>
+            <button class="upload-btn">
+                <i class="fas fa-cloud-upload-alt"></i> Upload Document
+            </button>
+        </div>
+
+        <!-- Categories -->
+        <div class="records-categories">
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="fas fa-prescription-bottle-alt"></i>
+                </div>
+                <h3>Prescriptions</h3>
+                <p>Medication history</p>
+                <div class="count">8 files</div>
+            </div>
+
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="fas fa-file-medical"></i>
+                </div>
+                <h3>Lab Reports</h3>
+                <p>Test results & analysis</p>
+                <div class="count">12 files</div>
+            </div>
+
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="fas fa-x-ray"></i>
+                </div>
+                <h3>Scans & X-rays</h3>
+                <p>Imaging reports</p>
+                <div class="count">5 files</div>
+            </div>
+
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <h3>Medical History</h3>
+                <p>Past treatments</p>
+                <div class="count">15 files</div>
+            </div>
+
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <h3>Insurance</h3>
+                <p>Claims & documents</p>
+                <div class="count">7 files</div>
+            </div>
+        </div>
+
+        <!-- Records Table -->
+        <div class="records-table">
+            <div class="table-header">
+                <div>Document Name</div>
+                <div>Type</div>
+                <div>Date</div>
+                <div>Doctor</div>
+                <div>Actions</div>
+            </div>
+
+            <div class="table-row">
+                <div class="file-info">
+                    <div class="file-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div>
+                        <div>Blood Test Results</div>
+                        <div class="file-type">PDF • 2.4 MB</div>
+                    </div>
+                </div>
+                <div>Lab Report</div>
+                <div>Dec 10, 2023</div>
+                <div>Dr. Sarah Johnson</div>
+                <div>
+                    <button class="btn-small btn-view">View</button>
+                    <button class="btn-small btn-download">Download</button>
+                </div>
+            </div>
+
+            <div class="table-row">
+                <div class="file-info">
+                    <div class="file-icon">
+                        <i class="fas fa-file-image"></i>
+                    </div>
+                    <div>
+                        <div>Chest X-ray</div>
+                        <div class="file-type">DICOM • 15.2 MB</div>
+                    </div>
+                </div>
+                <div>X-ray Scan</div>
+                <div>Nov 25, 2023</div>
+                <div>Dr. Michael Chen</div>
+                <div>
+                    <button class="btn-small btn-view">View</button>
+                    <button class="btn-small btn-download">Download</button>
+                </div>
+            </div>
+
+            <div class="table-row">
+                <div class="file-info">
+                    <div class="file-icon">
+                        <i class="fas fa-file-prescription"></i>
+                    </div>
+                    <div>
+                        <div>Amoxicillin Prescription</div>
+                        <div class="file-type">PDF • 1.1 MB</div>
+                    </div>
+                </div>
+                <div>Prescription</div>
+                <div>Nov 15, 2023</div>
+                <div>Dr. Lisa Park</div>
+                <div>
+                    <button class="btn-small btn-view">View</button>
+                    <button class="btn-small btn-download">Download</button>
+                    <button class="btn-small btn-share">Share</button>
+                </div>
+            </div>
+
+            <div class="table-row">
+                <div class="file-info">
+                    <div class="file-icon">
+                        <i class="fas fa-file-medical-alt"></i>
+                    </div>
+                    <div>
+                        <div>Annual Physical Report</div>
+                        <div class="file-type">PDF • 3.8 MB</div>
+                    </div>
+                </div>
+                <div>Medical Report</div>
+                <div>Oct 30, 2023</div>
+                <div>Dr. Robert Kim</div>
+                <div>
+                    <button class="btn-small btn-view">View</button>
+                    <button class="btn-small btn-download">Download</button>
+                </div>
+            </div>
+
+            <div class="table-row">
+                <div class="file-info">
+                    <div class="file-icon">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <div>
+                        <div>Insurance Claim Form</div>
+                        <div class="file-type">PDF • 1.5 MB</div>
+                    </div>
+                </div>
+                <div>Insurance</div>
+                <div>Oct 15, 2023</div>
+                <div>Blue Cross</div>
+                <div>
+                    <button class="btn-small btn-view">View</button>
+                    <button class="btn-small btn-download">Download</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Access -->
+        <div class="emergency-section">
+            <h3><i class="fas fa-exclamation-triangle"></i> Emergency Access</h3>
+            <p>In case of emergency, healthcare providers can access your critical medical information with your consent.</p>
+            <button style="background: #92400e; color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; margin-top: 10px;">
+                <i class="fas fa-shield-alt"></i> Manage Emergency Access
+            </button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

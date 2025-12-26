@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appointments | TeleHealth Patient</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #1e293b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; }
+
+        .dashboard-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); position: fixed; height: 100vh; }
+        .main-content { flex: 1; margin-left: 250px; padding: 30px; }
+
+        .sidebar-header { padding: 25px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .sidebar-nav { padding: 20px 0; }
+        .nav-item { display: flex; align-items: center; padding: 15px 25px; color: #64748b; text-decoration: none; transition: all 0.3s; }
+        .nav-item:hover, .nav-item.active { background: #f1f5f9; color: var(--primary); border-left: 4px solid var(--primary); }
+        .nav-item i { margin-right: 12px; width: 20px; }
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-header h1 { color: var(--dark); font-size: 28px; }
+
+        .new-appointment-btn { background: var(--primary); color: white; border: none; padding: 15px 30px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.3s; }
+        .new-appointment-btn:hover { background: var(--secondary); transform: translateY(-2px); }
+
+        .appointment-filters { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; gap: 15px; flex-wrap: wrap; }
+        .filter-btn { padding: 10px 20px; border: 2px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.3s; }
+        .filter-btn.active, .filter-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .appointments-container { display: grid; gap: 20px; }
+        .appointment-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        .appointment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .doctor-info { display: flex; align-items: center; gap: 15px; }
+        .doctor-avatar { width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; }
+        .badge { padding: 6px 15px; border-radius: 20px; font-size: 14px; font-weight: 500; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+
+        .appointment-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .detail-item { background: #f8fafc; padding: 15px; border-radius: 8px; }
+        .detail-label { color: #64748b; font-size: 14px; margin-bottom: 5px; }
+        .detail-value { color: var(--dark); font-weight: 600; }
+
+        .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: all 0.3s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); }
+        .btn-danger { background: var(--danger); color: white; }
+
+        .no-appointments { text-align: center; padding: 60px 20px; color: #64748b; }
+        .no-appointments i { font-size: 60px; color: #cbd5e1; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-heartbeat"></i> TeleHealth</h2>
+            <p>Patient Portal</p>
+        </div>
+
+        <div class="sidebar-nav">
+            <a href="/patient/dashboard" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a th:href="@{/patient/profile/{id}(id=${patient.id})}" class="nav-item">
+                <i class="fas fa-user"></i> My Profile
+            </a>
+            <a href="/patient/rendezvous" class="nav-item active">
+                <i class="fas fa-calendar-check"></i> Appointments
+            </a>
+            <a href="/patient/dossier" class="nav-item">
+                <i class="fas fa-file-medical"></i> Medical Records
+            </a>
+            <a href="/patient/chat" class="nav-item">
+                <i class="fas fa-comments"></i> Chat with Doctor
+            </a>
+            <a href="/logout" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-calendar-alt"></i> My Appointments</h1>
+            <button class="new-appointment-btn">
+                <i class="fas fa-plus"></i> New Appointment
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="appointment-filters">
+            <button class="filter-btn active">All Appointments</button>
+            <button class="filter-btn">Upcoming</button>
+            <button class="filter-btn">Past</button>
+            <button class="filter-btn">Video Consult</button>
+            <button class="filter-btn">In-person</button>
+        </div>
+
+        <!-- Appointments List -->
+        <div class="appointments-container">
+            <!-- Appointment 1 -->
+            <div class="appointment-card">
+                <div class="appointment-header">
+                    <div class="doctor-info">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h3>Dr. Sarah Johnson</h3>
+                            <p>Cardiologist • 15 years experience</p>
+                        </div>
+                    </div>
+                    <span class="badge badge-success">Confirmed</span>
+                </div>
+
+                <div class="appointment-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Date & Time</div>
+                        <div class="detail-value">Tomorrow, 10:00 AM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Type</div>
+                        <div class="detail-value">Video Consultation</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Duration</div>
+                        <div class="detail-value">45 minutes</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Purpose</div>
+                        <div class="detail-value">Follow-up Consultation</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-video"></i> Join Video Call
+                    </button>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-edit"></i> Reschedule
+                    </button>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Appointment 2 -->
+            <div class="appointment-card">
+                <div class="appointment-header">
+                    <div class="doctor-info">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h3>Dr. Michael Chen</h3>
+                            <p>General Physician • 12 years experience</p>
+                        </div>
+                    </div>
+                    <span class="badge badge-warning">Pending</span>
+                </div>
+
+                <div class="appointment-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Date & Time</div>
+                        <div class="detail-value">December 28, 2:30 PM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Type</div>
+                        <div class="detail-value">In-person Visit</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Duration</div>
+                        <div class="detail-value">60 minutes</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Purpose</div>
+                        <div class="detail-value">Annual Physical Exam</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" disabled>
+                        <i class="fas fa-calendar-check"></i> Confirm Appointment
+                    </button>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-edit"></i> Reschedule
+                    </button>
+                </div>
+            </div>
+
+            <!-- Appointment 3 -->
+            <div class="appointment-card">
+                <div class="appointment-header">
+                    <div class="doctor-info">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h3>Dr. Lisa Park</h3>
+                            <p>Neurologist • 18 years experience</p>
+                        </div>
+                    </div>
+                    <span class="badge badge-success">Confirmed</span>
+                </div>
+
+                <div class="appointment-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Date & Time</div>
+                        <div class="detail-value">January 5, 11:15 AM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Type</div>
+                        <div class="detail-value">Phone Consultation</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Duration</div>
+                        <div class="detail-value">30 minutes</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Purpose</div>
+                        <div class="detail-value">Migraine Follow-up</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-phone-alt"></i> Call Doctor
+                    </button>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-edit"></i> Reschedule
+                    </button>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Past Appointment -->
+            <div class="appointment-card" style="opacity: 0.8;">
+                <div class="appointment-header">
+                    <div class="doctor-info">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h3>Dr. Robert Kim</h3>
+                            <p>Dermatologist • 10 years experience</p>
+                        </div>
+                    </div>
+                    <span class="badge">Completed</span>
+                </div>
+
+                <div class="appointment-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Date & Time</div>
+                        <div class="detail-value">November 15, 2023, 3:00 PM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Type</div>
+                        <div class="detail-value">In-person Visit</div>
+                    </div>
+                    <div class="detail-label" style="grid-column: 1 / -1; margin-top: 10px;">Notes:</div>
+                    <div class="detail-value" style="grid-column: 1 / -1;">
+                        Skin examination completed. Prescribed topical cream. Follow-up in 3 months.
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-outline">
+                        <i class="fas fa-file-medical"></i> View Prescription
+                    </button>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-redo"></i> Book Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

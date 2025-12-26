@@ -25,7 +25,8 @@ public class Messagerie {
     @Column(name = "sender_role")
     private String senderRole;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
+    @Column
     private String content;
 
     private LocalDateTime timestamp;

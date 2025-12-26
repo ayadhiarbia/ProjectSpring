@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+
 @Service
 public class UserServiceImp implements UserService {
     @Autowired
@@ -26,7 +27,7 @@ public class UserServiceImp implements UserService {
 
     @Override
     public User getUserById(Long id) {
-        return userRepository.findById(id).get();
+        return userRepository.findById(id).orElse(null);  // Better to use orElse for null safety
     }
 
     @Override
@@ -40,12 +41,20 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public User getUserByRole(UserRole role) {
+    public List<User> getUsersByRole(UserRole role) {  // Changed to return List
         return userRepository.findByRole(role);
     }
 
     @Override
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    public User getUserByUsername(String name) {
+        return userRepository.findByName(name);
+    }
+
+    public User getUserByPassword(String password) {
+        return userRepository.findByPassword(password);
     }
 }

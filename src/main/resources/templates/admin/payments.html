@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments Management | Telemedicine Platform</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Chart.js for revenue charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <style>
+        /* ===== CSS VARIABLES - Compatible with Dashboard ===== */
+        :root {
+            --primary: #2563eb;
+            --primary-light: #60a5fa;
+            --primary-dark: #1d4ed8;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+
+            --card-bg: #ffffff;
+            --sidebar-bg: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            --sidebar-accent: #2563eb;
+
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+            --radius-sm: 6px;
+            --radius: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            --border: 1px solid #e2e8f0;
+            --border-dark: 1px solid #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: var(--gray-800);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ===== DASHBOARD CONTAINER ===== */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            color: white;
+            padding: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            box-shadow: var(--shadow-xl);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .user-profile {
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .user-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 28px;
+            color: white;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            font-weight: 600;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        .user-email {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-bottom: 12px;
+            font-weight: 400;
+        }
+
+        .user-role {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar-menu {
+            padding: 24px 16px;
+        }
+
+        .sidebar-item {
+            margin-bottom: 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            letter-spacing: 0.3px;
+            border: 1px solid transparent;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-link.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            border-left: 4px solid var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            opacity: 0.9;
+        }
+
+        .badge-nav {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: auto;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #f8fafc;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 72px;
+                padding: 0;
+            }
+
+            .sidebar-header {
+                padding: 16px;
+            }
+
+            .logo {
+                justify-content: center;
+            }
+
+            .logo-text {
+                display: none;
+            }
+
+            .logo-icon {
+                margin: 0;
+                width: 32px;
+                height: 32px;
+            }
+
+            .user-profile, .nav-text, .badge-nav {
+                display: none;
+            }
+
+            .sidebar-link {
+                justify-content: center;
+                padding: 14px;
+            }
+
+            .sidebar-link.active {
+                border-left: none;
+                background: rgba(255, 255, 255, 0.15);
+            }
+
+            .sidebar-icon {
+                font-size: 18px;
+                width: auto;
+            }
+
+            .main-content {
+                margin-left: 72px;
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 16px;
+            }
+        }
+
+        /* ===== TOP NAVBAR ===== */
+        .navbar-custom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: var(--border);
+        }
+
+        .page-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .page-title i {
+            color: var(--primary);
+            font-size: 18px;
+        }
+
+        .date-display {
+            font-size: 13px;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        /* ===== STAT CARDS ===== */
+        .stat-card {
+            border-radius: var(--radius-md);
+            padding: 24px;
+            color: white;
+            margin-bottom: 20px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: inherit;
+            opacity: 0.8;
+        }
+
+        .stat-card.revenue {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .stat-card.pending {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+        }
+
+        .stat-card.completed {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-card-icon {
+            font-size: 2.2rem;
+            opacity: 0.9;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .stat-card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card-label {
+            font-size: 14px;
+            opacity: 0.95;
+            margin-top: 8px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== CARDS ===== */
+        .card-custom {
+            background: white;
+            border: var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .card-custom:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-light);
+        }
+
+        .card-header-custom {
+            background: white;
+            border-bottom: var(--border);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+            padding: 20px;
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--gray-900);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* ===== TABLES ===== */
+        .table-custom {
+            background-color: white;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-xs);
+            margin: 0;
+        }
+
+        .table-custom thead th {
+            background-color: var(--gray-50);
+            border: none;
+            font-weight: 600;
+            color: var(--gray-700);
+            padding: 16px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: var(--border);
+        }
+
+        .table-custom tbody td {
+            padding: 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--gray-100);
+            color: var(--gray-800);
+            font-size: 14px;
+        }
+
+        .table-custom tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-custom tbody tr:hover {
+            background-color: var(--gray-50);
+        }
+
+        /* ===== FILTER SECTION ===== */
+        .filter-section {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+            border: var(--border);
+        }
+
+        /* ===== PAYMENT AVATARS ===== */
+        .payment-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
+        }
+
+        /* ===== ACTION BUTTONS ===== */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-buttons .btn {
+            padding: 8px 12px;
+            margin: 0;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: var(--border);
+        }
+
+        .action-buttons .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--gray-500);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            color: var(--gray-300);
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h4 {
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: var(--gray-500);
+            margin-bottom: 24px;
+            max-width: 320px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        /* ===== SEARCH ===== */
+        .search-box {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            z-index: 10;
+            font-size: 14px;
+        }
+
+        .search-input {
+            padding-left: 40px;
+            border-radius: var(--radius);
+            border: var(--border);
+            font-size: 14px;
+            height: 42px;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: var(--radius);
+            padding: 10px 20px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 14px;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        }
+
+        .btn-outline-secondary-custom {
+            border: var(--border);
+            border-radius: var(--radius);
+            padding: 10px 20px;
+            font-weight: 600;
+            color: var(--gray-600);
+            background: white;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 14px;
+        }
+
+        .btn-outline-secondary-custom:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--gray-50);
+            transform: translateY(-1px);
+        }
+
+        /* ===== FORM CONTROLS ===== */
+        .form-select-custom {
+            border-radius: var(--radius);
+            border: var(--border);
+            padding: 10px 14px;
+            font-size: 14px;
+            height: 42px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-select-custom:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        /* ===== PAGINATION ===== */
+        .pagination-custom .page-link {
+            border-radius: var(--radius);
+            margin: 0 2px;
+            border: var(--border);
+            color: var(--gray-700);
+            font-weight: 500;
+            padding: 8px 14px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .pagination-custom .page-item.active .page-link {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .pagination-custom .page-item:not(.active) .page-link:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--gray-50);
+        }
+
+        /* ===== BADGES ===== */
+        .badge-custom {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-status-paid {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-status-pending {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-status-failed {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-status-refunded {
+            background-color: rgba(37, 99, 235, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(37, 99, 235, 0.3);
+        }
+
+        .badge-amount {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .date-badge {
+            background-color: rgba(100, 116, 139, 0.1);
+            color: var(--gray-500);
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--gray-200);
+        }
+
+        /* ===== MOBILE MENU BUTTON ===== */
+        .mobile-menu-btn {
+            display: none;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            padding: 10px 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .mobile-menu-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        /* ===== PAYMENT INFO STYLES ===== */
+        .payment-info-item {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .payment-info-label {
+            font-weight: 600;
+            color: var(--gray-700);
+            min-width: 120px;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .payment-info-value {
+            color: var(--gray-800);
+            font-size: 14px;
+            flex: 1;
+            word-break: break-word;
+        }
+
+        /* ===== CHART STYLES ===== */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border: var(--border);
+        }
+
+        .revenue-chart {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+            border: var(--border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .revenue-chart:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .amount-cell {
+            font-weight: 700;
+            color: var(--success);
+            font-size: 14px;
+        }
+
+        /* ===== INVOICE LINK ===== */
+        .invoice-link {
+            color: var(--primary);
+            text-decoration: none;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .invoice-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .stat-card-value {
+                font-size: 1.8rem;
+            }
+
+            .stat-card-label {
+                font-size: 13px;
+            }
+
+            .action-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .action-buttons .btn {
+                margin: 0;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .navbar-custom {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .payment-info-item {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .payment-info-label {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .payment-info-value {
+                width: 100%;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+
+            .table-responsive {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .stat-card {
+                padding: 20px;
+                min-height: 120px;
+            }
+
+            .stat-card-value {
+                font-size: 1.6rem;
+            }
+
+            .stat-card-icon {
+                font-size: 1.8rem;
+            }
+
+            .payment-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .chart-container {
+                height: 200px;
+                padding: 16px;
+            }
+        }
+
+        /* ===== SCROLLBAR STYLING ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* ===== FOCUS STATES ===== */
+        :focus {
+            outline: 2px solid var(--primary-light);
+            outline-offset: 2px;
+        }
+
+        :focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        /* ===== PAYMENT SPECIFIC UTILITIES ===== */
+        .text-amount {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .text-amount.paid {
+            color: var(--success);
+        }
+
+        .text-amount.pending {
+            color: var(--warning);
+        }
+
+        .text-amount.failed {
+            color: var(--danger);
+        }
+
+        .text-amount.refunded {
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-heart-pulse-fill me-2"></i>
+        TeleMed Admin
+    </div>
+
+    <div class="sidebar-menu">
+        <div class="sidebar-item">
+            <a href="/admin/dashboard" class="sidebar-link">
+                <i class="bi bi-speedometer2 sidebar-icon"></i>
+                Dashboard
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/pending-approvals" class="sidebar-link">
+                <i class="bi bi-clock-history sidebar-icon"></i>
+                Pending Approvals
+                <span th:if="${totalPending > 0}" class="badge bg-danger float-end" th:text="${totalPending}"></span>
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/doctors" class="sidebar-link">
+                <i class="bi bi-person-badge sidebar-icon"></i>
+                Doctors
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/patients" class="sidebar-link">
+                <i class="bi bi-people sidebar-icon"></i>
+                Patients
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/users" class="sidebar-link">
+                <i class="bi bi-person-lines-fill sidebar-icon"></i>
+                Users
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/appointments" class="sidebar-link">
+                <i class="bi bi-calendar-check sidebar-icon"></i>
+                Appointments
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/payments" class="sidebar-link active">
+                <i class="bi bi-credit-card sidebar-icon"></i>
+                Payments
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/reports" class="sidebar-link">
+                <i class="bi bi-graph-up sidebar-icon"></i>
+                Reports
+            </a>
+        </div>
+    </div>
+
+    <div class="user-profile">
+        <div class="d-flex align-items-center">
+            <div class="user-avatar">
+                <span th:text="${user?.name?.substring(0, 1)}">A</span>
+            </div>
+            <div>
+                <div class="fw-bold" th:text="${user?.name}">Admin User</div>
+                <small class="text-white-50">Administrator</small>
+            </div>
+        </div>
+        <div class="mt-3">
+            <a href="/logout" class="btn btn-sm btn-outline-light w-100">
+                <i class="bi bi-box-arrow-right me-1"></i> Logout
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <i class="bi bi-list"></i> Menu
+    </button>
+
+    <!-- Navbar -->
+    <div class="navbar-custom">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-0">
+                    <i class="bi bi-credit-card me-2 text-primary"></i>
+                    Payments Management
+                </h4>
+                <p class="text-muted mb-0">View and manage all payments in the platform</p>
+            </div>
+            <div>
+                <span class="text-muted" id="currentDate"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue Chart Section -->
+    <div class="revenue-chart">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+                <i class="bi bi-graph-up me-2"></i>
+                Revenue Overview
+            </h5>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm active" id="btnDay">Today</button>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btnWeek">Week</button>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btnMonth">Month</button>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btnYear">Year</button>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="stat-card revenue">
+                <div class="stat-card-icon">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+                <div class="stat-card-value">
+                    <span th:text="${'$' + #numbers.formatDecimal(totalAmount, 1, 2, 'COMMA')}">0.00DT</span>
+                </div>
+                <div class="stat-card-label">Total Revenue</div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-card revenue">
+                    <div class="stat-card-icon">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                    <div class="stat-card-value">
+                        <span th:text="${'$' + #numbers.formatDecimal(totalAmount, 1, 2, 'COMMA')}">0.00DT</span>
+                    </div>
+                    <div class="stat-card-label">Total Revenue</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card completed">
+                    <div class="stat-card-icon">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <div class="stat-card-value">
+                        <!-- Use the pre-calculated paidCount from controller -->
+                        <span th:text="${paidCount}">0</span>
+                    </div>
+                    <div class="stat-card-label">Completed Payments</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card pending">
+                    <div class="stat-card-icon">
+                        <i class="bi bi-clock-fill"></i>
+                    </div>
+                    <div class="stat-card-value">
+                        <!-- Use the pre-calculated pendingCount from controller -->
+                        <span th:text="${pendingCount}">0</span>
+                    </div>
+                    <div class="stat-card-label">Pending Payments</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <form th:action="@{/admin/payments}" method="get" id="filterForm">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select form-select-custom" name="status" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="PAID">Paid</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="FAILED">Failed</option>
+                        <option value="REFUNDED">Refunded</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date From</label>
+                    <input type="date" class="form-control form-select-custom" name="startDate" id="startDate">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date To</label>
+                    <input type="date" class="form-control form-select-custom" name="endDate" id="endDate">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Amount Range</label>
+                    <select class="form-select form-select-custom" name="amountRange" id="amountRange">
+                        <option value="">All Amounts</option>
+                        <option value="0-50">0DT - 50DT</option>
+                        <option value="50-100">50DT - 100DT</option>
+                        <option value="100-200">100DT - 200DT</option>
+                        <option value="200+">200DT+</option>
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Search</label>
+                    <div class="search-box">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" class="form-control search-input" name="search"
+                               id="searchInput"
+                               placeholder="Search by patient name, invoice ID, or email...">
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="bi bi-funnel me-1"></i> Apply Filters
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="clearFilters">
+                            <i class="bi bi-x-circle me-1"></i> Clear Filters
+                        </button>
+                        <button type="button" class="btn btn-success" id="exportBtn">
+                            <i class="bi bi-download me-1"></i> Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Payments Table -->
+    <div class="card-custom">
+        <div class="card-header-custom d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-table me-2"></i>
+                Payments List
+                <span class="badge bg-primary ms-2" th:text="${#lists.size(payments)}">0</span>
+            </div>
+            <div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                        <i class="bi bi-plus-circle me-1"></i> Add Payment
+                    </button>
+                    <button type="button" class="btn btn-outline-info btn-sm" id="refreshBtn">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div th:if="${#lists.isEmpty(payments)}" class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-credit-card"></i>
+                </div>
+                <h4>No Payments Found</h4>
+                <p class="text-muted">No payments match your current filters. Try adjusting your search criteria or add a new payment.</p>
+                <button type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                    <i class="bi bi-plus-circle me-1"></i> Add New Payment
+                </button>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(payments)}" class="table-responsive">
+                <table class="table table-custom table-hover mb-0">
+                    <thead>
+                    <tr>
+                        <th>Payment ID</th>
+                        <th>Patient</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Invoice</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="payment : ${payments}">
+                        <td>
+                            <div class="fw-bold">#PAY-<span th:text="${payment.id}">123</span></div>
+                            <small class="text-muted">Transaction</small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="payment-avatar me-3">
+                                    <span th:if="${payment.patient}" th:text="${#strings.substring(payment.patient.name, 0, 1)}">P</span>
+                                    <span th:unless="${payment.patient}">U</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold" th:text="${payment.patient != null ? payment.patient.name + ' ' + (payment.patient.prenom != null ? payment.patient.prenom : '') : 'Unknown Patient'}">Patient Name</div>
+                                    <small class="text-muted" th:text="${payment.patient != null ? payment.patient.email : 'No email'}">patient@example.com</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="amount-cell">
+                            <!-- Check if montant is null first -->
+                            <span th:if="${payment.montant != null}"
+                                  th:text="${'$' + #numbers.formatDecimal(payment.montant, 1, 2, 'COMMA')}">0.00DT</span>
+                            <span th:unless="${payment.montant != null}" class="text-muted">0.00DT</span>
+                        </td>
+                        <td>
+                            <div th:if="${payment.datePaiement}">
+                                <div th:text="${#dates.format(payment.datePaiement, 'dd MMM yyyy')}">01 Jan 2023</div>
+                                <small class="date-badge" th:text="${#dates.format(payment.datePaiement, 'hh:mm a')}">10:30 AM</small>
+                            </div>
+                            <div th:unless="${payment.datePaiement}" class="text-muted">
+                                Not specified
+                            </div>
+                        </td>
+                        <td>
+                                    <span th:switch="${payment.status}">
+                                        <span th:case="'PAID'" class="badge badge-custom badge-status-paid">
+                                            <i class="bi bi-check-circle me-1"></i> Paid
+                                        </span>
+                                        <span th:case="'PENDING'" class="badge badge-custom badge-status-pending">
+                                            <i class="bi bi-clock me-1"></i> Pending
+                                        </span>
+                                        <span th:case="'FAILED'" class="badge badge-custom badge-status-failed">
+                                            <i class="bi bi-x-circle me-1"></i> Failed
+                                        </span>
+                                        <span th:case="'REFUNDED'" class="badge badge-custom badge-status-refunded">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i> Refunded
+                                        </span>
+                                        <span th:case="*" class="badge badge-custom bg-secondary">
+                                            <i class="bi bi-question-circle me-1"></i> Unknown
+                                        </span>
+                                    </span>
+                        </td>
+                        <td>
+                            <div th:if="${payment.factureURL}">
+                                <a th:href="${payment.factureURL}" class="invoice-link" target="_blank">
+                                    <i class="bi bi-file-earmark-text me-1"></i>
+                                    View Invoice
+                                </a>
+                            </div>
+                            <div th:unless="${payment.factureURL}">
+                                <span class="text-muted">No invoice</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#viewPaymentModal"
+                                        th:attr="data-id=${payment.id},
+                                                        data-patient=${payment.patient != null ? payment.patient.name + ' ' + (payment.patient.prenom != null ? payment.patient.prenom : '') : 'Unknown Patient'},
+                                                        data-patient-email=${payment.patient != null ? payment.patient.email : 'No email'},
+                                                        data-amount=${payment.montant != null ? payment.montant : 0},
+                                                        data-date=${payment.datePaiement != null ? #dates.format(payment.datePaiement, 'yyyy-MM-dd') : ''},
+                                                        data-time=${payment.datePaiement != null ? #dates.format(payment.datePaiement, 'HH:mm') : ''},
+                                                        data-status=${payment.status},
+                                                        data-invoice=${payment.factureURL}">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" th:if="${payment.status == 'PENDING'}" onclick="markAsPaid(this)" th:attr="data-id=${payment.id}">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" th:if="${payment.status == 'PENDING' || payment.status == 'PAID'}" onclick="refundPayment(this)" th:attr="data-id=${payment.id}">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" th:if="${!payment.factureURL}" onclick="generateInvoice(this)" th:attr="data-id=${payment.id}">
+                                    <i class="bi bi-file-earmark-plus"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination (if needed) -->
+    <div th:unless="${#lists.isEmpty(payments)}" class="d-flex justify-content-between align-items-center mt-3">
+        <div class="text-muted">
+            Showing <span th:text="${#lists.size(payments)}">0</span> payments
+            <span class="ms-2">Total: <span class="fw-bold" th:text="${'$' + #numbers.formatDecimal(totalAmount, 1, 2, 'COMMA')}">0.00DT</span></span>
+        </div>
+        <nav>
+            <ul class="pagination pagination-custom">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- View Payment Modal -->
+<div class="modal fade" id="viewPaymentModal" tabindex="-1" aria-labelledby="viewPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewPaymentModalLabel">Payment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <div class="payment-info-item">
+                                    <span class="payment-info-label">Payment ID:</span>
+                                    <span class="payment-info-value" id="paymentId">#PAY-123</span>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="payment-info-item">
+                                    <span class="payment-info-label">Amount:</span>
+                                    <span class="payment-info-value fw-bold text-success" id="paymentAmount">0.00DT</span>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="payment-info-item">
+                                    <span class="payment-info-label">Date:</span>
+                                    <span class="payment-info-value" id="paymentDate">Not specified</span>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="payment-info-item">
+                                    <span class="payment-info-label">Time:</span>
+                                    <span class="payment-info-value" id="paymentTime">Not specified</span>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="payment-info-item">
+                                    <span class="payment-info-label">Status:</span>
+                                    <span class="payment-info-value">
+                                            <span class="badge" id="paymentStatusBadge">Unknown</span>
+                                        </span>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="payment-info-item">
+                                    <span class="payment-info-label">Invoice:</span>
+                                    <span class="payment-info-value">
+                                            <a href="#" class="invoice-link" id="paymentInvoiceLink" target="_blank">
+                                                <i class="bi bi-file-earmark-text me-1"></i>
+                                                View Invoice
+                                            </a>
+                                            <span id="noInvoiceText" class="text-muted" style="display: none;">No invoice</span>
+                                        </span>
+                                </div>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <div class="payment-info-item">
+                                    <span class="payment-info-label">Patient Name:</span>
+                                    <span class="payment-info-value fw-bold" id="paymentPatient">Unknown Patient</span>
+                                </div>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <div class="payment-info-item">
+                                    <span class="payment-info-label">Patient Email:</span>
+                                    <span class="payment-info-value" id="paymentPatientEmail">No email</span>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="bi bi-info-circle me-2"></i>Additional Information
+                                        </h6>
+                                        <p class="card-text text-muted" id="paymentAdditionalInfo">
+                                            No additional information available for this payment.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="payment-avatar mx-auto" style="width: 100px; height: 100px; font-size: 2.5rem;" id="paymentAvatar">P</div>
+                        <h5 class="mt-3" id="paymentPatientName">Patient</h5>
+                        <div class="mt-2">
+                            <span class="badge badge-amount" id="paymentAmountBadge">0.00DT</span>
+                        </div>
+                        <div class="mt-4">
+                            <button class="btn btn-outline-primary w-100 mb-2" id="printInvoiceBtn">
+                                <i class="bi bi-printer me-1"></i> Print Invoice
+                            </button>
+                            <button class="btn btn-outline-success w-100 mb-2" id="sendReceiptBtn">
+                                <i class="bi bi-envelope me-1"></i> Send Receipt
+                            </button>
+                            <button class="btn btn-outline-warning w-100" id="updateStatusBtn">
+                                <i class="bi bi-pencil me-1"></i> Update Status
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" id="refundBtn" style="display: none;">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Process Refund
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Payment Modal (Basic Structure) -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPaymentModalLabel">Add New Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Payment creation feature will be implemented in the next version.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script>
+    // Mobile menu toggle
+    document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+
+        if (sidebar.style.width === '250px') {
+            sidebar.style.width = '0';
+            mainContent.style.marginLeft = '0';
+        } else {
+            sidebar.style.width = '250px';
+            mainContent.style.marginLeft = '250px';
+        }
+    });
+
+    // Set current date
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+
+    // Set default date range for filters
+    document.getElementById('startDate').valueAsDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+    document.getElementById('endDate').valueAsDate = now;
+
+    // Initialize Revenue Chart
+    let revenueChart;
+    function initializeRevenueChart() {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+
+        // Sample data - you should replace this with actual data from your backend
+        const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+        const data = [1200, 1900, 1500, 2200, 1800, 2500, 3000];
+
+        revenueChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: data,
+                    borderColor: '#06d6a0',
+                    backgroundColor: 'rgba(6, 214, 160, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `$${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Chart time period buttons
+    document.getElementById('btnDay').addEventListener('click', function() {
+        updateChartPeriod('day');
+        setActiveButton(this);
+    });
+    document.getElementById('btnWeek').addEventListener('click', function() {
+        updateChartPeriod('week');
+        setActiveButton(this);
+    });
+    document.getElementById('btnMonth').addEventListener('click', function() {
+        updateChartPeriod('month');
+        setActiveButton(this);
+    });
+    document.getElementById('btnYear').addEventListener('click', function() {
+        updateChartPeriod('year');
+        setActiveButton(this);
+    });
+
+    function setActiveButton(button) {
+        document.querySelectorAll('#btnDay, #btnWeek, #btnMonth, #btnYear').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        button.classList.add('active');
+    }
+
+    function updateChartPeriod(period) {
+        // This would typically make an AJAX call to get new data
+        // For now, we'll just update the chart with sample data
+        let labels, data;
+
+        switch(period) {
+            case 'day':
+                labels = ['9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM'];
+                data = [200, 350, 450, 600, 400, 550, 700, 650, 300];
+                break;
+            case 'week':
+                labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                data = [1200, 900, 1500, 1300, 1800, 1100, 1400];
+                break;
+            case 'month':
+                labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                data = [4500, 5200, 4800, 5500];
+                break;
+            case 'year':
+                labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                data = [12000, 14000, 11000, 16000, 15000, 18000, 20000, 19000, 17000, 21000, 18000, 22000];
+                break;
+        }
+
+        revenueChart.data.labels = labels;
+        revenueChart.data.datasets[0].data = data;
+        revenueChart.update();
+    }
+
+    // Handle view payment modal
+    const viewPaymentModal = document.getElementById('viewPaymentModal');
+    if (viewPaymentModal) {
+        viewPaymentModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+
+            // Extract info from data-* attributes
+            const paymentId = button.getAttribute('data-id');
+            const patientName = button.getAttribute('data-patient');
+            const patientEmail = button.getAttribute('data-patient-email');
+            const amount = parseFloat(button.getAttribute('data-amount'));
+            const date = button.getAttribute('data-date');
+            const time = button.getAttribute('data-time');
+            const status = button.getAttribute('data-status');
+            const invoiceUrl = button.getAttribute('data-invoice');
+
+            // Update modal content
+            document.getElementById('paymentId').textContent = `#PAY-${paymentId}`;
+            document.getElementById('paymentAmount').textContent = `$${amount.toFixed(2)}`;
+            document.getElementById('paymentAmountBadge').textContent = `$${amount.toFixed(2)}`;
+            document.getElementById('paymentPatient').textContent = patientName;
+            document.getElementById('paymentPatientName').textContent = patientName.split(' ')[0];
+            document.getElementById('paymentPatientEmail').textContent = patientEmail;
+            document.getElementById('paymentAvatar').textContent = patientName.charAt(0);
+
+            // Set date and time
+            if (date) {
+                const paymentDate = new Date(date);
+                const formattedDate = paymentDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                document.getElementById('paymentDate').textContent = formattedDate;
+            } else {
+                document.getElementById('paymentDate').textContent = 'Not specified';
+            }
+
+            document.getElementById('paymentTime').textContent = time || 'Not specified';
+
+            // Set status badge
+            const statusBadge = document.getElementById('paymentStatusBadge');
+            statusBadge.textContent = status || 'UNKNOWN';
+            statusBadge.className = 'badge badge-custom ';
+
+            if (status === 'PAID') {
+                statusBadge.className += 'badge-status-paid';
+            } else if (status === 'PENDING') {
+                statusBadge.className += 'badge-status-pending';
+            } else if (status === 'FAILED') {
+                statusBadge.className += 'badge-status-failed';
+            } else if (status === 'REFUNDED') {
+                statusBadge.className += 'badge-status-refunded';
+            } else {
+                statusBadge.className += 'bg-secondary';
+            }
+
+            // Set invoice link
+            const invoiceLink = document.getElementById('paymentInvoiceLink');
+            const noInvoiceText = document.getElementById('noInvoiceText');
+
+            if (invoiceUrl && invoiceUrl.trim() !== '') {
+                invoiceLink.href = invoiceUrl;
+                invoiceLink.style.display = 'inline';
+                noInvoiceText.style.display = 'none';
+            } else {
+                invoiceLink.style.display = 'none';
+                noInvoiceText.style.display = 'inline';
+            }
+
+            // Show/hide refund button based on status
+            const refundBtn = document.getElementById('refundBtn');
+            if (status === 'PAID') {
+                refundBtn.style.display = 'inline-block';
+            } else {
+                refundBtn.style.display = 'none';
+            }
+        });
+    }
+
+    // Clear filters
+    document.getElementById('clearFilters').addEventListener('click', function() {
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        document.getElementById('amountRange').value = '';
+        document.getElementById('searchInput').value = '';
+        window.location.href = '/admin/payments';
+    });
+
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', function() {
+        window.location.reload();
+    });
+
+    // Export data button
+    document.getElementById('exportBtn').addEventListener('click', function() {
+        alert('Export feature will be implemented in the next version. Data will be exported as CSV.');
+    });
+
+    // Payment action functions
+    function markAsPaid(button) {
+        const paymentId = button.getAttribute('data-id');
+        if (confirm(`Mark payment #PAY-${paymentId} as paid?`)) {
+            alert(`Payment #PAY-${paymentId} marked as paid. This would typically make an API call.`);
+            // In a real application, you would make an AJAX call here
+            // fetch(`/admin/payments/${paymentId}/mark-paid`, { method: 'POST' })
+            //   .then(response => response.json())
+            //   .then(data => {
+            //       if (data.success) {
+            //           location.reload();
+            //       }
+            //   });
+        }
+    }
+
+    function refundPayment(button) {
+        const paymentId = button.getAttribute('data-id');
+        if (confirm(`Process refund for payment #PAY-${paymentId}?`)) {
+            alert(`Refund initiated for payment #PAY-${paymentId}. This would typically make an API call.`);
+            // In a real application, you would make an AJAX call here
+        }
+    }
+
+    function generateInvoice(button) {
+        const paymentId = button.getAttribute('data-id');
+        if (confirm(`Generate invoice for payment #PAY-${paymentId}?`)) {
+            alert(`Invoice generated for payment #PAY-${paymentId}. This would typically make an API call.`);
+            // In a real application, you would make an AJAX call here
+        }
+    }
+
+    // Modal button actions
+    document.getElementById('printInvoiceBtn')?.addEventListener('click', function() {
+        alert('Printing invoice... This would open print dialog in a real application.');
+    });
+
+    document.getElementById('sendReceiptBtn')?.addEventListener('click', function() {
+        alert('Receipt sent to patient email. This would send an email in a real application.');
+    });
+
+    document.getElementById('updateStatusBtn')?.addEventListener('click', function() {
+        alert('Update status feature will be implemented in the next version.');
+    });
+
+    document.getElementById('refundBtn')?.addEventListener('click', function() {
+        const paymentId = document.getElementById('paymentId').textContent.replace('#PAY-', '');
+        if (confirm(`Process refund for ${document.getElementById('paymentId').textContent}?`)) {
+            alert(`Refund initiated for ${document.getElementById('paymentId').textContent}.`);
+            // Close modal after action
+            const modal = bootstrap.Modal.getInstance(document.getElementById('viewPaymentModal'));
+            modal.hide();
+        }
+    });
+
+    // Auto-submit search when typing (with delay)
+    let searchTimeout;
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                // Only auto-submit if there's at least 2 characters or the field is empty
+                if (this.value.length >= 2 || this.value.length === 0) {
+                    document.getElementById('filterForm').submit();
+                }
+            }, 800);
+        });
+    }
+
+    // Handle date changes
+    document.getElementById('startDate').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+
+    document.getElementById('endDate').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+
+    // Initialize chart when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeRevenueChart();
+
+        // Handle flash messages
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('success')) {
+            const successMessage = urlParams.get('success');
+            if (successMessage) {
+                showNotification('success', decodeURIComponent(successMessage));
+            }
+        }
+    });
+
+    function showNotification(type, message) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = `
+                <strong>${type === 'success' ? 'Success!' : 'Error!'}</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+        document.body.appendChild(notification);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+</script>
+</body>
+</html>

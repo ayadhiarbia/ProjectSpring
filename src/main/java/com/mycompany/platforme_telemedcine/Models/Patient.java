@@ -2,6 +2,7 @@ package com.mycompany.platforme_telemedcine.Models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 
@@ -27,18 +28,11 @@ public class Patient extends User{
     List<Paiement> paiements;
 
     // lezmni nes2el
-    @JsonIgnore
-    @OneToOne
-    ModuleIA moduleIA;
+    // Make this optional
 
 
-    public ModuleIA getModuleIA() {
-        return moduleIA;
-    }
 
-    public void setModuleIA(ModuleIA moduleIA) {
-        this.moduleIA = moduleIA;
-    }
+
 
     public List<Paiement> getPaiements() {
         return paiements;

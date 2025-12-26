@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Successful | TeleHealth</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .success-card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 500px;
+        }
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            font-size: 50px;
+            color: white;
+        }
+        h1 { color: #2d3748; margin-bottom: 15px; }
+        p { color: #718096; margin-bottom: 30px; }
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: #4f46e5;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .btn:hover { background: #4338ca; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div class="success-card">
+    <div class="success-icon">
+        <i class="fas fa-check"></i>
+    </div>
+    <h1>Registration Successful! 🎉</h1>
+    <p>
+        Welcome to TeleHealth! Your patient account has been created successfully.
+        You can now log in to access your personal health dashboard and schedule appointments.
+    </p>
+    <a href="/login" class="btn">
+        <i class="fas fa-sign-in-alt"></i> Go to Login
+    </a>
+</div>
+</body>
+</html>

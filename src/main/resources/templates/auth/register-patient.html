@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Our Health Community | Patient Registration</title>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Inline CSS for cuteness -->
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #8b5cf6;
+            --accent-color: #10b981;
+            --success-color: #38b2ac;
+            --light-color: #f7f9fc;
+            --dark-color: #2d3748;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--dark-color);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .registration-wrapper {
+            display: flex;
+            background: white;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .registration-wrapper:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .welcome-section {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 40px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+        }
+
+        .welcome-section::after {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            bottom: -50px;
+            left: -50px;
+        }
+
+        .patient-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .welcome-title {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-text {
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .benefits-list {
+            list-style: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .benefits-list li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 15px;
+        }
+
+        .benefits-list i {
+            margin-right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-section {
+            flex: 1.5;
+            padding: 40px;
+        }
+
+        .form-header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-title {
+            font-family: 'Quicksand', sans-serif;
+            color: var(--dark-color);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .form-title::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 4px;
+            background: var(--accent-color);
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .form-subtitle {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-color);
+            font-size: 18px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 15px 14px 50px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: var(--transition);
+            background: var(--light-color);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+            background: white;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 14px;
+        }
+
+        .required-star {
+            color: #f56565;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0aec0;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .date-input {
+            cursor: pointer;
+        }
+
+        .medical-info {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .terms-checkbox {
+            display: flex;
+            align-items: flex-start;
+            margin: 25px 0;
+        }
+
+        .terms-checkbox input {
+            margin-top: 5px;
+            margin-right: 10px;
+            accent-color: var(--primary-color);
+        }
+
+        .terms-label {
+            font-size: 13px;
+            color: #718096;
+            line-height: 1.5;
+        }
+
+        .terms-label a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .terms-label a:hover {
+            text-decoration: underline;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .login-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Success animation */
+        .success-animation {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            background: var(--success-color);
+            animation: scaleIn 0.5s ease;
+        }
+
+        .checkmark i {
+            font-size: 40px;
+            color: white;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .registration-wrapper {
+                flex-direction: column;
+            }
+
+            .welcome-section {
+                padding: 30px;
+            }
+
+            .form-section {
+                padding: 30px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
+        /* Input focus animations */
+        .form-control:focus + .input-icon {
+            color: var(--secondary-color);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error message */
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        /* Password strength indicator */
+        .password-strength {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .strength-weak { background: #f56565; width: 33%; }
+        .strength-medium { background: #f6ad55; width: 66%; }
+        .strength-strong { background: #48bb78; width: 100%; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="registration-wrapper">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="patient-icon">
+                <i class="fas fa-user-injured"></i>
+            </div>
+            <h2 class="welcome-title">Welcome to TeleHealth! 🏥</h2>
+            <p class="welcome-text">
+                Join our community of patients receiving quality healthcare from the comfort of their homes. Your health journey starts here!
+            </p>
+            <ul class="benefits-list">
+                <li><i class="fas fa-check-circle"></i> 24/7 Virtual Consultations</li>
+                <li><i class="fas fa-check-circle"></i> Digital Prescriptions</li>
+                <li><i class="fas fa-check-circle"></i> Secure Medical Records</li>
+                <li><i class="fas fa-check-circle"></i> Easy Appointment Scheduling</li>
+                <li><i class="fas fa-check-circle"></i> Health Monitoring Tools</li>
+            </ul>
+        </div>
+
+        <!-- Registration Form Section -->
+        <div class="form-section">
+            <div class="form-header">
+                <h2 class="form-title">Patient Registration</h2>
+                <p class="form-subtitle">Create your account in just a few steps</p>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText">Please fill in all required fields.</span>
+            </div>
+
+            <!-- Registration Form -->
+            <form id="registerForm">
+                <!-- IMPORTANT: No th:action attribute - we'll handle with JavaScript -->
+
+                <h3 style="color: var(--primary-color); margin-bottom: 20px;">
+                    <i class="fas fa-user-circle"></i> Personal & Medical Information
+                </h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name <span class="required-star">*</span></label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                   placeholder="Enter your first name">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Last Name <span class="required-star">*</span></label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user-tag input-icon"></i>
+                            <input type="text" class="form-control" id="prenom" name="prenom" required
+                                   placeholder="Enter your last name">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email Address <span class="required-star">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               placeholder="your.email@example.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password <span class="required-star">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" class="form-control" id="password" name="password" required
+                               placeholder="Create a strong password">
+                        <button type="button" class="password-toggle" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="strength-bar" id="passwordStrength"></div>
+                    </div>
+                    <small style="display: block; margin-top: 5px; font-size: 12px; color: #718096;">
+                        Must be at least 8 characters with letters and numbers
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date of Birth <span class="required-star">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-calendar input-icon"></i>
+                        <input type="date" class="form-control date-input" id="dataNaissance" name="dataNaissance" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Address <span class="required-star">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-home input-icon"></i>
+                        <input type="text" class="form-control" id="adresse" name="adresse" required
+                               placeholder="Enter your full address">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Medical History <span class="required-star">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-file-medical input-icon"></i>
+                        <textarea class="form-control medical-info" id="antecedentsMedicaux" name="antecedentsMedicaux" required
+                                  placeholder="List any medical conditions, surgeries, family history (e.g., Diabetes, Hypertension, Heart disease)"></textarea>
+                    </div>
+                </div>
+
+                <div class="terms-checkbox">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <label class="terms-label" for="terms">
+                        I agree to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Policy</a>.
+                        I confirm that all medical information provided is accurate to the best of my knowledge.
+                    </label>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <i class="fas fa-paper-plane"></i> Complete Registration
+                </button>
+
+                <div class="login-link">
+                    Already have an account? <a th:href="@{/login}">Sign in here</a>
+                </div>
+            </form>
+
+            <!-- Success Message (Hidden by default) -->
+            <div class="success-animation" id="successMessage">
+                <div class="checkmark">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 style="color: var(--success-color); margin-bottom: 10px;">Registration Successful! 🎉</h3>
+                <p style="color: #718096; margin-bottom: 20px;">
+                    Welcome to TeleHealth! Your account has been created successfully. You can now log in to access your patient dashboard.
+                </p>
+                <a th:href="@{/login}" style="display: inline-block; padding: 12px 25px; background: var(--primary-color); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    <i class="fas fa-sign-in-alt"></i> Go to Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Password toggle functionality
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordInput = document.getElementById('password');
+        const icon = this.querySelector('i');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+
+    // Password strength indicator
+    document.getElementById('password').addEventListener('input', function() {
+        const password = this.value;
+        const strengthBar = document.getElementById('passwordStrength');
+
+        if (password.length === 0) {
+            strengthBar.className = 'strength-bar';
+            strengthBar.style.width = '0%';
+            return;
+        }
+
+        let strength = 0;
+
+        // Length check
+        if (password.length >= 8) strength++;
+
+        // Contains both letters and numbers
+        if (/[a-zA-Z]/.test(password) && /\d/.test(password)) strength++;
+
+        // Contains special characters
+        if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+        // Update strength bar
+        strengthBar.className = 'strength-bar';
+        if (strength === 1) {
+            strengthBar.classList.add('strength-weak');
+        } else if (strength === 2) {
+            strengthBar.classList.add('strength-medium');
+        } else if (strength >= 3) {
+            strengthBar.classList.add('strength-strong');
+        }
+    });
+
+    // Form submission - USING FETCH API LIKE DOCTOR REGISTRATION
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Validate all required fields
+        const requiredInputs = this.querySelectorAll('input[required], textarea[required]');
+        let isValid = true;
+
+        requiredInputs.forEach(input => {
+            if (!input.value.trim()) {
+                isValid = false;
+                input.style.borderColor = '#f56565';
+
+                setTimeout(() => {
+                    input.style.borderColor = '#e2e8f0';
+                }, 2000);
+            }
+        });
+
+        // Validate email
+        const email = document.getElementById('email').value;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (email && !emailRegex.test(email)) {
+            isValid = false;
+            showError('Please enter a valid email address.');
+            document.getElementById('email').style.borderColor = '#f56565';
+
+            setTimeout(() => {
+                document.getElementById('email').style.borderColor = '#e2e8f0';
+            }, 2000);
+        }
+
+        // Validate password length
+        const password = document.getElementById('password').value;
+        if (password && password.length < 8) {
+            isValid = false;
+            showError('Password must be at least 8 characters long.');
+            document.getElementById('password').style.borderColor = '#f56565';
+
+            setTimeout(() => {
+                document.getElementById('password').style.borderColor = '#e2e8f0';
+            }, 2000);
+        }
+
+        // Validate terms agreement
+        if (!document.getElementById('terms').checked) {
+            isValid = false;
+            showError('You must agree to the terms and conditions.');
+            return;
+        }
+
+        if (!isValid) {
+            showError('Please fill in all required fields correctly.');
+            return;
+        }
+
+        // Show loading state
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<div class="spinner"></div> Processing...';
+        submitBtn.disabled = true;
+
+        // Collect form data
+        const formData = {
+            name: document.getElementById('name').value,
+            prenom: document.getElementById('prenom').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            dataNaissance: document.getElementById('dataNaissance').value,
+            adresse: document.getElementById('adresse').value,
+            antecedentsMedicaux: document.getElementById('antecedentsMedicaux').value,
+            role: 'PATIENT'
+        };
+
+        console.log('Sending data:', formData);
+
+        try {
+            // Send to REST API - LIKE DOCTOR REGISTRATION
+            const response = await fetch('/api/patients', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            console.log('Response status:', response.status);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Registration successful:', data);
+
+                // Hide form and show success message
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+
+                // Auto-redirect to login after 3 seconds
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000);
+
+            } else {
+                const errorData = await response.json();
+                console.error('Registration failed:', errorData);
+                throw new Error(errorData.message || `Registration failed with status: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error during registration:', error);
+            showError(`Registration failed: ${error.message}`);
+
+            // Reset button state
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    function showError(message) {
+        const errorEl = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+
+        errorText.textContent = message;
+        errorEl.style.display = 'flex';
+
+        setTimeout(() => {
+            errorEl.style.display = 'none';
+        }, 5000);
+    }
+
+    // Form input animations
+    document.querySelectorAll('.form-control').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
+        });
+
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+    });
+
+    // Set max date for date of birth (18 years ago)
+    const today = new Date();
+    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    document.getElementById('dataNaissance').max = maxDate.toISOString().split('T')[0];
+    document.getElementById('dataNaissance').min = new Date(1900, 0, 1).toISOString().split('T')[0];
+</script>
+</body>
+</html>

@@ -38,12 +38,12 @@ public class PatientRestController {
             patient.setRole(UserRole.PATIENT);
 
 
-            if (requestBody.get("dateNaissance") != null) {
+            if (requestBody.get("dataNaissance") != null) {
                 try {
-                    String dateStr = requestBody.get("dateNaissance").toString();
+                    String dateStr = requestBody.get("dataNaissance").toString();
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                    Date dateNaissance = sdf.parse(dateStr);
-                    patient.setDataNaissance(dateNaissance);
+                    Date dataNaissance = sdf.parse(dateStr);
+                    patient.setDataNaissance(dataNaissance);
                 } catch (ParseException ignored) {}
             }
 

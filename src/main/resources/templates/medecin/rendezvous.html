@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointments | TeleHealth Doctor</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --doctor-primary: #4cd9c5;
+            --doctor-secondary: #6a82fb;
+            --doctor-accent: #ff9a8b;
+            --doctor-success: #38b2ac;
+            --doctor-warning: #ffb74d;
+            --doctor-danger: #f67280;
+            --doctor-light: #f7f9fc;
+            --doctor-dark: #2d3748;
+            --doctor-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --doctor-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            color: var(--doctor-dark);
+        }
+
+        /* Reuse header and sidebar styles from dashboard */
+        .doctor-main {
+            margin-left: 280px;
+            padding: 30px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--doctor-dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .page-title i {
+            color: var(--doctor-primary);
+            font-size: 24px;
+        }
+
+        /* Appointments Header */
+        .appointments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: var(--doctor-light);
+            border-radius: 12px;
+            padding: 5px;
+        }
+
+        .view-btn {
+            padding: 12px 25px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-weight: 500;
+            color: #718096;
+            cursor: pointer;
+            transition: var(--doctor-transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .view-btn.active {
+            background: white;
+            color: var(--doctor-primary);
+            box-shadow: var(--doctor-shadow);
+        }
+
+        .date-navigation {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--doctor-transition);
+        }
+
+        .nav-btn:hover {
+            border-color: var(--doctor-primary);
+            color: var(--doctor-primary);
+        }
+
+        .current-date {
+            font-weight: 600;
+            color: var(--doctor-dark);
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .action-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--doctor-transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--doctor-primary), var(--doctor-secondary));
+            color: white;
+        }
+
+        .action-btn.secondary {
+            background: white;
+            border: 2px solid #e2e8f0;
+            color: var(--doctor-dark);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--doctor-shadow);
+        }
+
+        /* Calendar View */
+        .calendar-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--doctor-shadow);
+            margin-bottom: 30px;
+            height: 600px;
+        }
+
+        /* Calendar Customization */
+        .fc {
+            height: 100%;
+        }
+
+        .fc-toolbar-chunk {
+            display: flex;
+            gap: 10px;
+        }
+
+        .fc-button {
+            background: var(--doctor-light) !important;
+            border: 2px solid #e2e8f0 !important;
+            color: var(--doctor-dark) !important;
+            border-radius: 8px !important;
+            font-weight: 500 !important;
+            transition: var(--doctor-transition) !important;
+        }
+
+        .fc-button:hover {
+            background: white !important;
+            border-color: var(--doctor-primary) !important;
+            color: var(--doctor-primary) !important;
+        }
+
+        .fc-button-primary:not(:disabled).fc-button-active {
+            background: var(--doctor-primary) !important;
+            border-color: var(--doctor-primary) !important;
+            color: white !important;
+        }
+
+        .fc-event {
+            border-radius: 8px !important;
+            border: none !important;
+            padding: 5px !important;
+            cursor: pointer !important;
+        }
+
+        .fc-event-title {
+            font-weight: 500 !important;
+            font-size: 13px !important;
+        }
+
+        .event-video {
+            background: rgba(76, 217, 197, 0.2) !important;
+            border-left: 4px solid var(--doctor-primary) !important;
+            color: var(--doctor-dark) !important;
+        }
+
+        .event-inperson {
+            background: rgba(106, 130, 251, 0.2) !important;
+            border-left: 4px solid var(--doctor-secondary) !important;
+            color: var(--doctor-dark) !important;
+        }
+
+        .event-followup {
+            background: rgba(56, 178, 172, 0.2) !important;
+            border-left: 4px solid var(--doctor-success) !important;
+            color: var(--doctor-dark) !important;
+        }
+
+        .event-urgent {
+            background: rgba(246, 114, 128, 0.2) !important;
+            border-left: 4px solid var(--doctor-danger) !important;
+            color: var(--doctor-dark) !important;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Appointments List (for list view) */
+        .appointments-list {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--doctor-shadow);
+            margin-bottom: 30px;
+        }
+
+        .list-view.active {
+            display: block;
+        }
+
+        .appointment-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: var(--doctor-transition);
+        }
+
+        .appointment-item:hover {
+            background: var(--doctor-light);
+            transform: translateX(10px);
+        }
+
+        .appointment-time {
+            min-width: 120px;
+            font-weight: 600;
+            color: var(--doctor-dark);
+        }
+
+        .appointment-details {
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .appointment-details h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .appointment-details p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .appointment-type {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-right: 15px;
+        }
+
+        .appointment-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--doctor-transition);
+        }
+
+        .icon-btn:hover {
+            border-color: var(--doctor-primary);
+            color: var(--doctor-primary);
+        }
+
+        /* Appointment Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 25px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            color: var(--doctor-dark);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #718096;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .modal-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--doctor-dark);
+        }
+
+        .modal-form input,
+        .modal-form select,
+        .modal-form textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .modal-form input:focus,
+        .modal-form select:focus,
+        .modal-form textarea:focus {
+            outline: none;
+            border-color: var(--doctor-primary);
+        }
+
+        .modal-footer {
+            padding: 25px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .doctor-main {
+                margin-left: 80px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .doctor-main {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .appointments-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .view-toggle {
+                order: 3;
+                margin-top: 20px;
+            }
+
+            .calendar-container {
+                height: 400px;
+                padding: 15px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Header (copy from dashboard) -->
+<header class="doctor-header">
+    <div class="logo-section">
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="doctor-logo">
+            <i class="fas fa-user-md"></i> TeleHealth Doctor
+        </div>
+    </div>
+
+    <div class="welcome-text">
+        <h1>Appointments</h1>
+        <p>Manage your schedule and patient meetings</p>
+    </div>
+
+    <div class="header-actions">
+        <!-- Copy from dashboard -->
+    </div>
+</header>
+
+<!-- Sidebar (copy from dashboard) -->
+<aside class="doctor-sidebar" id="sidebar">
+    <nav class="sidebar-menu">
+        <a th:href="@{/medecins/dashboard}" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a th:href="@{/medecins/patients}" class="menu-item">
+            <i class="fas fa-user-injured"></i>
+            <span>My Patients</span>
+        </a>
+
+        <a th:href="@{/medecins/rendezvous}" class="menu-item active">
+            <i class="fas fa-calendar-check"></i>
+            <span>Appointments</span>
+            <span class="menu-badge">8</span>
+        </a>
+
+        <!-- Other menu items -->
+    </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="doctor-main">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-calendar-check"></i>
+            Appointments
+        </h1>
+    </div>
+
+    <!-- Appointments Header -->
+    <div class="appointments-header">
+        <div class="view-toggle">
+            <button class="view-btn active" data-view="calendar">
+                <i class="fas fa-calendar-alt"></i>
+                Calendar
+            </button>
+            <button class="view-btn" data-view="list">
+                <i class="fas fa-list"></i>
+                List
+            </button>
+        </div>
+
+        <div class="date-navigation">
+            <button class="nav-btn" id="prevDate">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="current-date" id="currentDate">
+                December 2025
+            </div>
+            <button class="nav-btn" id="nextDate">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-btn secondary" onclick="openFilters()">
+                <i class="fas fa-filter"></i>
+                Filter
+            </button>
+            <button class="action-btn primary" onclick="openNewAppointmentModal()">
+                <i class="fas fa-plus"></i>
+                New Appointment
+            </button>
+        </div>
+    </div>
+
+    <!-- Calendar View -->
+    <div class="calendar-container" id="calendarView">
+        <div id="calendar"></div>
+    </div>
+
+    <!-- List View -->
+    <div class="appointments-list list-view" id="listView">
+        <div class="appointment-item">
+            <div class="appointment-time">
+                09:00 AM - 09:30 AM
+            </div>
+            <div class="appointment-details">
+                <h4>John Doe - Hypertension Follow-up</h4>
+                <p>Video Consultation • Recurring appointment</p>
+            </div>
+            <span class="appointment-type event-video">
+                    <i class="fas fa-video"></i> Video
+                </span>
+            <div class="appointment-actions">
+                <button class="icon-btn" title="Start Consultation">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="icon-btn" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="appointment-item urgent">
+            <div class="appointment-time">
+                10:30 AM - 11:00 AM
+            </div>
+            <div class="appointment-details">
+                <h4>Sarah Johnson - Initial Consultation</h4>
+                <p>In-person • New patient</p>
+            </div>
+            <span class="appointment-type event-inperson">
+                    <i class="fas fa-user"></i> In-person
+                </span>
+            <div class="appointment-actions">
+                <button class="icon-btn" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="icon-btn" title="Reschedule">
+                    <i class="fas fa-calendar-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- More appointments -->
+    </div>
+
+    <!-- Appointment Stats -->
+    <div class="patient-stats" style="margin-top: 30px;">
+        <div class="stat-card">
+            <h3 id="todayCount">8</h3>
+            <p>Today's Appointments</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="weekCount">24</h3>
+            <p>This Week</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="videoCount">15</h3>
+            <p>Video Consultations</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="cancelledCount">2</h3>
+            <p>Cancelled</p>
+        </div>
+    </div>
+</main>
+
+<!-- New Appointment Modal -->
+<div class="modal" id="appointmentModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Schedule New Appointment</h3>
+            <button class="close-modal" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <form class="modal-form" id="appointmentForm">
+                <div class="form-group">
+                    <label>Patient</label>
+                    <select id="patientSelect" required>
+                        <option value="">Select a patient</option>
+                        <option value="PT-001234">John Doe (Hypertension)</option>
+                        <option value="PT-001235">Sarah Johnson (Asthma)</option>
+                        <option value="PT-001236">Robert Chen (Diabetes)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Appointment Type</label>
+                    <select id="typeSelect" required>
+                        <option value="">Select type</option>
+                        <option value="video">Video Consultation</option>
+                        <option value="inperson">In-person Visit</option>
+                        <option value="followup">Follow-up</option>
+                        <option value="emergency">Emergency</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Date & Time</label>
+                    <input type="datetime-local" id="appointmentDateTime" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Duration (minutes)</label>
+                    <select id="durationSelect">
+                        <option value="30">30 minutes</option>
+                        <option value="45">45 minutes</option>
+                        <option value="60">60 minutes</option>
+                        <option value="90">90 minutes</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Reason / Notes</label>
+                    <textarea id="appointmentNotes" rows="3" placeholder="Brief description of the appointment purpose..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isRecurring">
+                        Recurring Appointment
+                    </label>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button class="action-btn secondary" onclick="closeModal()">
+                Cancel
+            </button>
+            <button class="action-btn primary" onclick="saveAppointment()">
+                <i class="fas fa-save"></i>
+                Save Appointment
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- FullCalendar JS -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+
+<script>
+    // Initialize FullCalendar
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: [
+                {
+                    title: 'John Doe - Hypertension',
+                    start: new Date().setHours(9, 0, 0, 0),
+                    end: new Date().setHours(9, 30, 0, 0),
+                    className: 'event-video',
+                    extendedProps: {
+                        type: 'video',
+                        patientId: 'PT-001234',
+                        urgent: false
+                    }
+                },
+                {
+                    title: 'Sarah Johnson - Asthma',
+                    start: new Date().setHours(10, 30, 0, 0),
+                    end: new Date().setHours(11, 0, 0, 0),
+                    className: 'event-inperson',
+                    extendedProps: {
+                        type: 'inperson',
+                        patientId: 'PT-001235',
+                        urgent: true
+                    }
+                },
+                {
+                    title: 'Robert Chen - Diabetes',
+                    start: new Date().setHours(14, 0, 0, 0),
+                    end: new Date().setHours(14, 45, 0, 0),
+                    className: 'event-followup',
+                    extendedProps: {
+                        type: 'followup',
+                        patientId: 'PT-001236',
+                        urgent: false
+                    }
+                }
+            ],
+            eventClick: function(info) {
+                const event = info.event;
+                alert(`Appointment Details:\nPatient: ${event.title}\nTime: ${event.start.toLocaleTimeString()}\nType: ${event.extendedProps.type}`);
+            },
+            dateClick: function(info) {
+                openNewAppointmentModal();
+                // Pre-fill date/time in modal
+                document.getElementById('appointmentDateTime').value =
+                    info.dateStr.substring(0, 16);
+            }
+        });
+
+        calendar.render();
+        window.calendar = calendar;
+
+        // Update current date display
+        updateCurrentDate();
+    });
+
+    // Sidebar toggle
+    document.getElementById('menuToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    });
+
+    // View toggle
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const view = this.dataset.view;
+            document.getElementById('calendarView').style.display =
+                view === 'calendar' ? 'block' : 'none';
+            document.getElementById('listView').classList.toggle('active', view === 'list');
+        });
+    });
+
+    // Date navigation
+    document.getElementById('prevDate').addEventListener('click', function() {
+        if (window.calendar) {
+            window.calendar.prev();
+            updateCurrentDate();
+        }
+    });
+
+    document.getElementById('nextDate').addEventListener('click', function() {
+        if (window.calendar) {
+            window.calendar.next();
+            updateCurrentDate();
+        }
+    });
+
+    function updateCurrentDate() {
+        if (window.calendar) {
+            const currentDate = window.calendar.getDate();
+            const options = { month: 'long', year: 'numeric' };
+            document.getElementById('currentDate').textContent =
+                currentDate.toLocaleDateString('en-US', options);
+        }
+    }
+
+    // Modal functions
+    function openNewAppointmentModal() {
+        document.getElementById('appointmentModal').classList.add('active');
+        // Set default time to next hour
+        const now = new Date();
+        now.setHours(now.getHours() + 1, 0, 0, 0);
+        document.getElementById('appointmentDateTime').value =
+            now.toISOString().slice(0, 16);
+    }
+
+    function closeModal() {
+        document.getElementById('appointmentModal').classList.remove('active');
+        document.getElementById('appointmentForm').reset();
+    }
+
+    function saveAppointment() {
+        const patient = document.getElementById('patientSelect').value;
+        const type = document.getElementById('typeSelect').value;
+        const datetime = document.getElementById('appointmentDateTime').value;
+
+        if (!patient || !type || !datetime) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        // In real app, this would send to API
+        alert(`Appointment scheduled!\nPatient: ${patient}\nType: ${type}\nTime: ${datetime}`);
+
+        // Add to calendar
+        if (window.calendar) {
+            const event = {
+                title: `New Appointment - ${patient}`,
+                start: new Date(datetime),
+                end: new Date(new Date(datetime).getTime() + 30 * 60000),
+                className: `event-${type}`,
+                extendedProps: {
+                    type: type,
+                    patientId: patient,
+                    urgent: false
+                }
+            };
+            window.calendar.addEvent(event);
+        }
+
+        closeModal();
+    }
+
+    // Open filters (simulated)
+    function openFilters() {
+        alert('Filter dialog would open here');
+        // In real app, this would show filter options
+    }
+
+    // Auto-refresh appointments every minute
+    setInterval(() => {
+        console.log('Refreshing appointments...');
+        // In real app, this would fetch updated appointments
+    }, 60000);
+
+    // Update appointment stats
+    function updateStats() {
+        // In real app, these would come from API
+        document.getElementById('todayCount').textContent = '8';
+        document.getElementById('weekCount').textContent = '24';
+        document.getElementById('videoCount').textContent = '15';
+        document.getElementById('cancelledCount').textContent = '2';
+    }
+
+    // Initial stats update
+    updateStats();
+</script>
+</body>
+</html>

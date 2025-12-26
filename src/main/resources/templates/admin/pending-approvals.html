@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⏳ Pending Approvals - TeleHealth Admin</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== CSS VARIABLES - Compatible with Dashboard ===== */
+        :root {
+            --primary: #2563eb;
+            --primary-light: #60a5fa;
+            --primary-dark: #1d4ed8;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+
+            --card-bg: #ffffff;
+            --sidebar-bg: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            --sidebar-accent: #2563eb;
+
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+            --radius-sm: 6px;
+            --radius: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            --border: 1px solid #e2e8f0;
+            --border-dark: 1px solid #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: var(--gray-800);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ===== DASHBOARD CONTAINER ===== */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            color: white;
+            padding: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            box-shadow: var(--shadow-xl);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .user-profile {
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .user-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 28px;
+            color: white;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            font-weight: 600;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        .user-email {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-bottom: 12px;
+            font-weight: 400;
+        }
+
+        .user-role {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar-nav {
+            padding: 24px 16px;
+        }
+
+        .nav-item {
+            margin-bottom: 4px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            letter-spacing: 0.3px;
+            border: 1px solid transparent;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            border-left: 4px solid var(--primary);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            opacity: 0.9;
+        }
+
+        .badge-nav {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: auto;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #f8fafc;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 72px;
+                padding: 0;
+            }
+
+            .sidebar-header {
+                padding: 16px;
+            }
+
+            .logo {
+                justify-content: center;
+            }
+
+            .logo-text {
+                display: none;
+            }
+
+            .logo-icon {
+                margin: 0;
+                width: 32px;
+                height: 32px;
+            }
+
+            .user-profile, .nav-text, .badge-nav {
+                display: none;
+            }
+
+            .nav-link {
+                justify-content: center;
+                padding: 14px;
+            }
+
+            .nav-link.active {
+                border-left: none;
+                background: rgba(255, 255, 255, 0.15);
+            }
+
+            .nav-icon {
+                font-size: 18px;
+                width: auto;
+            }
+
+            .main-content {
+                margin-left: 72px;
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 16px;
+            }
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: var(--border);
+        }
+
+        .page-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .page-title i {
+            color: var(--primary);
+            font-size: 18px;
+        }
+
+        .date-display {
+            font-size: 13px;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        /* ===== STATS GRID ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-left: 4px solid;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: var(--border);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-light);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-icon.pending {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            border-left-color: var(--warning);
+        }
+
+        .stat-icon.patients {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-left-color: var(--primary);
+        }
+
+        .stat-icon.doctors {
+            background: linear-gradient(135deg, var(--success), #059669);
+            border-left-color: var(--success);
+        }
+
+        .stat-content h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            color: var(--gray-900);
+            letter-spacing: -0.5px;
+        }
+
+        .stat-content p {
+            color: var(--gray-500);
+            font-size: 13px;
+            margin: 4px 0 0;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== TABS ===== */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            background: white;
+            padding: 8px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: var(--border);
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-500);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: var(--radius-sm);
+            flex: 1;
+            text-align: center;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+            background: var(--gray-50);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            font-weight: 700;
+        }
+
+        .tab-badge {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+            font-weight: 600;
+        }
+
+        /* ===== APPROVAL SECTION ===== */
+        .approval-section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 12px;
+            border-bottom: var(--border);
+        }
+
+        .section-title i {
+            color: var(--primary);
+            font-size: 16px;
+        }
+
+        .approval-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .approval-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== APPROVAL CARD ===== */
+        .approval-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border: var(--border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .approval-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--warning), #d97706);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .approval-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--warning);
+        }
+
+        .approval-card:hover::before {
+            opacity: 1;
+        }
+
+        .user-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: var(--border);
+        }
+
+        .user-avatar-card {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #5b21b6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(124, 58, 237, 0.2);
+        }
+
+        .user-info-card {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name-card {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+            font-size: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-email-card {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid;
+        }
+
+        .badge-patient {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-doctor {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        /* ===== USER DETAILS ===== */
+        .user-details {
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--gray-600);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: var(--gray-800);
+            font-size: 13px;
+            text-align: right;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ===== ACTION BUTTONS ===== */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-approve, .btn-reject {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.3px;
+        }
+
+        .btn-approve {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .btn-reject {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+        }
+
+        .btn-approve:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-reject:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: var(--border);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            color: var(--gray-300);
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            color: var(--gray-500);
+            font-size: 14px;
+            max-width: 300px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-content {
+            border-radius: var(--radius-lg);
+            border: none;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .modal-header {
+            background: var(--gray-50);
+            border-bottom: var(--border);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            padding: 20px;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            color: var(--gray-900);
+            font-size: 16px;
+        }
+
+        .modal-header .btn-close {
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+
+        .modal-header .btn-close:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+                padding: 16px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                flex: none;
+                min-width: 120px;
+            }
+
+            .user-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+
+            .user-info-card {
+                text-align: center;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .detail-item {
+                flex-direction: column;
+                gap: 4px;
+                text-align: center;
+            }
+
+            .detail-value {
+                text-align: center;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-card {
+                padding: 16px;
+            }
+
+            .stat-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 18px;
+            }
+
+            .stat-content h3 {
+                font-size: 22px;
+            }
+        }
+
+        /* ===== SCROLLBAR STYLING ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* ===== FOCUS STATES ===== */
+        :focus {
+            outline: 2px solid var(--primary-light);
+            outline-offset: 2px;
+        }
+
+        :focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        /* ===== REJECTION REASON STYLES ===== */
+        .rejection-reason {
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            border-left: 4px solid var(--danger);
+        }
+
+        .rejection-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--danger);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rejection-text {
+            font-size: 13px;
+            color: var(--gray-700);
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>TeleHealth</span>
+            </div>
+        </div>
+
+        <div class="user-profile">
+            <div class="user-avatar">
+                <i class="fas fa-user-md"></i>
+            </div>
+            <div class="user-name" th:text="${user.name}">Admin</div>
+            <div class="user-email" th:text="${user.email}">admin@email.com</div>
+            <div class="user-role">ADMIN</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard" class="nav-link">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/admin/pending-approvals" class="nav-link active">
+                <i class="fas fa-user-clock"></i>
+                <span>Pending</span>
+                <span class="badge-nav" th:text="${totalPending}">0</span>
+            </a>
+            <a href="/admin/users" class="nav-link">
+                <i class="fas fa-users"></i>
+                <span>Users</span>
+            </a>
+            <a href="/admin/doctors" class="nav-link">
+                <i class="fas fa-user-md"></i>
+                <span>Doctors</span>
+            </a>
+            <a href="/admin/patients" class="nav-link">
+                <i class="fas fa-user-injured"></i>
+                <span>Patients</span>
+            </a>
+
+            <a href="/admin/payments" class="nav-link">
+                <i class="fas fa-credit-card"></i>
+                <span>Payments</span>
+            </a>
+            <a href="/logout" class="nav-link">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="page-title">
+                <i class="fas fa-user-clock"></i>
+                Pending Approvals
+            </h1>
+            <div class="date-display" th:text="${#dates.format(#dates.createNow(), 'MMM dd, yyyy')}">
+                Jan 1, 2024
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon pending">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 th:text="${totalPending}">0</h3>
+                    <p>Total Pending</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon patients">
+                    <i class="fas fa-user-injured"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 th:text="${pendingPatients.size()}">0</h3>
+                    <p>Pending Patients</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon doctors">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 th:text="${pendingDoctors.size()}">0</h3>
+                    <p>Pending Doctors</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showSection('all')">
+                All Pending
+                <span class="tab-badge" th:text="${totalPending}">0</span>
+            </button>
+            <button class="tab" onclick="showSection('patients')">
+                Patients
+                <span class="tab-badge" th:text="${pendingPatients.size()}">0</span>
+            </button>
+            <button class="tab" onclick="showSection('doctors')">
+                Doctors
+                <span class="tab-badge" th:text="${pendingDoctors.size()}">0</span>
+            </button>
+        </div>
+
+        <!-- All Pending Section -->
+        <div id="all-section" class="approval-section">
+            <!-- Pending Patients -->
+            <div th:if="${not pendingPatients.isEmpty()}" class="mb-4">
+                <h3 class="section-title">
+                    <i class="fas fa-user-injured"></i>
+                    Pending Patients
+                </h3>
+                <div class="approval-grid">
+                    <div th:each="patient : ${pendingPatients}" class="approval-card">
+                        <div class="user-header">
+                            <div class="user-avatar-card">
+                                <i class="fas fa-user-injured"></i>
+                            </div>
+                            <div class="user-info-card">
+                                <div class="user-name-card" th:text="${patient.name + ' ' + patient.prenom}">John Doe</div>
+                                <div class="user-email-card" th:text="${patient.email}">john@email.com</div>
+                            </div>
+                            <span class="user-type-badge badge-patient">Patient</span>
+                        </div>
+
+                        <div class="user-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Birth Date:</span>
+                                <span class="detail-value" th:text="${patient.dataNaissance != null ? #dates.format(patient.dataNaissance, 'yyyy-MM-dd') : 'Not provided'}">1990-01-01</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Address:</span>
+                                <span class="detail-value" th:text="${patient.adresse != null ? patient.adresse : 'Not provided'}">123 Main St</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Medical History:</span>
+                                <span class="detail-value" th:text="${patient.antecedentsMedicaux != null ? patient.antecedentsMedicaux : 'Not provided'}">None</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Registered:</span>
+                                <span class="detail-value" th:text="${patient.createdAt}">2024-01-01</span>
+                            </div>
+                        </div>
+
+                        <form th:action="@{/admin/approve-user/{id}(id=${patient.id})}" method="post" style="display: inline;">
+                            <input type="hidden" name="userType" value="patient">
+                            <div class="action-buttons">
+                                <button type="submit" class="btn-approve">
+                                    <i class="fas fa-check"></i>
+                                    Approve
+                                </button>
+                                <button type="button" class="btn-reject"
+                                        th:onclick="'showRejectModal(\'patient\', ' + ${patient.id} + ', \'' + ${patient.name} + ' ' + ${patient.prenom} + '\')'">
+                                    <i class="fas fa-times"></i>
+                                    Reject
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Doctors -->
+            <div th:if="${not pendingDoctors.isEmpty()}" class="mb-4">
+                <h3 class="section-title">
+                    <i class="fas fa-user-md"></i>
+                    Pending Doctors
+                </h3>
+                <div class="approval-grid">
+                    <div th:each="doctor : ${pendingDoctors}" class="approval-card">
+                        <div class="user-header">
+                            <div class="user-avatar-card">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <div class="user-info-card">
+                                <div class="user-name-card" th:text="'Dr. ' + ${doctor.name} + ' ' + ${doctor.prenom}">Dr. Sarah Smith</div>
+                                <div class="user-email-card" th:text="${doctor.email}">sarah@email.com</div>
+                            </div>
+                            <span class="user-type-badge badge-doctor">Doctor</span>
+                        </div>
+
+                        <div class="user-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Specialty:</span>
+                                <span class="detail-value" th:text="${doctor.specialte != null ? doctor.specialte : 'Not specified'}">Cardiology</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Availability:</span>
+                                <span class="detail-value" th:text="${doctor.disponibilite != null ? doctor.disponibilite : 'Not specified'}">Monday-Friday</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Registered:</span>
+                                <span class="detail-value" th:text="${doctor.createdAt}">2024-01-01</span>
+                            </div>
+                        </div>
+
+                        <form th:action="@{/admin/approve-user/{id}(id=${doctor.id})}" method="post" style="display: inline;">
+                            <input type="hidden" name="userType" value="doctor">
+                            <div class="action-buttons">
+                                <button type="submit" class="btn-approve">
+                                    <i class="fas fa-check"></i>
+                                    Approve
+                                </button>
+                                <button type="button" class="btn-reject"
+                                        th:onclick="'showRejectModal(\'doctor\', ' + ${doctor.id} + ', \'Dr. ' + ${doctor.name} + ' ' + ${doctor.prenom} + '\')'">
+                                    <i class="fas fa-times"></i>
+                                    Reject
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${pendingPatients.isEmpty() and pendingDoctors.isEmpty()}" class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <h3 class="empty-title">No Pending Approvals</h3>
+                <p class="empty-text">All users have been approved. Check back later for new registrations.</p>
+            </div>
+        </div>
+
+        <!-- Patients Only Section (Hidden by default) -->
+        <div id="patients-section" class="approval-section" style="display: none;">
+            <div th:if="${not pendingPatients.isEmpty()}">
+                <h3 class="section-title">
+                    <i class="fas fa-user-injured"></i>
+                    Pending Patients
+                </h3>
+                <div class="approval-grid">
+                    <div th:each="patient : ${pendingPatients}" class="approval-card">
+                        <div class="user-header">
+                            <div class="user-avatar-card">
+                                <i class="fas fa-user-injured"></i>
+                            </div>
+                            <div class="user-info-card">
+                                <div class="user-name-card" th:text="${patient.name + ' ' + patient.prenom}">John Doe</div>
+                                <div class="user-email-card" th:text="${patient.email}">john@email.com</div>
+                            </div>
+                            <span class="user-type-badge badge-patient">Patient</span>
+                        </div>
+
+                        <div class="user-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Birth Date:</span>
+                                <span class="detail-value" th:text="${patient.dataNaissance != null ? #dates.format(patient.dataNaissance, 'yyyy-MM-dd') : 'Not provided'}">1990-01-01</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Address:</span>
+                                <span class="detail-value" th:text="${patient.adresse != null ? patient.adresse : 'Not provided'}">123 Main St</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Medical History:</span>
+                                <span class="detail-value" th:text="${patient.antecedentsMedicaux != null ? patient.antecedentsMedicaux : 'Not provided'}">None</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Registered:</span>
+                                <span class="detail-value" th:text="${patient.createdAt}">2024-01-01</span>
+                            </div>
+                        </div>
+
+                        <form th:action="@{/admin/approve-user/{id}(id=${patient.id})}" method="post" style="display: inline;">
+                            <input type="hidden" name="userType" value="patient">
+                            <div class="action-buttons">
+                                <button type="submit" class="btn-approve">
+                                    <i class="fas fa-check"></i>
+                                    Approve
+                                </button>
+                                <button type="button" class="btn-reject"
+                                        th:onclick="'showRejectModal(\'patient\', ' + ${patient.id} + ', \'' + ${patient.name} + ' ' + ${patient.prenom} + '\')'">
+                                    <i class="fas fa-times"></i>
+                                    Reject
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${pendingPatients.isEmpty()}" class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-user-injured"></i>
+                </div>
+                <h3 class="empty-title">No Pending Patients</h3>
+                <p class="empty-text">All patient registrations have been approved.</p>
+            </div>
+        </div>
+
+        <!-- Doctors Only Section (Hidden by default) -->
+        <div id="doctors-section" class="approval-section" style="display: none;">
+            <div th:if="${not pendingDoctors.isEmpty()}">
+                <h3 class="section-title">
+                    <i class="fas fa-user-md"></i>
+                    Pending Doctors
+                </h3>
+                <div class="approval-grid">
+                    <div th:each="doctor : ${pendingDoctors}" class="approval-card">
+                        <div class="user-header">
+                            <div class="user-avatar-card">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <div class="user-info-card">
+                                <div class="user-name-card" th:text="'Dr. ' + ${doctor.name} + ' ' + ${doctor.prenom}">Dr. Sarah Smith</div>
+                                <div class="user-email-card" th:text="${doctor.email}">sarah@email.com</div>
+                            </div>
+                            <span class="user-type-badge badge-doctor">Doctor</span>
+                        </div>
+
+                        <div class="user-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Specialty:</span>
+                                <span class="detail-value" th:text="${doctor.specialte != null ? doctor.specialte : 'Not specified'}">Cardiology</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Availability:</span>
+                                <span class="detail-value" th:text="${doctor.disponibilite != null ? doctor.disponibilite : 'Not specified'}">Monday-Friday</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Registered:</span>
+                                <span class="detail-value" th:text="${doctor.createdAt}">2024-01-01</span>
+                            </div>
+                        </div>
+
+                        <form th:action="@{/admin/approve-user/{id}(id=${doctor.id})}" method="post" style="display: inline;">
+                            <input type="hidden" name="userType" value="doctor">
+                            <div class="action-buttons">
+                                <button type="submit" class="btn-approve">
+                                    <i class="fas fa-check"></i>
+                                    Approve
+                                </button>
+                                <button type="button" class="btn-reject"
+                                        th:onclick="'showRejectModal(\'doctor\', ' + ${doctor.id} + ', \'Dr. ' + ${doctor.name} + ' ' + ${doctor.prenom} + '\')'">
+                                    <i class="fas fa-times"></i>
+                                    Reject
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${pendingDoctors.isEmpty()}" class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <h3 class="empty-title">No Pending Doctors</h3>
+                <p class="empty-text">All doctor registrations have been approved.</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-times text-danger me-2"></i>
+                    Reject User
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="rejectUserInfo" class="mb-3">Are you sure you want to reject <strong id="rejectUserName">User Name</strong>?</p>
+                <form id="rejectForm" method="post" action="">
+                    <input type="hidden" id="rejectUserId" name="id">
+                    <input type="hidden" id="rejectUserType" name="userType">
+                    <div class="mb-3">
+                        <label for="rejectReason" class="form-label">Reason for Rejection (Optional)</label>
+                        <textarea class="form-control" id="rejectReason" name="reason" rows="3"
+                                  placeholder="Please provide a reason for rejection..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="submitRejectForm()">Reject User</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- JavaScript -->
+<script>
+    // Tab functionality
+    function showSection(section) {
+        // Hide all sections
+        document.getElementById('all-section').style.display = 'none';
+        document.getElementById('patients-section').style.display = 'none';
+        document.getElementById('doctors-section').style.display = 'none';
+
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Show selected section and activate tab
+        document.getElementById(section + '-section').style.display = 'block';
+        document.querySelectorAll('.tab').forEach(tab => {
+            if (tab.textContent.includes(section.charAt(0).toUpperCase() + section.slice(1)) ||
+                (section === 'all' && tab.textContent.includes('All'))) {
+                tab.classList.add('active');
+            }
+        });
+    }
+
+    // Reject modal functionality
+    let rejectModal = null;
+
+    function showRejectModal(userType, userId, userName) {
+        document.getElementById('rejectUserName').textContent = userName;
+        document.getElementById('rejectUserId').value = userId;
+        document.getElementById('rejectUserType').value = userType;
+
+        // Update form action
+        const form = document.getElementById('rejectForm');
+        form.action = `/admin/reject-user/${userId}`;
+
+        // Clear previous reason
+        document.getElementById('rejectReason').value = '';
+
+        // Show modal
+        if (!rejectModal) {
+            rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+        }
+        rejectModal.show();
+    }
+
+    function submitRejectForm() {
+        document.getElementById('rejectForm').submit();
+    }
+
+    // Initialize Bootstrap tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize first section
+        showSection('all');
+
+        // Flash message handling
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('success')) {
+            showSuccessMessage('Operation completed successfully!');
+        }
+    });
+
+    function showSuccessMessage(message) {
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">Success</strong>
+                    <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.parentElement.parentElement.remove()"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+
+        // Remove toast after 3 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 3000);
+    }
+</script>
+</body>
+</html>

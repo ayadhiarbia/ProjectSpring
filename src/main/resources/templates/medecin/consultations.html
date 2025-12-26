@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultations | TeleHealth Doctor</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --doctor-primary: #4cd9c5;
+            --doctor-secondary: #6a82fb;
+            --doctor-accent: #ff9a8b;
+            --doctor-success: #38b2ac;
+            --doctor-warning: #ffb74d;
+            --doctor-danger: #f67280;
+            --doctor-light: #f7f9fc;
+            --doctor-dark: #2d3748;
+            --doctor-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --doctor-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            color: var(--doctor-dark);
+        }
+
+        /* Reuse header and sidebar styles from dashboard */
+        .doctor-main {
+            margin-left: 280px;
+            padding: 30px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--doctor-dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .page-title i {
+            color: var(--doctor-primary);
+            font-size: 24px;
+        }
+
+        .page-subtitle {
+            color: #718096;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        /* Consultations Header */
+        .consultations-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .tab-navigation {
+            display: flex;
+            background: var(--doctor-light);
+            border-radius: 12px;
+            padding: 5px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 12px 25px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-weight: 500;
+            color: #718096;
+            cursor: pointer;
+            transition: var(--doctor-transition);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: var(--doctor-primary);
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--doctor-primary);
+            box-shadow: var(--doctor-shadow);
+        }
+
+        .consultation-stats {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .stat-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-badge.today {
+            background: rgba(76, 217, 197, 0.1);
+            color: var(--doctor-primary);
+        }
+
+        .stat-badge.pending {
+            background: rgba(255, 183, 77, 0.1);
+            color: var(--doctor-warning);
+        }
+
+        .new-consultation-btn {
+            background: linear-gradient(135deg, var(--doctor-primary), var(--doctor-secondary));
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--doctor-transition);
+        }
+
+        .new-consultation-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(76, 217, 197, 0.3);
+        }
+
+        /* Consultation Filters */
+        .consultation-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 14px;
+            color: #718096;
+            font-weight: 500;
+        }
+
+        .filter-select {
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            color: var(--doctor-dark);
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #718096;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+        }
+
+        /* Consultation Cards */
+        .consultations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .consultation-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--doctor-shadow);
+            transition: var(--doctor-transition);
+            position: relative;
+        }
+
+        .consultation-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .consultation-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .consultation-patient {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .patient-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--doctor-primary), var(--doctor-secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .patient-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .patient-info p {
+            font-size: 13px;
+            color: #718096;
+        }
+
+        .consultation-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-completed { background: rgba(56, 178, 172, 0.1); color: var(--doctor-success); }
+        .status-scheduled { background: rgba(106, 130, 251, 0.1); color: var(--doctor-secondary); }
+        .status-pending { background: rgba(255, 183, 77, 0.1); color: var(--doctor-warning); }
+        .status-cancelled { background: rgba(246, 114, 128, 0.1); color: var(--doctor-danger); }
+
+        .consultation-body {
+            padding: 20px;
+        }
+
+        .consultation-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-weight: 500;
+            color: var(--doctor-dark);
+        }
+
+        .consultation-notes {
+            background: var(--doctor-light);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: var(--doctor-dark);
+            line-height: 1.5;
+        }
+
+        .consultation-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--doctor-transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .action-btn.primary {
+            background: var(--doctor-primary);
+            color: white;
+        }
+
+        .action-btn.secondary {
+            background: var(--doctor-light);
+            color: var(--doctor-dark);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .urgent-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 10px;
+            height: 10px;
+            background: var(--doctor-danger);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Consultation Types */
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .type-video { background: rgba(76, 217, 197, 0.1); color: var(--doctor-primary); }
+        .type-inperson { background: rgba(106, 130, 251, 0.1); color: var(--doctor-secondary); }
+        .type-followup { background: rgba(56, 178, 172, 0.1); color: var(--doctor-success); }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--doctor-shadow);
+            grid-column: 1 / -1;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            color: #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            color: var(--doctor-dark);
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #718096;
+            margin-bottom: 25px;
+        }
+
+        /* Consultation Modal */
+        .consultation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .consultation-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 25px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+
+        .modal-header h3 {
+            color: var(--doctor-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #718096;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-section {
+            margin-bottom: 30px;
+        }
+
+        .modal-section h4 {
+            color: var(--doctor-dark);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--doctor-light);
+        }
+
+        .prescription-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .prescription-item {
+            background: var(--doctor-light);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .doctor-main {
+                margin-left: 80px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .doctor-main {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .consultations-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .consultation-stats {
+                order: 3;
+                margin-top: 20px;
+                justify-content: center;
+            }
+
+            .consultations-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .consultation-details {
+                grid-template-columns: 1fr;
+            }
+
+            .consultation-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Header (copy from dashboard) -->
+<header class="doctor-header">
+    <div class="logo-section">
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="doctor-logo">
+            <i class="fas fa-user-md"></i> TeleHealth Doctor
+        </div>
+    </div>
+
+    <div class="welcome-text">
+        <h1>Consultations</h1>
+        <p>Manage patient consultations and medical records</p>
+    </div>
+
+    <div class="header-actions">
+        <!-- Copy from dashboard -->
+    </div>
+</header>
+
+<!-- Sidebar (copy from dashboard) -->
+<aside class="doctor-sidebar" id="sidebar">
+    <nav class="sidebar-menu">
+        <a th:href="@{/medecins/dashboard}" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a th:href="@{/medecins/patients}" class="menu-item">
+            <i class="fas fa-user-injured"></i>
+            <span>My Patients</span>
+        </a>
+
+        <a th:href="@{/medecins/rendezvous}" class="menu-item">
+            <i class="fas fa-calendar-check"></i>
+            <span>Appointments</span>
+        </a>
+
+        <a th:href="@{/medecins/consultations}" class="menu-item active">
+            <i class="fas fa-stethoscope"></i>
+            <span>Consultations</span>
+            <span class="menu-badge">12</span>
+        </a>
+
+        <!-- Other menu items -->
+    </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="doctor-main">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-stethoscope"></i>
+            Patient Consultations
+        </h1>
+        <p class="page-subtitle">
+            Total 12 consultations • 3 pending follow-ups
+        </p>
+    </div>
+
+    <!-- Consultations Header -->
+    <div class="consultations-header">
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="all">
+                <i class="fas fa-list"></i>
+                All Consultations
+            </button>
+            <button class="tab-btn" data-tab="today">
+                <i class="fas fa-calendar-day"></i>
+                Today
+            </button>
+            <button class="tab-btn" data-tab="pending">
+                <i class="fas fa-clock"></i>
+                Pending
+            </button>
+            <button class="tab-btn" data-tab="completed">
+                <i class="fas fa-check-circle"></i>
+                Completed
+            </button>
+            <button class="tab-btn" data-tab="video">
+                <i class="fas fa-video"></i>
+                Video Calls
+            </button>
+        </div>
+
+        <div class="consultation-stats">
+            <div class="stat-badge today">
+                <i class="fas fa-calendar-day"></i>
+                <span>5 today</span>
+            </div>
+            <div class="stat-badge pending">
+                <i class="fas fa-clock"></i>
+                <span>3 pending</span>
+            </div>
+        </div>
+
+        <button class="new-consultation-btn" onclick="openNewConsultation()">
+            <i class="fas fa-plus"></i>
+            New Consultation
+        </button>
+    </div>
+
+    <!-- Consultation Filters -->
+    <div class="consultation-filters">
+        <div class="filter-group">
+            <label class="filter-label">Filter by Status</label>
+            <select class="filter-select" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Filter by Type</label>
+            <select class="filter-select" id="typeFilter">
+                <option value="">All Types</option>
+                <option value="video">Video Consultation</option>
+                <option value="inperson">In-person</option>
+                <option value="followup">Follow-up</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Filter by Date</label>
+            <select class="filter-select" id="dateFilter">
+                <option value="">All Dates</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+            </select>
+        </div>
+
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search consultations..." id="searchInput">
+        </div>
+    </div>
+
+    <!-- Consultations Grid -->
+    <div class="consultations-grid" id="consultationsGrid">
+        <!-- Consultation Card 1 -->
+        <div class="consultation-card">
+            <div class="urgent-indicator"></div>
+
+            <div class="consultation-header">
+                <div class="consultation-patient">
+                    <div class="patient-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="patient-info">
+                        <h4>John Doe</h4>
+                        <p>Age: 45 • ID: PT-001234</p>
+                    </div>
+                </div>
+                <div class="consultation-status status-completed">
+                    Completed
+                </div>
+            </div>
+
+            <div class="consultation-body">
+                <div class="consultation-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Date & Time</span>
+                        <span class="detail-value">Dec 4, 2025 • 09:00 AM</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Duration</span>
+                        <span class="detail-value">30 minutes</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Type</span>
+                        <span class="type-badge type-video">
+                                <i class="fas fa-video"></i> Video
+                            </span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Condition</span>
+                        <span class="detail-value">Hypertension</span>
+                    </div>
+                </div>
+
+                <div class="consultation-notes">
+                    <strong>Notes:</strong> Patient reports improved BP control with current medication. No side effects reported. Advised to continue current regimen and schedule follow-up in 2 weeks.
+                </div>
+
+                <div class="consultation-actions">
+                    <button class="action-btn primary" onclick="viewConsultationDetails(1)">
+                        <i class="fas fa-eye"></i>
+                        View Details
+                    </button>
+                    <button class="action-btn secondary" onclick="generatePrescription(1)">
+                        <i class="fas fa-prescription"></i>
+                        Prescription
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consultation Card 2 -->
+        <div class="consultation-card">
+            <div class="consultation-header">
+                <div class="consultation-patient">
+                    <div class="patient-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="patient-info">
+                        <h4>Sarah Johnson</h4>
+                        <p>Age: 32 • ID: PT-001235</p>
+                    </div>
+                </div>
+                <div class="consultation-status status-scheduled">
+                    Scheduled
+                </div>
+            </div>
+
+            <div class="consultation-body">
+                <div class="consultation-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Date & Time</span>
+                        <span class="detail-value">Dec 5, 2025 • 10:30 AM</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Duration</span>
+                        <span class="detail-value">45 minutes</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Type</span>
+                        <span class="type-badge type-inperson">
+                                <i class="fas fa-user"></i> In-person
+                            </span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Condition</span>
+                        <span class="detail-value">Asthma</span>
+                    </div>
+                </div>
+
+                <div class="consultation-notes">
+                    <strong>Initial Consultation:</strong> New patient with persistent asthma symptoms. Needs full assessment and treatment plan.
+                </div>
+
+                <div class="consultation-actions">
+                    <button class="action-btn primary" onclick="viewConsultationDetails(2)">
+                        <i class="fas fa-eye"></i>
+                        View Details
+                    </button>
+                    <button class="action-btn secondary" onclick="prepareForConsultation(2)">
+                        <i class="fas fa-stethoscope"></i>
+                        Prepare
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add more consultation cards as needed -->
+    </div>
+
+    <!-- Consultation Stats -->
+    <div class="patient-stats">
+        <div class="stat-card">
+            <h3 id="totalConsultations">12</h3>
+            <p>Total Consultations</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="avgDuration">35</h3>
+            <p>Avg. Duration (min)</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="videoConsultations">8</h3>
+            <p>Video Consultations</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="satisfactionRate">94%</h3>
+            <p>Satisfaction Rate</p>
+        </div>
+    </div>
+</main>
+
+<!-- Consultation Details Modal -->
+<div class="consultation-modal" id="consultationModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-stethoscope"></i>
+                Consultation Details
+            </h3>
+            <button class="modal-close" onclick="closeConsultationModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="modal-section">
+                <h4>Patient Information</h4>
+                <div class="consultation-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Patient Name</span>
+                        <span class="detail-value">John Doe</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Age</span>
+                        <span class="detail-value">45 years</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Gender</span>
+                        <span class="detail-value">Male</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Patient ID</span>
+                        <span class="detail-value">PT-001234</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>Consultation Details</h4>
+                <div class="consultation-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Date & Time</span>
+                        <span class="detail-value">December 4, 2025 • 09:00 AM</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Duration</span>
+                        <span class="detail-value">30 minutes</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Type</span>
+                        <span class="type-badge type-video">
+                                <i class="fas fa-video"></i> Video Consultation
+                            </span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Status</span>
+                        <span class="consultation-status status-completed">
+                                Completed
+                            </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>Medical Notes</h4>
+                <div class="consultation-notes">
+                    <strong>Chief Complaint:</strong> Follow-up for hypertension management<br><br>
+                    <strong>Subjective:</strong> Patient reports improved blood pressure control with current medication (Lisinopril 10mg daily). No side effects reported. BP readings at home range 125-135/80-85 mmHg.<br><br>
+                    <strong>Objective:</strong> BP in clinic: 130/82 mmHg, Pulse: 72 bpm, Weight: 85 kg (stable)<br><br>
+                    <strong>Assessment:</strong> Hypertension well-controlled with current regimen.<br><br>
+                    <strong>Plan:</strong>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Continue Lisinopril 10mg daily</li>
+                        <li>Maintain low-sodium diet</li>
+                        <li>Continue home BP monitoring</li>
+                        <li>Schedule follow-up in 2 weeks</li>
+                        <li>Consider adding diuretic if BP increases</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>Prescriptions</h4>
+                <div class="prescription-list">
+                    <div class="prescription-item">
+                        <div>
+                            <strong>Lisinopril</strong><br>
+                            <small>10mg tablet • Take 1 tablet daily</small>
+                        </div>
+                        <div>
+                            <span style="color: var(--doctor-primary); font-weight: 600;">30 days supply</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>Next Steps</h4>
+                <div style="display: flex; gap: 15px;">
+                    <button class="action-btn primary">
+                        <i class="fas fa-file-pdf"></i>
+                        Export as PDF
+                    </button>
+                    <button class="action-btn secondary">
+                        <i class="fas fa-calendar-plus"></i>
+                        Schedule Follow-up
+                    </button>
+                    <button class="action-btn secondary">
+                        <i class="fas fa-prescription"></i>
+                        New Prescription
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sidebar toggle
+    document.getElementById('menuToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    });
+
+    // Tab navigation
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const tab = this.dataset.tab;
+            filterConsultations(tab);
+        });
+    });
+
+    // Filter consultations
+    function filterConsultations(tab) {
+        const cards = document.querySelectorAll('.consultation-card');
+
+        cards.forEach(card => {
+            let show = true;
+
+            // Tab filtering
+            if (tab === 'today') {
+                const dateText = card.querySelector('.detail-item:nth-child(1) .detail-value').textContent;
+                show = dateText.includes('Dec 4');
+            } else if (tab === 'pending') {
+                const status = card.querySelector('.consultation-status').textContent;
+                show = status === 'Scheduled' || status === 'Pending';
+            } else if (tab === 'completed') {
+                const status = card.querySelector('.consultation-status').textContent;
+                show = status === 'Completed';
+            } else if (tab === 'video') {
+                const type = card.querySelector('.type-badge').textContent;
+                show = type.includes('Video');
+            }
+
+            card.style.display = show ? 'block' : 'none';
+        });
+
+        // Show empty state if no cards visible
+        const visibleCards = Array.from(cards).filter(card => card.style.display !== 'none');
+        showEmptyState(visibleCards.length === 0);
+    }
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.consultation-card');
+
+        cards.forEach(card => {
+            const patientName = card.querySelector('.patient-info h4').textContent.toLowerCase();
+            const patientId = card.querySelector('.patient-info p').textContent.toLowerCase();
+            const condition = card.querySelector('.detail-item:nth-child(4) .detail-value').textContent.toLowerCase();
+            const notes = card.querySelector('.consultation-notes')?.textContent.toLowerCase() || '';
+
+            if (patientName.includes(searchTerm) || patientId.includes(searchTerm) ||
+                condition.includes(searchTerm) || notes.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+
+    // Filter select functionality
+    document.getElementById('statusFilter').addEventListener('change', function(e) {
+        applyFilters();
+    });
+
+    document.getElementById('typeFilter').addEventListener('change', function(e) {
+        applyFilters();
+    });
+
+    document.getElementById('dateFilter').addEventListener('change', function(e) {
+        applyFilters();
+    });
+
+    function applyFilters() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        const typeFilter = document.getElementById('typeFilter').value;
+        const dateFilter = document.getElementById('dateFilter').value;
+        const cards = document.querySelectorAll('.consultation-card');
+
+        cards.forEach(card => {
+            let show = true;
+
+            // Status filter
+            if (statusFilter) {
+                const status = card.querySelector('.consultation-status').textContent.toLowerCase();
+                show = show && status.includes(statusFilter);
+            }
+
+            // Type filter
+            if (typeFilter) {
+                const type = card.querySelector('.type-badge').textContent.toLowerCase();
+                show = show && type.includes(typeFilter);
+            }
+
+            // Date filter (simplified)
+            if (dateFilter === 'today') {
+                const dateText = card.querySelector('.detail-item:nth-child(1) .detail-value').textContent;
+                show = show && dateText.includes('Dec 4');
+            }
+
+            card.style.display = show ? 'block' : 'none';
+        });
+
+        const visibleCards = Array.from(cards).filter(card => card.style.display !== 'none');
+        showEmptyState(visibleCards.length === 0);
+    }
+
+    // Show/hide empty state
+    function showEmptyState(show) {
+        let emptyState = document.getElementById('emptyState');
+
+        if (show && !emptyState) {
+            emptyState = document.createElement('div');
+            emptyState.id = 'emptyState';
+            emptyState.className = 'empty-state';
+            emptyState.innerHTML = `
+                    <i class="fas fa-stethoscope"></i>
+                    <h3>No Consultations Found</h3>
+                    <p>Try adjusting your filters or create a new consultation</p>
+                    <button class="new-consultation-btn" onclick="openNewConsultation()">
+                        <i class="fas fa-plus"></i>
+                        New Consultation
+                    </button>
+                `;
+            document.getElementById('consultationsGrid').appendChild(emptyState);
+        } else if (!show && emptyState) {
+            emptyState.remove();
+        }
+    }
+
+    // Open new consultation
+    function openNewConsultation() {
+        alert('New consultation form would open here');
+        // In real app: window.location.href = '/medecins/consultations/new';
+    }
+
+    // View consultation details
+    function viewConsultationDetails(id) {
+        document.getElementById('consultationModal').classList.add('active');
+    }
+
+    function closeConsultationModal() {
+        document.getElementById('consultationModal').classList.remove('active');
+    }
+
+    // Generate prescription
+    function generatePrescription(id) {
+        alert(`Generating prescription for consultation ${id}...`);
+        // In real app: window.location.href = `/medecins/prescriptions/new?consultation=${id}`;
+    }
+
+    // Prepare for consultation
+    function prepareForConsultation(id) {
+        alert(`Preparing for consultation ${id}...`);
+        // In real app: open preparation checklist
+    }
+
+    // Update stats
+    function updateStats() {
+        // In real app, these would come from API
+        document.getElementById('totalConsultations').textContent = '12';
+        document.getElementById('avgDuration').textContent = '35';
+        document.getElementById('videoConsultations').textContent = '8';
+        document.getElementById('satisfactionRate').textContent = '94%';
+    }
+
+    // Initial stats update
+    updateStats();
+
+    // Auto-refresh consultations every 2 minutes
+    setInterval(() => {
+        console.log('Refreshing consultations...');
+        // In real app, this would fetch updated data
+    }, 120000);
+
+    // Handle consultation completion
+    function completeConsultation(cardElement) {
+        const statusBadge = cardElement.querySelector('.consultation-status');
+        statusBadge.className = 'consultation-status status-completed';
+        statusBadge.textContent = 'Completed';
+
+        // Add completion timestamp
+        const now = new Date();
+        const dateElement = cardElement.querySelector('.detail-item:nth-child(1) .detail-value');
+        dateElement.textContent = `${now.toLocaleDateString()} • ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+
+        // Show success message
+        showNotification('Consultation marked as completed', 'success');
+    }
+
+    // Show notification
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                background: ${type === 'success' ? 'var(--doctor-success)' : 'var(--doctor-danger)'};
+                color: white;
+                border-radius: 10px;
+                box-shadow: var(--doctor-shadow);
+                z-index: 3000;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                animation: slideInRight 0.3s ease;
+            `;
+
+        notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // Add CSS for notifications
+    const style = document.createElement('style');
+    style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+    document.head.appendChild(style);
+</script>
+</body>
+</html>

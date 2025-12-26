@@ -34,5 +34,8 @@ public class AdministrateurServiceImp implements AdministrateurService {
     @Override
     public Administrateur getAdminByEmail(String email) {
         return administrateurRepository.findByEmail(email);
+
     }
+
+
 }

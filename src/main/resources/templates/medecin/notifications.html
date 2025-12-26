@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications | TeleHealth Doctor</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --doctor-primary: #4cd9c5;
+            --doctor-secondary: #6a82fb;
+            --doctor-accent: #ff9a8b;
+            --doctor-success: #38b2ac;
+            --doctor-warning: #ffb74d;
+            --doctor-danger: #f67280;
+            --doctor-light: #f7f9fc;
+            --doctor-dark: #2d3748;
+            --doctor-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --doctor-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            color: var(--doctor-dark);
+        }
+
+        /* Reuse header and sidebar styles from dashboard */
+        .doctor-main {
+            margin-left: 280px;
+            padding: 30px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--doctor-dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .page-title i {
+            color: var(--doctor-primary);
+            font-size: 24px;
+        }
+
+        .page-subtitle {
+            color: #718096;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        /* Notifications Header */
+        .notifications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .notification-stats {
+            display: flex;
+            gap: 15px;
+        }
+
+        .stat-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-badge.unread {
+            background: rgba(76, 217, 197, 0.1);
+            color: var(--doctor-primary);
+        }
+
+        .stat-badge.urgent {
+            background: rgba(246, 114, 128, 0.1);
+            color: var(--doctor-danger);
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .action-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--doctor-transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--doctor-primary), var(--doctor-secondary));
+            color: white;
+        }
+
+        .action-btn.secondary {
+            background: white;
+            border: 2px solid #e2e8f0;
+            color: var(--doctor-dark);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--doctor-shadow);
+        }
+
+        /* Notification Tabs */
+        .notification-tabs {
+            display: flex;
+            background: var(--doctor-light);
+            border-radius: 12px;
+            padding: 5px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 12px 25px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-weight: 500;
+            color: #718096;
+            cursor: pointer;
+            transition: var(--doctor-transition);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: var(--doctor-primary);
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--doctor-primary);
+            box-shadow: var(--doctor-shadow);
+        }
+
+        /* Notifications List */
+        .notifications-list {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--doctor-shadow);
+        }
+
+        .notification-item {
+            display: flex;
+            padding: 25px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: var(--doctor-transition);
+            position: relative;
+        }
+
+        .notification-item:hover {
+            background: var(--doctor-light);
+        }
+
+        .notification-item.unread {
+            background: rgba(76, 217, 197, 0.05);
+        }
+
+        .notification-item.urgent {
+            background: rgba(246, 114, 128, 0.05);
+            border-left: 4px solid var(--doctor-danger);
+        }
+
+        .notification-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .notification-icon.appointment {
+            background: rgba(106, 130, 251, 0.1);
+            color: var(--doctor-secondary);
+        }
+
+        .notification-icon.message {
+            background: rgba(76, 217, 197, 0.1);
+            color: var(--doctor-primary);
+        }
+
+        .notification-icon.alert {
+            background: rgba(246, 114, 128, 0.1);
+            color: var(--doctor-danger);
+        }
+
+        .notification-icon.system {
+            background: rgba(56, 178, 172, 0.1);
+            color: var(--doctor-success);
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            color: var(--doctor-dark);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification-text {
+            color: #718096;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .notification-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #a0aec0;
+        }
+
+        .notification-actions-small {
+            display: flex;
+            gap: 10px;
+            margin-left: 20px;
+            align-items: center;
+        }
+
+        .mark-read-btn {
+            background: none;
+            border: none;
+            color: var(--doctor-primary);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .action-icon {
+            width: 35px;
+            height: 35px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--doctor-transition);
+        }
+
+        .action-icon:hover {
+            border-color: var(--doctor-primary);
+            color: var(--doctor-primary);
+        }
+
+        .unread-indicator {
+            width: 10px;
+            height: 10px;
+            background: var(--doctor-primary);
+            border-radius: 50%;
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            color: #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            color: var(--doctor-dark);
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #718096;
+            margin-bottom: 25px;
+        }
+
+        /* Notification Preferences */
+        .preferences-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--doctor-shadow);
+            margin-top: 30px;
+        }
+
+        .preferences-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .preferences-header h3 {
+            color: var(--doctor-dark);
+        }
+
+        .preferences-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .preference-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: var(--doctor-light);
+            border-radius: 10px;
+        }
+
+        .preference-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--doctor-dark);
+        }
+
+        .preference-info p {
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #e2e8f0;
+            transition: var(--doctor-transition);
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: var(--doctor-transition);
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background: var(--doctor-primary);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Notification Badge */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge.urgent {
+            background: var(--doctor-danger);
+            color: white;
+        }
+
+        .badge.new {
+            background: var(--doctor-primary);
+            color: white;
+        }
+
+        .badge.system {
+            background: var(--doctor-success);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .doctor-main {
+                margin-left: 80px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .doctor-main {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .notifications-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .notification-stats {
+                order: 3;
+                margin-top: 20px;
+                justify-content: center;
+            }
+
+            .notification-item {
+                flex-direction: column;
+            }
+
+            .notification-actions-small {
+                margin-left: 0;
+                margin-top: 15px;
+                justify-content: flex-start;
+            }
+
+            .preferences-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notification-item {
+            animation: slideIn 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+<!-- Header (copy from dashboard) -->
+<header class="doctor-header">
+    <div class="logo-section">
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="doctor-logo">
+            <i class="fas fa-user-md"></i> TeleHealth Doctor
+        </div>
+    </div>
+
+    <div class="welcome-text">
+        <h1>Notifications</h1>
+        <p>Stay updated with important alerts and messages</p>
+    </div>
+
+    <div class="header-actions">
+        <!-- Copy from dashboard -->
+    </div>
+</header>
+
+<!-- Sidebar (copy from dashboard) -->
+<aside class="doctor-sidebar" id="sidebar">
+    <nav class="sidebar-menu">
+        <a th:href="@{/medecins/dashboard}" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a th:href="@{/medecins/patients}" class="menu-item">
+            <i class="fas fa-user-injured"></i>
+            <span>My Patients</span>
+        </a>
+
+        <a th:href="@{/medecins/rendezvous}" class="menu-item">
+            <i class="fas fa-calendar-check"></i>
+            <span>Appointments</span>
+        </a>
+
+        <a th:href="@{/medecins/consultations}" class="menu-item">
+            <i class="fas fa-stethoscope"></i>
+            <span>Consultations</span>
+        </a>
+
+        <a th:href="@{/medecins/notifications}" class="menu-item active">
+            <i class="fas fa-bell"></i>
+            <span>Notifications</span>
+            <span class="menu-badge">8</span>
+        </a>
+    </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="doctor-main">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-bell"></i>
+            Notifications
+        </h1>
+        <p class="page-subtitle">
+            Stay informed about important updates and activities
+        </p>
+    </div>
+
+    <!-- Notifications Header -->
+    <div class="notifications-header">
+        <div class="notification-stats">
+            <div class="stat-badge unread">
+                <i class="fas fa-envelope"></i>
+                <span id="unreadCount">5 unread</span>
+            </div>
+            <div class="stat-badge urgent">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="urgentCount">2 urgent</span>
+            </div>
+        </div>
+
+        <div class="notification-actions">
+            <button class="action-btn secondary" onclick="markAllAsRead()">
+                <i class="fas fa-check-double"></i>
+                Mark All as Read
+            </button>
+            <button class="action-btn secondary" onclick="clearAllNotifications()">
+                <i class="fas fa-trash"></i>
+                Clear All
+            </button>
+            <button class="action-btn primary" onclick="testNotification()">
+                <i class="fas fa-bell"></i>
+                Test Notification
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification Tabs -->
+    <div class="notification-tabs">
+        <button class="tab-btn active" data-tab="all">
+            <i class="fas fa-list"></i>
+            All Notifications
+        </button>
+        <button class="tab-btn" data-tab="unread">
+            <i class="fas fa-envelope"></i>
+            Unread
+            <span class="badge new">5</span>
+        </button>
+        <button class="tab-btn" data-tab="appointments">
+            <i class="fas fa-calendar-check"></i>
+            Appointments
+        </button>
+        <button class="tab-btn" data-tab="messages">
+            <i class="fas fa-comment-medical"></i>
+            Messages
+        </button>
+        <button class="tab-btn" data-tab="alerts">
+            <i class="fas fa-exclamation-triangle"></i>
+            Alerts
+            <span class="badge urgent">2</span>
+        </button>
+        <button class="tab-btn" data-tab="system">
+            <i class="fas fa-cog"></i>
+            System
+        </button>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="notifications-list" id="notificationsList">
+        <!-- Notification 1 - Unread Appointment -->
+        <div class="notification-item unread urgent" data-id="1" data-type="appointment" data-urgent="true">
+            <div class="unread-indicator"></div>
+            <div class="notification-icon appointment">
+                <i class="fas fa-calendar-plus"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">
+                    New Appointment Request
+                    <span class="badge urgent">Urgent</span>
+                </div>
+                <div class="notification-text">
+                    <strong>John Doe</strong> has requested an urgent appointment for tomorrow at 2:00 PM. Reason: Severe headache and high blood pressure readings.
+                </div>
+                <div class="notification-meta">
+                    <span><i class="far fa-clock"></i> 10 minutes ago</span>
+                    <span><i class="fas fa-user-md"></i> Cardiology</span>
+                </div>
+            </div>
+            <div class="notification-actions-small">
+                <button class="mark-read-btn" onclick="markAsRead(1)">
+                    <i class="fas fa-check"></i>
+                    Mark as Read
+                </button>
+                <div class="action-icon" onclick="viewAppointment(1)" title="View Appointment">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="action-icon" onclick="respondToAppointment(1)" title="Respond">
+                    <i class="fas fa-reply"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification 2 - Unread Message -->
+        <div class="notification-item unread" data-id="2" data-type="message" data-urgent="false">
+            <div class="unread-indicator"></div>
+            <div class="notification-icon message">
+                <i class="fas fa-comment-medical"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">
+                    New Message from Patient
+                </div>
+                <div class="notification-text">
+                    <strong>Sarah Johnson:</strong> "Doctor, I'm experiencing increased shortness of breath today. Should I use my emergency inhaler?"
+                </div>
+                <div class="notification-meta">
+                    <span><i class="far fa-clock"></i> 45 minutes ago</span>
+                    <span><i class="fas fa-user-injured"></i> Patient Message</span>
+                </div>
+            </div>
+            <div class="notification-actions-small">
+                <button class="mark-read-btn" onclick="markAsRead(2)">
+                    <i class="fas fa-check"></i>
+                    Mark as Read
+                </button>
+                <div class="action-icon" onclick="replyToMessage(2)" title="Reply">
+                    <i class="fas fa-reply"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification 3 - System Alert -->
+        <div class="notification-item" data-id="3" data-type="system" data-urgent="false">
+            <div class="notification-icon system">
+                <i class="fas fa-capsules"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">
+                    Prescription Renewal Reminder
+                </div>
+                <div class="notification-text">
+                    3 of your patients have prescriptions expiring this week. Review and renew as needed.
+                </div>
+                <div class="notification-meta">
+                    <span><i class="far fa-clock"></i> 2 hours ago</span>
+                    <span><i class="fas fa-prescription-bottle-alt"></i> System</span>
+                </div>
+            </div>
+            <div class="notification-actions-small">
+                <button class="mark-read-btn" onclick="markAsRead(3)">
+                    <i class="fas fa-check"></i>
+                    Mark as Read
+                </button>
+                <div class="action-icon" onclick="viewExpiringPrescriptions()" title="View">
+                    <i class="fas fa-external-link-alt"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification 4 - Lab Results -->
+        <div class="notification-item unread" data-id="4" data-type="alert" data-urgent="true">
+            <div class="unread-indicator"></div>
+            <div class="notification-icon alert">
+                <i class="fas fa-flask"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">
+                    Lab Results Available
+                    <span class="badge new">New</span>
+                </div>
+                <div class="notification-text">
+                    Lab results for <strong>Robert Chen</strong> are now available. Abnormal findings detected in blood work.
+                </div>
+                <div class="notification-meta">
+                    <span><i class="far fa-clock"></i> 3 hours ago</span>
+                    <span><i class="fas fa-hospital"></i> Pathology Lab</span>
+                </div>
+            </div>
+            <div class="notification-actions-small">
+                <button class="mark-read-btn" onclick="markAsRead(4)">
+                    <i class="fas fa-check"></i>
+                    Mark as Read
+                </button>
+                <div class="action-icon" onclick="viewLabResults(4)" title="View Results">
+                    <i class="fas fa-file-medical"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add more notifications as needed -->
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="emptyState" style="display: none;">
+        <i class="fas fa-bell-slash"></i>
+        <h3>No Notifications</h3>
+        <p>You're all caught up! No new notifications at the moment.</p>
+        <button class="action-btn secondary" onclick="loadSampleNotifications()">
+            <i class="fas fa-sync"></i>
+            Load Sample Notifications
+        </button>
+    </div>
+
+    <!-- Notification Preferences -->
+    <div class="preferences-section">
+        <div class="preferences-header">
+            <h3>Notification Preferences</h3>
+            <button class="action-btn secondary" onclick="savePreferences()">
+                <i class="fas fa-save"></i>
+                Save Preferences
+            </button>
+        </div>
+
+        <div class="preferences-grid">
+            <div class="preference-item">
+                <div class="preference-info">
+                    <h4>Appointment Notifications</h4>
+                    <p>Get notified about new appointments and changes</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="prefAppointments" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="preference-item">
+                <div class="preference-info">
+                    <h4>Patient Messages</h4>
+                    <p>Receive notifications for new patient messages</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="prefMessages" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="preference-item">
+                <div class="preference-info">
+                    <h4>Lab Results</h4>
+                    <p>Alert when new lab results are available</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="prefLabResults" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="preference-item">
+                <div class="preference-info">
+                    <h4>Prescription Renewals</h4>
+                    <p>Reminders for expiring prescriptions</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="prefPrescriptions" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="preference-item">
+                <div class="preference-info">
+                    <h4>System Updates</h4>
+                    <p>Notifications about system maintenance and updates</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="prefSystem" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="preference-item">
+                <div class="preference-info">
+                    <h4>Email Notifications</h4>
+                    <p>Receive notifications via email as well</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="prefEmail" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Sidebar toggle
+    document.getElementById('menuToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    });
+
+    // Tab navigation
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const tab = this.dataset.tab;
+            filterNotifications(tab);
+        });
+    });
+
+    // Filter notifications
+    function filterNotifications(tab) {
+        const notifications = document.querySelectorAll('.notification-item');
+        let visibleCount = 0;
+
+        notifications.forEach(notification => {
+            let show = true;
+            const type = notification.dataset.type;
+            const isUnread = notification.classList.contains('unread');
+            const isUrgent = notification.dataset.urgent === 'true';
+
+            if (tab === 'unread') {
+                show = isUnread;
+            } else if (tab === 'appointments') {
+                show = type === 'appointment';
+            } else if (tab === 'messages') {
+                show = type === 'message';
+            } else if (tab === 'alerts') {
+                show = type === 'alert' || isUrgent;
+            } else if (tab === 'system') {
+                show = type === 'system';
+            }
+
+            notification.style.display = show ? 'flex' : 'none';
+            if (show) visibleCount++;
+        });
+
+        // Show/hide empty state
+        const emptyState = document.getElementById('emptyState');
+        if (visibleCount === 0) {
+            emptyState.style.display = 'block';
+        } else {
+            emptyState.style.display = 'none';
+        }
+
+        // Update counts
+        updateNotificationCounts();
+    }
+
+    // Mark notification as read
+    function markAsRead(notificationId) {
+        const notification = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+        if (notification) {
+            notification.classList.remove('unread');
+            notification.querySelector('.unread-indicator')?.remove();
+
+            // Update badge count
+            updateNotificationCounts();
+
+            // Show success feedback
+            showToast('Notification marked as read', 'success');
+        }
+    }
+
+    // Mark all as read
+    function markAllAsRead() {
+        if (confirm('Mark all notifications as read?')) {
+            const unreadNotifications = document.querySelectorAll('.notification-item.unread');
+            unreadNotifications.forEach(notification => {
+                notification.classList.remove('unread');
+                notification.querySelector('.unread-indicator')?.remove();
+            });
+
+            updateNotificationCounts();
+            showToast('All notifications marked as read', 'success');
+        }
+    }
+
+    // Clear all notifications
+    function clearAllNotifications() {
+        if (confirm('Clear all notifications? This action cannot be undone.')) {
+            const notifications = document.querySelectorAll('.notification-item');
+            notifications.forEach(notification => notification.remove());
+
+            updateNotificationCounts();
+            document.getElementById('emptyState').style.display = 'block';
+            showToast('All notifications cleared', 'info');
+        }
+    }
+
+    // Update notification counts
+    function updateNotificationCounts() {
+        const unreadCount = document.querySelectorAll('.notification-item.unread').length;
+        const urgentCount = document.querySelectorAll('.notification-item[data-urgent="true"].unread').length;
+
+        document.getElementById('unreadCount').textContent = `${unreadCount} unread`;
+        document.getElementById('urgentCount').textContent = `${urgentCount} urgent`;
+
+        // Update badge in tab
+        const unreadTab = document.querySelector('.tab-btn[data-tab="unread"] .badge');
+        if (unreadTab) {
+            unreadTab.textContent = unreadCount;
+            unreadTab.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+        }
+
+        const alertsTab = document.querySelector('.tab-btn[data-tab="alerts"] .badge');
+        if (alertsTab) {
+            alertsTab.textContent = urgentCount;
+            alertsTab.style.display = urgentCount > 0 ? 'inline-block' : 'none';
+        }
+
+        // Update sidebar badge
+        const sidebarBadge = document.querySelector('.sidebar-menu .menu-item.active .menu-badge');
+        if (sidebarBadge) {
+            sidebarBadge.textContent = unreadCount;
+            sidebarBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
+        }
+    }
+
+    // Test notification
+    function testNotification() {
+        const notificationsList = document.getElementById('notificationsList');
+        const testNotification = document.createElement('div');
+
+        const notificationId = Date.now();
+        testNotification.className = 'notification-item unread';
+        testNotification.dataset.id = notificationId;
+        testNotification.dataset.type = 'system';
+        testNotification.dataset.urgent = 'false';
+        testNotification.innerHTML = `
+                <div class="unread-indicator"></div>
+                <div class="notification-icon system">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">
+                        Test Notification
+                        <span class="badge new">Test</span>
+                    </div>
+                    <div class="notification-text">
+                        This is a test notification to check if notifications are working properly.
+                    </div>
+                    <div class="notification-meta">
+                        <span><i class="far fa-clock"></i> Just now</span>
+                        <span><i class="fas fa-cog"></i> System Test</span>
+                    </div>
+                </div>
+                <div class="notification-actions-small">
+                    <button class="mark-read-btn" onclick="markAsRead(${notificationId})">
+                        <i class="fas fa-check"></i>
+                        Mark as Read
+                    </button>
+                    <div class="action-icon" onclick="this.closest('.notification-item').remove(); updateNotificationCounts()" title="Dismiss">
+                        <i class="fas fa-times"></i>
+                    </div>
+                </div>
+            `;
+
+        notificationsList.insertBefore(testNotification, notificationsList.firstChild);
+        updateNotificationCounts();
+
+        // Hide empty state if shown
+        document.getElementById('emptyState').style.display = 'none';
+
+        // Show success message
+        showToast('Test notification created', 'success');
+    }
+
+    // Load sample notifications
+    function loadSampleNotifications() {
+        const sampleNotifications = [
+            {
+                type: 'appointment',
+                urgent: false,
+                title: 'Appointment Confirmed',
+                text: 'Your appointment with <strong>Maria Garcia</strong> for tomorrow at 3:00 PM has been confirmed.',
+                icon: 'calendar-check',
+                meta: '1 hour ago • Confirmation'
+            },
+            {
+                type: 'message',
+                urgent: false,
+                title: 'New Patient Feedback',
+                text: '<strong>John Doe</strong> left positive feedback about your recent consultation.',
+                icon: 'star',
+                meta: '2 hours ago • Feedback'
+            },
+            {
+                type: 'system',
+                urgent: false,
+                title: 'System Backup Complete',
+                text: 'Daily system backup has been completed successfully.',
+                icon: 'database',
+                meta: '3 hours ago • System'
+            }
+        ];
+
+        const notificationsList = document.getElementById('notificationsList');
+
+        sampleNotifications.forEach((notif, index) => {
+            const notificationId = Date.now() + index;
+            const notification = document.createElement('div');
+            notification.className = 'notification-item unread';
+            notification.dataset.id = notificationId;
+            notification.dataset.type = notif.type;
+            notification.dataset.urgent = notif.urgent;
+            notification.innerHTML = `
+                    <div class="unread-indicator"></div>
+                    <div class="notification-icon ${notif.type}">
+                        <i class="fas fa-${notif.icon}"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">
+                            ${notif.title}
+                        </div>
+                        <div class="notification-text">
+                            ${notif.text}
+                        </div>
+                        <div class="notification-meta">
+                            <span><i class="far fa-clock"></i> ${notif.meta}</span>
+                        </div>
+                    </div>
+                    <div class="notification-actions-small">
+                        <button class="mark-read-btn" onclick="markAsRead(${notificationId})">
+                            <i class="fas fa-check"></i>
+                            Mark as Read
+                        </button>
+                    </div>
+                `;
+
+            notificationsList.appendChild(notification);
+        });
+
+        updateNotificationCounts();
+        document.getElementById('emptyState').style.display = 'none';
+        showToast('Sample notifications loaded', 'success');
+    }
+
+    // Action handlers
+    function viewAppointment(id) {
+        alert(`Viewing appointment details for notification ${id}`);
+        markAsRead(id);
+    }
+
+    function respondToAppointment(id) {
+        alert(`Responding to appointment request ${id}`);
+        markAsRead(id);
+    }
+
+    function replyToMessage(id) {
+        alert(`Replying to message ${id}`);
+        markAsRead(id);
+    }
+
+    function viewExpiringPrescriptions() {
+        alert('Opening expiring prescriptions list');
+    }
+
+    function viewLabResults(id) {
+        alert(`Viewing lab results for notification ${id}`);
+        markAsRead(id);
+    }
+
+    // Save preferences
+    function savePreferences() {
+        const preferences = {
+            appointments: document.getElementById('prefAppointments').checked,
+            messages: document.getElementById('prefMessages').checked,
+            labResults: document.getElementById('prefLabResults').checked,
+            prescriptions: document.getElementById('prefPrescriptions').checked,
+            system: document.getElementById('prefSystem').checked,
+            email: document.getElementById('prefEmail').checked
+        };
+
+        // In real app, this would save to API
+        localStorage.setItem('notificationPreferences', JSON.stringify(preferences));
+        showToast('Notification preferences saved', 'success');
+    }
+
+    // Load preferences
+    function loadPreferences() {
+        const saved = localStorage.getItem('notificationPreferences');
+        if (saved) {
+            const preferences = JSON.parse(saved);
+            document.getElementById('prefAppointments').checked = preferences.appointments;
+            document.getElementById('prefMessages').checked = preferences.messages;
+            document.getElementById('prefLabResults').checked = preferences.labResults;
+            document.getElementById('prefPrescriptions').checked = preferences.prescriptions;
+            document.getElementById('prefSystem').checked = preferences.system;
+            document.getElementById('prefEmail').checked = preferences.email;
+        }
+    }
+
+    // Show toast notification
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                background: ${type === 'success' ? 'var(--doctor-success)' :
+            type === 'error' ? 'var(--doctor-danger)' : 'var(--doctor-primary)'};
+                color: white;
+                border-radius: 10px;
+                box-shadow: var(--doctor-shadow);
+                z-index: 3000;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                animation: slideInRight 0.3s ease;
+            `;
+
+        toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' :
+            type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // Add CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+    document.head.appendChild(style);
+
+    // Simulate real-time notifications (demo)
+    function simulateRealTimeNotifications() {
+        if (Math.random() > 0.7) { // 30% chance
+            const notifications = [
+                "New lab results uploaded for patient",
+                "System maintenance scheduled for tonight",
+                "Patient appointment reminder",
+                "New message in support chat"
+            ];
+
+            const randomNotif = notifications[Math.floor(Math.random() * notifications.length)];
+            console.log('New notification:', randomNotif);
+
+            // In real app, this would use WebSocket
+            if (Math.random() > 0.5) {
+                testNotification();
+            }
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateNotificationCounts();
+        loadPreferences();
+
+        // Check for empty state
+        const notifications = document.querySelectorAll('.notification-item');
+        if (notifications.length === 0) {
+            document.getElementById('emptyState').style.display = 'block';
+        }
+
+        // Simulate real-time notifications every 30-60 seconds
+        setInterval(simulateRealTimeNotifications, 30000 + Math.random() * 30000);
+
+        // Auto-mark as read when clicked (except action buttons)
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.notification-item') &&
+                !e.target.closest('.notification-actions-small') &&
+                !e.target.closest('.mark-read-btn')) {
+                const notification = e.target.closest('.notification-item');
+                if (notification.classList.contains('unread')) {
+                    markAsRead(notification.dataset.id);
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>

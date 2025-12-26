@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctors Management | Telemedicine Platform</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <style>
+        /* ===== CSS VARIABLES - Compatible with Dashboard ===== */
+        :root {
+            --primary: #2563eb;
+            --primary-light: #60a5fa;
+            --primary-dark: #1d4ed8;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+
+            --card-bg: #ffffff;
+            --sidebar-bg: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            --sidebar-accent: #2563eb;
+
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+            --radius-sm: 6px;
+            --radius: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            --border: 1px solid #e2e8f0;
+            --border-dark: 1px solid #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: var(--gray-800);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ===== DASHBOARD CONTAINER ===== */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            color: white;
+            padding: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            box-shadow: var(--shadow-xl);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .user-profile {
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .user-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 28px;
+            color: white;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            font-weight: 600;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        .user-email {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-bottom: 12px;
+            font-weight: 400;
+        }
+
+        .user-role {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar-menu {
+            padding: 24px 16px;
+        }
+
+        .sidebar-item {
+            margin-bottom: 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            letter-spacing: 0.3px;
+            border: 1px solid transparent;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-link.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            border-left: 4px solid var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            opacity: 0.9;
+        }
+
+        .badge-nav {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: auto;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #f8fafc;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 72px;
+                padding: 0;
+            }
+
+            .sidebar-header {
+                padding: 16px;
+            }
+
+            .logo {
+                justify-content: center;
+            }
+
+            .logo-text {
+                display: none;
+            }
+
+            .logo-icon {
+                margin: 0;
+                width: 32px;
+                height: 32px;
+            }
+
+            .user-profile, .nav-text, .badge-nav {
+                display: none;
+            }
+
+            .sidebar-link {
+                justify-content: center;
+                padding: 14px;
+            }
+
+            .sidebar-link.active {
+                border-left: none;
+                background: rgba(255, 255, 255, 0.15);
+            }
+
+            .sidebar-icon {
+                font-size: 18px;
+                width: auto;
+            }
+
+            .main-content {
+                margin-left: 72px;
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 16px;
+            }
+        }
+
+        /* ===== TOP NAVBAR ===== */
+        .navbar-custom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: var(--border);
+        }
+
+        .page-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .page-title i {
+            color: var(--primary);
+            font-size: 18px;
+        }
+
+        .date-display {
+            font-size: 13px;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        /* ===== STAT CARDS ===== */
+        .stat-card {
+            border-radius: var(--radius-md);
+            padding: 24px;
+            color: white;
+            margin-bottom: 20px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: inherit;
+            opacity: 0.8;
+        }
+
+        .stat-card.total {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        }
+
+        .stat-card.active {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .stat-card.pending {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-card-icon {
+            font-size: 2.2rem;
+            opacity: 0.9;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .stat-card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card-label {
+            font-size: 14px;
+            opacity: 0.95;
+            margin-top: 8px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== CARDS ===== */
+        .card-custom {
+            background: white;
+            border: var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .card-custom:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-light);
+        }
+
+        .card-header-custom {
+            background: white;
+            border-bottom: var(--border);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+            padding: 20px;
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--gray-900);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* ===== TABLES ===== */
+        .table-custom {
+            background-color: white;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-xs);
+            margin: 0;
+        }
+
+        .table-custom thead th {
+            background-color: var(--gray-50);
+            border: none;
+            font-weight: 600;
+            color: var(--gray-700);
+            padding: 16px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: var(--border);
+        }
+
+        .table-custom tbody td {
+            padding: 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--gray-100);
+            color: var(--gray-800);
+            font-size: 14px;
+        }
+
+        .table-custom tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-custom tbody tr:hover {
+            background-color: var(--gray-50);
+        }
+
+        /* ===== FILTER SECTION ===== */
+        .filter-section {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+            border: var(--border);
+        }
+
+        /* ===== AVATARS ===== */
+        .doctor-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ===== ACTION BUTTONS ===== */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-buttons .btn {
+            padding: 8px 12px;
+            margin: 0;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: var(--border);
+        }
+
+        .action-buttons .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--gray-500);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            color: var(--gray-300);
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h4 {
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: var(--gray-500);
+            margin-bottom: 24px;
+            max-width: 320px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        /* ===== SEARCH ===== */
+        .search-box {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            z-index: 10;
+            font-size: 14px;
+        }
+
+        .search-input {
+            padding-left: 40px;
+            border-radius: var(--radius);
+            border: var(--border);
+            font-size: 14px;
+            height: 42px;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: var(--radius);
+            padding: 10px 20px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 14px;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        }
+
+        .btn-outline-secondary-custom {
+            border: var(--border);
+            border-radius: var(--radius);
+            padding: 10px 20px;
+            font-weight: 600;
+            color: var(--gray-600);
+            background: white;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 14px;
+        }
+
+        .btn-outline-secondary-custom:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--gray-50);
+            transform: translateY(-1px);
+        }
+
+        /* ===== FORM CONTROLS ===== */
+        .form-select-custom {
+            border-radius: var(--radius);
+            border: var(--border);
+            padding: 10px 14px;
+            font-size: 14px;
+            height: 42px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-select-custom:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        /* ===== PAGINATION ===== */
+        .pagination-custom .page-link {
+            border-radius: var(--radius);
+            margin: 0 2px;
+            border: var(--border);
+            color: var(--gray-700);
+            font-weight: 500;
+            padding: 8px 14px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .pagination-custom .page-item.active .page-link {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .pagination-custom .page-item:not(.active) .page-link:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--gray-50);
+        }
+
+        /* ===== BADGES ===== */
+        .badge-custom {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-status-approved {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-status-pending {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-status-rejected {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* ===== MOBILE MENU BUTTON ===== */
+        .mobile-menu-btn {
+            display: none;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            padding: 10px 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .mobile-menu-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .stat-card-value {
+                font-size: 1.8rem;
+            }
+
+            .stat-card-label {
+                font-size: 13px;
+            }
+
+            .action-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .action-buttons .btn {
+                margin: 0;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .navbar-custom {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .table-responsive {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .stat-card {
+                padding: 20px;
+                min-height: 120px;
+            }
+
+            .stat-card-value {
+                font-size: 1.6rem;
+            }
+
+            .stat-card-icon {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* ===== SCROLLBAR STYLING ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* ===== FOCUS STATES ===== */
+        :focus {
+            outline: 2px solid var(--primary-light);
+            outline-offset: 2px;
+        }
+
+        :focus:not(:focus-visible) {
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-heart-pulse-fill me-2"></i>
+        TeleMed Admin
+    </div>
+
+    <div class="sidebar-menu">
+        <div class="sidebar-item">
+            <a href="/admin/dashboard" class="sidebar-link">
+                <i class="bi bi-speedometer2 sidebar-icon"></i>
+                Dashboard
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/pending-approvals" class="sidebar-link">
+                <i class="bi bi-clock-history sidebar-icon"></i>
+                Pending Approvals
+                <span th:if="${totalPending > 0}" class="badge bg-danger float-end" th:text="${totalPending}"></span>
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/doctors" class="sidebar-link active">
+                <i class="bi bi-person-badge sidebar-icon"></i>
+                Doctors
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/patients" class="sidebar-link">
+                <i class="bi bi-people sidebar-icon"></i>
+                Patients
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/users" class="sidebar-link">
+                <i class="bi bi-person-lines-fill sidebar-icon"></i>
+                Users
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="/admin/payments" class="sidebar-link">
+                <i class="bi bi-credit-card sidebar-icon"></i>
+                Payments
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="/admin/reports" class="sidebar-link">
+                <i class="bi bi-graph-up sidebar-icon"></i>
+                Reports
+            </a>
+        </div>
+    </div>
+
+    <div class="user-profile">
+        <div class="d-flex align-items-center">
+            <div class="user-avatar">
+                <span th:text="${user?.name?.substring(0, 1)}">A</span>
+            </div>
+            <div>
+                <div class="fw-bold" th:text="${user?.name}">Admin User</div>
+                <small class="text-white-50">Administrator</small>
+            </div>
+        </div>
+        <div class="mt-3">
+            <a href="/logout" class="btn btn-sm btn-outline-light w-100">
+                <i class="bi bi-box-arrow-right me-1"></i> Logout
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <i class="bi bi-list"></i> Menu
+    </button>
+
+    <!-- Navbar -->
+    <div class="navbar-custom">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-0">
+                    <i class="bi bi-person-badge me-2 text-primary"></i>
+                    Doctors Management
+                </h4>
+                <p class="text-muted mb-0">Manage all doctors in the platform</p>
+            </div>
+            <div>
+                <span class="text-muted" id="currentDate"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="stat-card total">
+                <div class="stat-card-icon">
+                    <i class="bi bi-person-badge"></i>
+                </div>
+                <div class="stat-card-value" th:text="${totalDoctors}">0</div>
+                <div class="stat-card-label">Total Doctors</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card active">
+                <div class="stat-card-icon">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="stat-card-value" th:text="${activeDoctors}">0</div>
+                <div class="stat-card-label">Active Doctors</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card pending">
+                <div class="stat-card-icon">
+                    <i class="bi bi-clock"></i>
+                </div>
+                <div class="stat-card-value" th:text="${pendingDoctors}">0</div>
+                <div class="stat-card-label">Pending Approval</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <form th:action="@{/admin/doctors}" method="get">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select class="form-select form-select-custom" name="status" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        <option value="APPROVED" th:selected="${currentStatus == 'APPROVED'}">Approved</option>
+                        <option value="PENDING" th:selected="${currentStatus == 'PENDING'}">Pending</option>
+                        <option value="REJECTED" th:selected="${currentStatus == 'REJECTED'}">Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Specialty</label>
+                    <select class="form-select form-select-custom" name="specialty" onchange="this.form.submit()">
+                        <option value="">All Specialties</option>
+                        <option th:each="spec : ${specialties}"
+                                th:value="${spec}"
+                                th:text="${spec}"
+                                th:selected="${currentSpecialty == spec}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Search</label>
+                    <div class="search-box">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" class="form-control search-input" name="search"
+                               th:value="${currentSearch}"
+                               placeholder="Search by name, email, or specialty...">
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="bi bi-funnel me-1"></i> Apply Filters
+                        </button>
+                        <a href="/admin/doctors" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i> Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Doctors Table -->
+    <div class="card-custom">
+        <div class="card-header-custom d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-table me-2"></i>
+                Doctors List
+                <span class="badge bg-primary ms-2" th:text="${#lists.size(doctors)}">0</span>
+            </div>
+            <div>
+                <a href="/admin/pending-approvals" class="btn btn-warning btn-sm">
+                    <i class="bi bi-clock me-1"></i> View Pending Approvals
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div th:if="${#lists.isEmpty(doctors)}" class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-person-x"></i>
+                </div>
+                <h4>No Doctors Found</h4>
+                <p class="text-muted">No doctors match your current filters. Try adjusting your search criteria.</p>
+                <a href="/admin/doctors" class="btn btn-primary-custom">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Reset Filters
+                </a>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(doctors)}" class="table-responsive">
+                <table class="table table-custom table-hover mb-0">
+                    <thead>
+                    <tr>
+                        <th>Doctor</th>
+                        <th>Contact</th>
+                        <th>Specialty</th>
+                        <th>Status</th>
+                        <th>Registration Date</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="doctor : ${doctors}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="doctor-avatar me-3">
+                                    <span th:text="${#strings.substring(doctor.name, 0, 1)}">D</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold" th:text="${doctor.name + ' ' + doctor.prenom}">Doctor Name</div>
+                                    <small class="text-muted">ID: <span th:text="${doctor.id}">123</span></small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="mb-1">
+                                <i class="bi bi-envelope me-1 text-primary"></i>
+                                <span th:text="${doctor.email}">doctor@example.com</span>
+                            </div>
+                            <div>
+                                <i class="bi bi-calendar me-1 text-primary"></i>
+                                <small th:if="${doctor.disponibilite}" th:text="${doctor.disponibilite}">Available</small>
+                                <small th:unless="${doctor.disponibilite}" class="text-muted">Not specified</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info bg-opacity-10 text-info" th:text="${doctor.specialte}">Specialty</span>
+                        </td>
+                        <td>
+                                    <span th:switch="${doctor.status}">
+                                        <span th:case="APPROVED" class="badge badge-custom badge-status-approved">
+                                            <i class="bi bi-check-circle me-1"></i> Approved
+                                        </span>
+                                        <span th:case="PENDING" class="badge badge-custom badge-status-pending">
+                                            <i class="bi bi-clock me-1"></i> Pending
+                                        </span>
+                                        <span th:case="REJECTED" class="badge badge-custom badge-status-rejected">
+                                            <i class="bi bi-x-circle me-1"></i> Rejected
+                                        </span>
+                                        <span th:case="*" class="badge badge-custom bg-secondary">
+                                            <i class="bi bi-question-circle me-1"></i> Unknown
+                                        </span>
+                                    </span>
+                        </td>
+                        <td>
+                            <div th:if="${doctor.createdAt}" th:text="${#temporals.format(doctor.createdAt, 'dd MMM yyyy')}">01 Jan 2023</div>
+                            <div th:unless="${doctor.createdAt}" class="text-muted">N/A</div>
+                            <small th:if="${doctor.approvedAt}" class="text-success">
+                                Approved: <span th:text="${#temporals.format(doctor.approvedAt, 'dd MMM yyyy')}">01 Jan 2023</span>
+                            </small>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#viewDoctorModal"
+                                        th:attr="data-id=${doctor.id},
+                                                        data-name=${doctor.name + ' ' + doctor.prenom},
+                                                        data-email=${doctor.email},
+                                                        data-specialty=${doctor.specialte},
+                                                        data-status=${doctor.status},
+                                                        data-availability=${doctor.disponibilite},
+                                                        data-created=${#temporals.format(doctor.createdAt, 'yyyy-MM-dd')}">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <a th:href="@{/admin/pending-approvals}" class="btn btn-sm btn-outline-warning" th:if="${doctor.status.name() == 'PENDING'}">
+                                    <i class="bi bi-check-circle"></i>
+                                </a>
+                                <a th:href="@{/admin/pending-approvals}" class="btn btn-sm btn-outline-danger" th:if="${doctor.status.name() == 'PENDING'}">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-secondary" disabled th:if="${doctor.status.name() != 'PENDING'}">
+                                    <i class="bi bi-gear"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination (if needed) -->
+    <div th:unless="${#lists.isEmpty(doctors)}" class="d-flex justify-content-between align-items-center mt-3">
+        <div class="text-muted">
+            Showing <span th:text="${#lists.size(doctors)}">0</span> of <span th:text="${totalDoctors}">0</span> doctors
+        </div>
+        <nav>
+            <ul class="pagination pagination-custom">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- View Doctor Modal -->
+<div class="modal fade" id="viewDoctorModal" tabindex="-1" aria-labelledby="viewDoctorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewDoctorModalLabel">Doctor Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <div class="doctor-avatar mx-auto" style="width: 100px; height: 100px; font-size: 2.5rem;" id="doctorAvatar">D</div>
+                        <h5 class="mt-3" id="doctorName">Doctor Name</h5>
+                        <div class="mt-2">
+                            <span class="badge" id="doctorStatusBadge">Status</span>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-muted">Email</label>
+                                <p class="fw-bold" id="doctorEmail">email@example.com</p>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-muted">Specialty</label>
+                                <p class="fw-bold" id="doctorSpecialty">Cardiology</p>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-muted">Availability</label>
+                                <p class="fw-bold" id="doctorAvailability">Monday-Friday</p>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-muted">Registration Date</label>
+                                <p class="fw-bold" id="doctorCreated">01 Jan 2023</p>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label text-muted">Doctor ID</label>
+                                <p class="fw-bold" id="doctorId">123</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a th:href="@{/admin/pending-approvals}" class="btn btn-primary" id="approveBtn" style="display: none;">
+                    <i class="bi bi-check-circle me-1"></i> Go to Approvals
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script>
+    // Mobile menu toggle
+    document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+
+        if (sidebar.style.width === '250px') {
+            sidebar.style.width = '0';
+            mainContent.style.marginLeft = '0';
+        } else {
+            sidebar.style.width = '250px';
+            mainContent.style.marginLeft = '250px';
+        }
+    });
+
+    // Set current date
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+
+    // Handle view doctor modal
+    const viewDoctorModal = document.getElementById('viewDoctorModal');
+    if (viewDoctorModal) {
+        viewDoctorModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+
+            // Extract info from data-* attributes
+            const doctorId = button.getAttribute('data-id');
+            const doctorName = button.getAttribute('data-name');
+            const doctorEmail = button.getAttribute('data-email');
+            const doctorSpecialty = button.getAttribute('data-specialty');
+            const doctorStatus = button.getAttribute('data-status');
+            const doctorAvailability = button.getAttribute('data-availability');
+            const doctorCreated = button.getAttribute('data-created');
+
+            // Update modal content
+            document.getElementById('doctorAvatar').textContent = doctorName.charAt(0);
+            document.getElementById('doctorName').textContent = doctorName;
+            document.getElementById('doctorEmail').textContent = doctorEmail;
+            document.getElementById('doctorSpecialty').textContent = doctorSpecialty || 'Not specified';
+            document.getElementById('doctorAvailability').textContent = doctorAvailability || 'Not specified';
+            document.getElementById('doctorId').textContent = doctorId;
+
+            // Format and set date
+            if (doctorCreated) {
+                const date = new Date(doctorCreated);
+                document.getElementById('doctorCreated').textContent = date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            } else {
+                document.getElementById('doctorCreated').textContent = 'N/A';
+            }
+
+            // Set status badge
+            const statusBadge = document.getElementById('doctorStatusBadge');
+            statusBadge.textContent = doctorStatus;
+            statusBadge.className = 'badge badge-custom ';
+
+            if (doctorStatus === 'APPROVED') {
+                statusBadge.className += 'badge-status-approved';
+            } else if (doctorStatus === 'PENDING') {
+                statusBadge.className += 'badge-status-pending';
+            } else if (doctorStatus === 'REJECTED') {
+                statusBadge.className += 'badge-status-rejected';
+            } else {
+                statusBadge.className += 'bg-secondary';
+            }
+
+            // Show/hide approve button
+            const approveBtn = document.getElementById('approveBtn');
+            if (doctorStatus === 'PENDING') {
+                approveBtn.style.display = 'inline-block';
+            } else {
+                approveBtn.style.display = 'none';
+            }
+        });
+    }
+
+    // Auto-submit search when typing (with delay)
+    let searchTimeout;
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.form.submit();
+            }, 500);
+        });
+    }
+
+    // Handle flash messages
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('success')) {
+            const successMessage = urlParams.get('success');
+            if (successMessage) {
+                alert('Success: ' + decodeURIComponent(successMessage));
+            }
+        }
+    });
+</script>
+</body>
+</html>

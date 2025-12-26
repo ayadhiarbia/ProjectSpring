@@ -18,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserRestController {
@@ -33,7 +34,6 @@ public class UserRestController {
 
     @Autowired
     private AdministrateurService administrateurService;
-
 
     @PostMapping
     public ResponseEntity<?> addUser(@RequestBody Map<String, Object> requestBody) {
@@ -92,6 +92,7 @@ public class UserRestController {
             return new ResponseEntity<>("Error creating user: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
@@ -119,7 +120,7 @@ public class UserRestController {
             if (existingUser == null) {
                 return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
             }
-            
+
             UserRole newRole = existingUser.getRole();
             if (requestBody.containsKey("role")) {
                 try {
@@ -128,7 +129,7 @@ public class UserRestController {
                     return new ResponseEntity<>("Invalid role", HttpStatus.BAD_REQUEST);
                 }
             }
-            
+
             if (newRole != existingUser.getRole()) {
                 if (existingUser.getRole() == UserRole.PATIENT) {
                     patientService.deletePatientById(id);
@@ -137,15 +138,15 @@ public class UserRestController {
                 } else if (existingUser.getRole() == UserRole.ADMIN) {
                     administrateurService.deleteAdministrateurById(id);
                 }
-                
+
                 User savedUser = null;
                 String name = requestBody.containsKey("name") ? requestBody.get("name").toString() : existingUser.getName();
                 String prenom = requestBody.containsKey("prenom") ? requestBody.get("prenom").toString() : existingUser.getPrenom();
                 String email = requestBody.containsKey("email") ? requestBody.get("email").toString() : existingUser.getEmail();
-                String password = requestBody.containsKey("password") && !requestBody.get("password").toString().isEmpty() 
-                    ? requestBody.get("password").toString() 
-                    : existingUser.getPassword();
-                
+                String password = requestBody.containsKey("password") && !requestBody.get("password").toString().isEmpty()
+                        ? requestBody.get("password").toString()
+                        : existingUser.getPassword();
+
                 if (newRole == UserRole.PATIENT) {
                     Patient patient = new Patient();
                     patient.setName(name);
@@ -171,10 +172,10 @@ public class UserRestController {
                     admin.setRole(UserRole.ADMIN);
                     savedUser = administrateurService.createAdministrateur(admin);
                 }
-                
+
                 return new ResponseEntity<>(savedUser, HttpStatus.OK);
             }
-            
+
             User updatedUser = null;
             if (existingUser.getRole() == UserRole.PATIENT) {
                 Patient patient = patientService.getPatientById(id);
@@ -210,7 +211,7 @@ public class UserRestController {
                     updatedUser = administrateurService.updateAdministrateur(admin);
                 }
             }
-            
+
             if (updatedUser != null) {
                 return new ResponseEntity<>(updatedUser, HttpStatus.OK);
             } else {
@@ -233,14 +234,14 @@ public class UserRestController {
     }
 
     @GetMapping("/role/{role}")
-    public ResponseEntity<User> getUserByRole(@PathVariable String role) {
+    public ResponseEntity<List<User>> getUsersByRole(@PathVariable String role) {
         try {
             UserRole userRole = UserRole.valueOf(role.toUpperCase());
-            User user = userService.getUserByRole(userRole);
-            if (user != null) {
-                return new ResponseEntity<>(user, HttpStatus.OK);
+            List<User> users = userService.getUsersByRole(userRole);  // Changed to getUsersByRole
+            if (users != null && !users.isEmpty()) {
+                return new ResponseEntity<>(users, HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);  // Changed to NO_CONTENT instead of NOT_FOUND
             }
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

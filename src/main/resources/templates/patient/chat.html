@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Doctor | TeleHealth Patient</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --light: #f8fafc;
+            --dark: #1e293b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; }
+
+        .dashboard-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); position: fixed; height: 100vh; }
+        .main-content { flex: 1; margin-left: 250px; padding: 30px; }
+
+        .sidebar-header { padding: 25px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .sidebar-nav { padding: 20px 0; }
+        .nav-item { display: flex; align-items: center; padding: 15px 25px; color: #64748b; text-decoration: none; transition: all 0.3s; }
+        .nav-item:hover, .nav-item.active { background: #f1f5f9; color: var(--primary); border-left: 4px solid var(--primary); }
+        .nav-item i { margin-right: 12px; width: 20px; }
+
+        .chat-container { display: flex; height: 80vh; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+        .doctors-sidebar { width: 300px; background: #f8fafc; border-right: 1px solid #e2e8f0; padding: 20px; overflow-y: auto; }
+        .search-box { margin-bottom: 20px; }
+        .search-input { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+        .doctor-list { display: flex; flex-direction: column; gap: 10px; }
+        .doctor-item { display: flex; align-items: center; padding: 15px; background: white; border-radius: 10px; cursor: pointer; transition: all 0.3s; border: 2px solid transparent; }
+        .doctor-item:hover, .doctor-item.active { border-color: var(--primary); background: rgba(79, 70, 229, 0.05); }
+        .doctor-avatar { width: 50px; height: 50px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 15px; }
+        .doctor-status { width: 10px; height: 10px; border-radius: 50%; margin-left: auto; }
+        .status-online { background: #10b981; }
+        .status-offline { background: #94a3b8; }
+        .status-away { background: #f59e0b; }
+
+        .chat-area { flex: 1; display: flex; flex-direction: column; }
+        .chat-header { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; }
+        .current-doctor-avatar { width: 50px; height: 50px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 15px; }
+
+        .messages-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #fafafa; }
+        .message { max-width: 70%; padding: 15px; border-radius: 15px; position: relative; }
+        .message-received { background: white; align-self: flex-start; border-top-left-radius: 5px; }
+        .message-sent { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; align-self: flex-end; border-top-right-radius: 5px; }
+        .message-time { font-size: 12px; color: #94a3b8; margin-top: 5px; text-align: right; }
+        .message-received .message-time { color: #64748b; text-align: left; }
+
+        .message-input-area { padding: 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
+        .message-input { flex: 1; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; }
+        .send-btn { background: var(--primary); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; transition: all 0.3s; }
+        .send-btn:hover { background: var(--secondary); transform: scale(1.05); }
+
+        .chat-actions { display: flex; gap: 15px; margin-bottom: 20px; }
+        .action-btn { padding: 10px 20px; background: white; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+        .action-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        .video-call-section { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 30px; border-radius: 12px; margin-top: 30px; text-align: center; }
+        .video-call-btn { background: white; color: var(--primary); border: none; padding: 15px 30px; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; margin-top: 15px; transition: all 0.3s; }
+        .video-call-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-heartbeat"></i> TeleHealth</h2>
+            <p>Patient Portal</p>
+        </div>
+
+        <div class="sidebar-nav">
+            <a href="/patient/dashboard" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a th:href="@{/patient/profile/{id}(id=${patient.id})}" class="nav-item">
+                <i class="fas fa-user"></i> My Profile
+            </a>
+            <a href="/patient/rendezvous" class="nav-item">
+                <i class="fas fa-calendar-check"></i> Appointments
+            </a>
+            <a href="/patient/dossier" class="nav-item">
+                <i class="fas fa-file-medical"></i> Medical Records
+            </a>
+            <a href="/patient/chat" class="nav-item active">
+                <i class="fas fa-comments"></i> Chat with Doctor
+            </a>
+            <a href="/logout" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Quick Actions -->
+        <div class="chat-actions">
+            <button class="action-btn">
+                <i class="fas fa-video"></i> Start Video Call
+            </button>
+            <button class="action-btn">
+                <i class="fas fa-phone-alt"></i> Voice Call
+            </button>
+            <button class="action-btn">
+                <i class="fas fa-file-medical"></i> Share Medical File
+            </button>
+            <button class="action-btn">
+                <i class="fas fa-prescription"></i> Request Prescription
+            </button>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+            <!-- Doctors List Sidebar -->
+            <div class="doctors-sidebar">
+                <div class="search-box">
+                    <input type="text" placeholder="Search doctors..." class="search-input">
+                </div>
+
+                <div class="doctor-list">
+                    <div class="doctor-item active">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h4>Dr. Sarah Johnson</h4>
+                            <p>Cardiologist</p>
+                        </div>
+                        <div class="doctor-status status-online"></div>
+                    </div>
+
+                    <div class="doctor-item">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h4>Dr. Michael Chen</h4>
+                            <p>General Physician</p>
+                        </div>
+                        <div class="doctor-status status-online"></div>
+                    </div>
+
+                    <div class="doctor-item">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h4>Dr. Lisa Park</h4>
+                            <p>Neurologist</p>
+                        </div>
+                        <div class="doctor-status status-away"></div>
+                    </div>
+
+                    <div class="doctor-item">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h4>Dr. Robert Kim</h4>
+                            <p>Dermatologist</p>
+                        </div>
+                        <div class="doctor-status status-offline"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="chat-area">
+                <!-- Chat Header -->
+                <div class="chat-header">
+                    <div class="current-doctor-avatar">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div>
+                        <h3>Dr. Sarah Johnson</h3>
+                        <p>Cardiologist • Online</p>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div class="messages-container">
+                    <!-- Date Separator -->
+                    <div style="text-align: center; color: #94a3b8; font-size: 12px; margin: 10px 0;">
+                        Today, December 22
+                    </div>
+
+                    <!-- Received Messages -->
+                    <div class="message message-received">
+                        <p>Hello John! How are you feeling today?</p>
+                        <div class="message-time">10:30 AM</div>
+                    </div>
+
+                    <!-- Sent Messages -->
+                    <div class="message message-sent">
+                        <p>Hi Dr. Johnson, I'm feeling better but still have some chest discomfort.</p>
+                        <div class="message-time">10:32 AM</div>
+                    </div>
+
+                    <div class="message message-received">
+                        <p>I see. Can you describe the discomfort? Is it sharp or dull pain?</p>
+                        <div class="message-time">10:33 AM</div>
+                    </div>
+
+                    <div class="message message-sent">
+                        <p>It's more of a dull ache, mostly on the left side. Comes and goes.</p>
+                        <div class="message-time">10:35 AM</div>
+                    </div>
+
+                    <div class="message message-received">
+                        <p>Any shortness of breath or dizziness?</p>
+                        <div class="message-time">10:36 AM</div>
+                    </div>
+
+                    <div class="message message-sent">
+                        <p>No shortness of breath, but I did feel lightheaded yesterday evening.</p>
+                        <div class="message-time">10:37 AM</div>
+                    </div>
+
+                    <div class="message message-received">
+                        <p>Based on what you're describing, I'd like to schedule an ECG test. Are you available tomorrow for a quick video consultation?</p>
+                        <div class="message-time">10:38 AM</div>
+                    </div>
+
+                    <div class="message message-sent">
+                        <p>Yes, tomorrow works for me. What time would be good?</p>
+                        <div class="message-time">10:40 AM</div>
+                    </div>
+
+                    <div class="message message-received">
+                        <p>How about 2 PM? We can do a 30-minute video consultation and I'll order the necessary tests.</p>
+                        <div class="message-time">10:41 AM</div>
+                    </div>
+
+                    <div class="message message-sent">
+                        <p>2 PM works perfectly. Thank you, doctor!</p>
+                        <div class="message-time">10:42 AM</div>
+                    </div>
+
+                    <div class="message message-received">
+                        <p>Great! I'll send you the appointment confirmation. In the meantime, please avoid strenuous activity and let me know immediately if the pain worsens.</p>
+                        <div class="message-time">10:43 AM</div>
+                    </div>
+                </div>
+
+                <!-- Message Input -->
+                <div class="message-input-area">
+                    <input type="text" placeholder="Type your message here..." class="message-input">
+                    <button class="send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Call Promotion -->
+        <div class="video-call-section">
+            <h3><i class="fas fa-video"></i> Need Immediate Assistance?</h3>
+            <p>Start a secure video consultation with your doctor for real-time diagnosis and treatment.</p>
+            <button class="video-call-btn">
+                <i class="fas fa-video"></i> Start Video Consultation
+            </button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout/base :: layout(~{::title}, ~{::section})">
+<head>
+    <title>Server Error</title>
+</head>
+<body>
+<section class="text-center py-5">
+    <div class="container">
+        <h1 class="display-1 text-danger">500</h1>
+        <h2 class="mb-4">Internal Server Error</h2>
+        <p class="lead mb-4">Something went wrong on our server. We're working to fix it.</p>
+        <a th:href="@{/}" class="btn btn-primary">Go to Homepage</a>
+    </div>
+</section>
+</body>
+</html>

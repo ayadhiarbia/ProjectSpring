@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | TeleHealth Patient</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --light: #f8fafc;
+            --dark: #1e293b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; }
+
+        .dashboard-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); position: fixed; height: 100vh; }
+        .main-content { flex: 1; margin-left: 250px; padding: 30px; }
+
+        .sidebar-header { padding: 25px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .sidebar-nav { padding: 20px 0; }
+        .nav-item { display: flex; align-items: center; padding: 15px 25px; color: #64748b; text-decoration: none; transition: all 0.3s; }
+        .nav-item:hover, .nav-item.active { background: #f1f5f9; color: var(--primary); border-left: 4px solid var(--primary); }
+        .nav-item i { margin-right: 12px; width: 20px; }
+
+        .profile-header { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-bottom: 30px; display: flex; align-items: center; }
+        .profile-avatar { width: 120px; height: 120px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px; margin-right: 30px; }
+        .profile-info h1 { color: var(--dark); margin-bottom: 10px; }
+        .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .info-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
+        .info-card h3 { color: var(--dark); margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9; display: flex; align-items: center; }
+        .info-card h3 i { margin-right: 10px; color: var(--primary); }
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+        .info-row:last-child { border-bottom: none; }
+        .label { color: #64748b; font-weight: 500; }
+        .value { color: var(--dark); font-weight: 600; }
+
+        .action-btn { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; margin-top: 20px; }
+        .action-btn:hover { background: var(--secondary); transform: translateY(-2px); }
+        .edit-btn { background: white; color: var(--primary); border: 2px solid var(--primary); }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-heartbeat"></i> TeleHealth</h2>
+            <p>Patient Portal</p>
+        </div>
+
+        <div class="sidebar-nav">
+            <a href="/patient/dashboard" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a th:href="@{/patient/profile/{id}(id=${patientId})}" class="nav-item active">
+                <i class="fas fa-user"></i> My Profile
+            </a>
+            <a href="/patient/rendezvous" class="nav-item">
+                <i class="fas fa-calendar-check"></i> Appointments
+            </a>
+            <a href="/patient/dossier" class="nav-item">
+                <i class="fas fa-file-medical"></i> Medical Records
+            </a>
+            <a href="/patient/chat" class="nav-item">
+                <i class="fas fa-comments"></i> Chat with Doctor
+            </a>
+            <a href="/logout" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="profile-info">
+                <h1>John Doe</h1>
+                <p>Patient ID: P-<span th:text="${patientId}">001</span></p>
+                <span class="badge badge-success">Active Patient</span>
+            </div>
+        </div>
+
+        <!-- Information Grid -->
+        <div class="info-grid">
+            <!-- Personal Information -->
+            <div class="info-card">
+                <h3><i class="fas fa-info-circle"></i> Personal Information</h3>
+                <div class="info-row">
+                    <span class="label">Full Name:</span>
+                    <span class="value">John Doe</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Date of Birth:</span>
+                    <span class="value">January 15, 1985</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Age:</span>
+                    <span class="value">39 years</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Gender:</span>
+                    <span class="value">Male</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Blood Type:</span>
+                    <span class="value">O+</span>
+                </div>
+                <button class="action-btn edit-btn">Edit Personal Info</button>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="info-card">
+                <h3><i class="fas fa-address-book"></i> Contact Information</h3>
+                <div class="info-row">
+                    <span class="label">Email:</span>
+                    <span class="value">john.doe@example.com</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Phone:</span>
+                    <span class="value">+1 (555) 123-4567</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Address:</span>
+                    <span class="value">123 Health Street, Medical City</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Emergency Contact:</span>
+                    <span class="value">Jane Doe (Spouse)</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Emergency Phone:</span>
+                    <span class="value">+1 (555) 987-6543</span>
+                </div>
+                <button class="action-btn edit-btn">Update Contact Info</button>
+            </div>
+
+            <!-- Medical Information -->
+            <div class="info-card">
+                <h3><i class="fas fa-stethoscope"></i> Medical Information</h3>
+                <div class="info-row">
+                    <span class="label">Primary Doctor:</span>
+                    <span class="value">Dr. Sarah Johnson</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Last Checkup:</span>
+                    <span class="value">November 15, 2023</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Next Appointment:</span>
+                    <span class="value">February 20, 2024</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Allergies:</span>
+                    <span class="value">Penicillin, Peanuts</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Chronic Conditions:</span>
+                    <span class="value">Hypertension</span>
+                </div>
+                <button class="action-btn edit-btn">Update Medical Info</button>
+            </div>
+
+            <!-- Account Settings -->
+            <div class="info-card">
+                <h3><i class="fas fa-cog"></i> Account Settings</h3>
+                <div class="info-row">
+                    <span class="label">Account Status:</span>
+                    <span class="badge badge-success">Active</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Member Since:</span>
+                    <span class="value">March 15, 2022</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Last Login:</span>
+                    <span class="value">Today, 10:30 AM</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Account Type:</span>
+                    <span class="value">Premium Patient</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Insurance Provider:</span>
+                    <span class="value">Blue Cross Health</span>
+                </div>
+                <button class="action-btn">Change Password</button>
+                <button class="action-btn edit-btn" style="margin-left: 10px;">Privacy Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
