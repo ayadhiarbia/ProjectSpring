@@ -1,7 +1,7 @@
 package com.mycompany.platforme_telemedcine.RestControllers;
 
 import com.mycompany.platforme_telemedcine.Models.Notification;
-import com.mycompany.platforme_telemedcine.Services.ImpService.NotificationService;
+import com.mycompany.platforme_telemedcine.Services.ImpService.NotificationServiceImp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +14,7 @@ import java.util.List;
 public class NotificationRestController {
 
     @Autowired
-    private NotificationService notificationService;
+    private NotificationServiceImp notificationService;
 
     @GetMapping("/medecin/{medecinId}")
     public ResponseEntity<List<Notification>> getNotificationsByMedecin(@PathVariable Long medecinId) {

@@ -1,7 +1,7 @@
 package com.mycompany.platforme_telemedcine.RestControllers;
 
 import com.mycompany.platforme_telemedcine.Models.Messagerie;
-import com.mycompany.platforme_telemedcine.Services.ImpService.MessagerieService;
+import com.mycompany.platforme_telemedcine.Services.ImpService.MessagerieServiceImp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +14,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chat")
-public class ChatController {
+public class ChatRestController {
 
     @Autowired
-    private MessagerieService messageService;
+    private MessagerieServiceImp messageService;
 
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody Map<String, Object> messageData) {

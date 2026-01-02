@@ -20,4 +20,9 @@ public enum UserStatus {
     public boolean isBlocked() {
         return this == REJECTED || this == SUSPENDED;
     }
+
+
+    public boolean equalsIgnoreCase(String status) {
+        return this.name().equalsIgnoreCase(status);
+    }
 }

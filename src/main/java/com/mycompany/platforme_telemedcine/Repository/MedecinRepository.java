@@ -1,6 +1,7 @@
 package com.mycompany.platforme_telemedcine.Repository;
 
 import com.mycompany.platforme_telemedcine.Models.Medecin;
+import com.mycompany.platforme_telemedcine.Models.UserStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,4 +27,9 @@ public interface MedecinRepository extends JpaRepository<Medecin, Long> {
     // Get all unique specialties
     @Query("SELECT DISTINCT m.specialte FROM Medecin m WHERE m.specialte IS NOT NULL")
     List<String> findAllSpecialties();
+    List<Medecin> findByStatus(UserStatus status);
+
+    default List<Medecin> findApprovedDoctors() {
+        return findByStatus(UserStatus.APPROVED);
+    }
 }

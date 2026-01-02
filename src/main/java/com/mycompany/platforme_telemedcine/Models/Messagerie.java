@@ -31,11 +31,16 @@ public class Messagerie {
 
     private LocalDateTime timestamp;
 
+    @Column(name = "is_read", columnDefinition = "boolean default false")
+    private boolean isRead = false;
+
     // Constructeurs
-    public Messagerie() {}
+    public Messagerie() {
+
+    }
 
     public Messagerie(Long senderId, Long receiverId, String senderName, String receiverName,
-                      String senderRole, String content, LocalDateTime timestamp) {
+                      String senderRole, String content, LocalDateTime timestamp ,boolean isRead) {
         this.senderId = senderId;
         this.receiverId = receiverId;
         this.senderName = senderName;
@@ -43,6 +48,10 @@ public class Messagerie {
         this.senderRole = senderRole;
         this.content = content;
         this.timestamp = timestamp;
+        this.isRead = isRead;
+    }
+
+    public Messagerie(Long id, Long doctorId, String name, String name1, String patient, String content, LocalDateTime now) {
     }
 
     // Getters et Setters
@@ -69,5 +78,6 @@ public class Messagerie {
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-
+    public boolean isRead() { return isRead; }
+    public void setRead(boolean read) { isRead = read; }
 }

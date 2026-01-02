@@ -3,7 +3,8 @@ package com.mycompany.platforme_telemedcine.Models;
 public enum StatusRendezVous {
     PENDING,
     APPROVED,
-    REFUSED
+    REJECTED,
+    COMPLETED,
+    CANCELLED,
+    IN_PROGRESS
 }
-
-

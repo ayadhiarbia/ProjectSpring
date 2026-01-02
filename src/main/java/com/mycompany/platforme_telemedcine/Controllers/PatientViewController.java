@@ -10,47 +10,133 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/patient")
 public class PatientViewController {
 
-    @GetMapping("/dashboard")
-    public String patientDashboard(HttpSession session, Model model) {
-        // Check if patient is logged in
+    // Helper method to check if user is logged in and add patient to model
+    private boolean setupPatientModel(HttpSession session, Model model) {
         Patient patient = (Patient) session.getAttribute("user");
         if (patient == null) {
-            System.out.println("No patient in session, redirecting to login");
+            return false;
+        }
+        model.addAttribute("patient", patient);
+        return true;
+    }
+
+    @GetMapping("/dashboard")
+    public String dashboard(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
             return "redirect:/login";
         }
-
-        System.out.println("Loading dashboard for patient: " + patient.getEmail());
-        model.addAttribute("patient", patient);
         return "patient/dashboard";
     }
 
-    @GetMapping("/profile/{id}")
-    public String patientProfile(@PathVariable Long id, Model model) {
-        model.addAttribute("patientId", id);
-        return "patient/profile";
-    }
+   // @GetMapping("/appointments")
+  //  public String appointments(HttpSession session, Model model) {
+       // if (!setupPatientModel(session, model)) {
+          //  return "redirect:/login";
+       // }
+       // return "patient/appointments";
+    //}
 
-    @GetMapping("/rendezvous")
-    public String patientRendezVous(HttpSession session) {
-        if (session.getAttribute("user") == null) {
+  //  @GetMapping("/appointments/details")
+   // public String appointmentDetails(HttpSession session, Model model) {
+      //  if (!setupPatientModel(session, model)) {
+        //    return "redirect:/login";
+     //   }
+      //  return "patient/appointments-details";  // Fixed to match your actual template name
+   // }
+
+    //@GetMapping("/chat")  // Changed from "/chat" to avoid conflict with ChatController
+   // public String chat(HttpSession session, Model model) {
+       // if (!setupPatientModel(session, model)) {
+        //    return "redirect:/login";
+       // }
+      //  return "patient/chat";
+   // }
+
+    @GetMapping("/chat-room")
+    public String chatRoom(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
             return "redirect:/login";
         }
-        return "patient/rendezvous";
+        return "patient/chat-room";
     }
 
-    @GetMapping("/dossier")
-    public String patientDossier(HttpSession session) {
-        if (session.getAttribute("user") == null) {
+    @GetMapping("/consultation-history")
+    public String consultationHistory(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
             return "redirect:/login";
         }
-        return "patient/dossier";
+        return "patient/consultaion-history";  // Fixed to match your actual template name
     }
 
-    @GetMapping("/chat")
-    public String patientChat(HttpSession session) {
-        if (session.getAttribute("user") == null) {
+    @GetMapping("/consultation-details")
+    public String consultationDetails(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
             return "redirect:/login";
         }
-        return "patient/chat";
+        return "patient/consultation-details";
+    }
+
+    @GetMapping("/consultation-room")
+    public String consultationRoom(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
+            return "redirect:/login";
+        }
+        return "patient/consultation-room";
+    }
+
+    @GetMapping("/document-details")
+    public String documentDetails(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
+            return "redirect:/login";
+        }
+        return "patient/document-details";
+    }
+
+    @GetMapping("/lab-results")
+    public String labResults(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
+            return "redirect:/login";
+        }
+        return "patient/lab-results";
+    }
+
+    @GetMapping("/medical-records")
+    public String medicalRecords(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
+            return "redirect:/login";
+        }
+        return "patient/medical-records";
+    }
+
+    @GetMapping("/medical-summary")
+    public String medicalSummary(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
+            return "redirect:/login";
+        }
+        return "patient/medical-summary";
+    }
+
+    @GetMapping("/prescriptions")
+    public String prescriptions(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
+            return "redirect:/login";
+        }
+        return "patient/prescriptions";
+    }
+
+    @GetMapping("/prescriptions-details")
+    public String prescriptionsDetails(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
+            return "redirect:/login";
+        }
+        return "patient/prescriptions-details";
+    }
+
+    @GetMapping("/vaccinations")
+    public String vaccinations(HttpSession session, Model model) {
+        if (!setupPatientModel(session, model)) {
+            return "redirect:/login";
+        }
+        return "patient/vaccinations";
     }
 }

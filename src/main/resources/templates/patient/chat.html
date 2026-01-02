@@ -1,271 +1,191 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat with Doctor | TeleHealth Patient</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Chat Dashboard - Telemedicine</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-        :root {
-            --primary: #4f46e5;
-            --secondary: #7c3aed;
-            --success: #10b981;
-            --light: #f8fafc;
-            --dark: #1e293b;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; }
-
-        .dashboard-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 250px; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); position: fixed; height: 100vh; }
-        .main-content { flex: 1; margin-left: 250px; padding: 30px; }
-
-        .sidebar-header { padding: 25px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
-        .sidebar-nav { padding: 20px 0; }
-        .nav-item { display: flex; align-items: center; padding: 15px 25px; color: #64748b; text-decoration: none; transition: all 0.3s; }
-        .nav-item:hover, .nav-item.active { background: #f1f5f9; color: var(--primary); border-left: 4px solid var(--primary); }
-        .nav-item i { margin-right: 12px; width: 20px; }
-
-        .chat-container { display: flex; height: 80vh; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-
-        .doctors-sidebar { width: 300px; background: #f8fafc; border-right: 1px solid #e2e8f0; padding: 20px; overflow-y: auto; }
-        .search-box { margin-bottom: 20px; }
-        .search-input { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
-        .doctor-list { display: flex; flex-direction: column; gap: 10px; }
-        .doctor-item { display: flex; align-items: center; padding: 15px; background: white; border-radius: 10px; cursor: pointer; transition: all 0.3s; border: 2px solid transparent; }
-        .doctor-item:hover, .doctor-item.active { border-color: var(--primary); background: rgba(79, 70, 229, 0.05); }
-        .doctor-avatar { width: 50px; height: 50px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 15px; }
-        .doctor-status { width: 10px; height: 10px; border-radius: 50%; margin-left: auto; }
-        .status-online { background: #10b981; }
-        .status-offline { background: #94a3b8; }
-        .status-away { background: #f59e0b; }
-
-        .chat-area { flex: 1; display: flex; flex-direction: column; }
-        .chat-header { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; }
-        .current-doctor-avatar { width: 50px; height: 50px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 15px; }
-
-        .messages-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #fafafa; }
-        .message { max-width: 70%; padding: 15px; border-radius: 15px; position: relative; }
-        .message-received { background: white; align-self: flex-start; border-top-left-radius: 5px; }
-        .message-sent { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; align-self: flex-end; border-top-right-radius: 5px; }
-        .message-time { font-size: 12px; color: #94a3b8; margin-top: 5px; text-align: right; }
-        .message-received .message-time { color: #64748b; text-align: left; }
-
-        .message-input-area { padding: 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
-        .message-input { flex: 1; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; }
-        .send-btn { background: var(--primary); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; transition: all 0.3s; }
-        .send-btn:hover { background: var(--secondary); transform: scale(1.05); }
-
-        .chat-actions { display: flex; gap: 15px; margin-bottom: 20px; }
-        .action-btn { padding: 10px 20px; background: white; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
-        .action-btn:hover { border-color: var(--primary); color: var(--primary); }
-
-        .video-call-section { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 30px; border-radius: 12px; margin-top: 30px; text-align: center; }
-        .video-call-btn { background: white; color: var(--primary); border: none; padding: 15px 30px; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; margin-top: 15px; transition: all 0.3s; }
-        .video-call-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2); }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .chat-container { max-width: 1000px; margin: 30px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .sidebar { border-right: 1px solid #eee; height: 600px; overflow-y: auto; }
+        .search-box { padding: 15px; border-bottom: 1px solid #eee; }
+        .doctor-item { padding: 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; text-decoration: none; color: inherit; }
+        .doctor-item:hover { background-color: #f0f7ff; }
+        .doctor-avatar { width: 50px; height: 50px; border-radius: 50%; background: #007bff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; position: relative; }
+        .status-indicator { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; position: absolute; bottom: 2px; right: 2px; }
+        .status-online { background-color: #28a745; }
+        .status-offline { background-color: #adb5bd; }
+        .doctor-info { flex-grow: 1; }
+        .doctor-name { font-weight: 600; margin-bottom: 2px; }
+        .last-msg { font-size: 0.85rem; color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .unread-badge { background-color: #dc3545; color: white; border-radius: 10px; padding: 2px 8px; font-size: 0.75rem; }
+        .welcome-screen { height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #6c757d; }
+        .debug-info { font-size: 0.8rem; }
     </style>
 </head>
 <body>
-<div class="dashboard-container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h2><i class="fas fa-heartbeat"></i> TeleHealth</h2>
-            <p>Patient Portal</p>
-        </div>
 
-        <div class="sidebar-nav">
-            <a href="/patient/dashboard" class="nav-item">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
-            <a th:href="@{/patient/profile/{id}(id=${patient.id})}" class="nav-item">
-                <i class="fas fa-user"></i> My Profile
-            </a>
-            <a href="/patient/rendezvous" class="nav-item">
-                <i class="fas fa-calendar-check"></i> Appointments
-            </a>
-            <a href="/patient/dossier" class="nav-item">
-                <i class="fas fa-file-medical"></i> Medical Records
-            </a>
-            <a href="/patient/chat" class="nav-item active">
-                <i class="fas fa-comments"></i> Chat with Doctor
-            </a>
-            <a href="/logout" class="nav-item">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        </div>
+<div class="container">
+    <!-- DEBUG HEADER - REMOVE AFTER FIXING -->
+    <div class="alert alert-info mt-3 debug-info">
+        <strong>Debug Info:</strong>
+        Patient: <span th:text="${patient != null ? patient.name : 'Not logged in'}">N/A</span> |
+        Doctors in model: <span th:text="${doctors != null ? doctors.size() : 0}">0</span> |
+        Online users: <span th:text="${onlineUsers != null ? onlineUsers.size() : 0}">0</span>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Quick Actions -->
-        <div class="chat-actions">
-            <button class="action-btn">
-                <i class="fas fa-video"></i> Start Video Call
-            </button>
-            <button class="action-btn">
-                <i class="fas fa-phone-alt"></i> Voice Call
-            </button>
-            <button class="action-btn">
-                <i class="fas fa-file-medical"></i> Share Medical File
-            </button>
-            <button class="action-btn">
-                <i class="fas fa-prescription"></i> Request Prescription
-            </button>
-        </div>
-
-        <!-- Chat Container -->
-        <div class="chat-container">
-            <!-- Doctors List Sidebar -->
-            <div class="doctors-sidebar">
-                <div class="search-box">
-                    <input type="text" placeholder="Search doctors..." class="search-input">
-                </div>
-
-                <div class="doctor-list">
-                    <div class="doctor-item active">
-                        <div class="doctor-avatar">
-                            <i class="fas fa-user-md"></i>
-                        </div>
-                        <div>
-                            <h4>Dr. Sarah Johnson</h4>
-                            <p>Cardiologist</p>
-                        </div>
-                        <div class="doctor-status status-online"></div>
-                    </div>
-
-                    <div class="doctor-item">
-                        <div class="doctor-avatar">
-                            <i class="fas fa-user-md"></i>
-                        </div>
-                        <div>
-                            <h4>Dr. Michael Chen</h4>
-                            <p>General Physician</p>
-                        </div>
-                        <div class="doctor-status status-online"></div>
-                    </div>
-
-                    <div class="doctor-item">
-                        <div class="doctor-avatar">
-                            <i class="fas fa-user-md"></i>
-                        </div>
-                        <div>
-                            <h4>Dr. Lisa Park</h4>
-                            <p>Neurologist</p>
-                        </div>
-                        <div class="doctor-status status-away"></div>
-                    </div>
-
-                    <div class="doctor-item">
-                        <div class="doctor-avatar">
-                            <i class="fas fa-user-md"></i>
-                        </div>
-                        <div>
-                            <h4>Dr. Robert Kim</h4>
-                            <p>Dermatologist</p>
-                        </div>
-                        <div class="doctor-status status-offline"></div>
-                    </div>
+    <div class="chat-container row g-0">
+        <!-- Sidebar: Doctor List -->
+        <div class="col-md-4 sidebar">
+            <div class="search-box">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" id="doctorSearch" class="form-control border-start-0" placeholder="Search doctors...">
                 </div>
             </div>
 
-            <!-- Chat Area -->
-            <div class="chat-area">
-                <!-- Chat Header -->
-                <div class="chat-header">
-                    <div class="current-doctor-avatar">
-                        <i class="fas fa-user-md"></i>
-                    </div>
-                    <div>
-                        <h3>Dr. Sarah Johnson</h3>
-                        <p>Cardiologist • Online</p>
-                    </div>
+            <div id="doctorList">
+                <!-- SIMPLIFIED DOCTOR LIST - No complex conditions -->
+                <div th:each="doctor : ${doctors}" class="doctor-list-item">
+                    <a th:href="@{'/patient/chat/' + ${doctor.id}}" class="doctor-item">
+                        <div class="doctor-avatar">
+                            <span th:text="${#strings.substring(doctor.name, 0, 1)}">D</span>
+                            <div class="status-indicator" th:classappend="${onlineUsers != null and onlineUsers.containsKey(doctor.id)
+ ? 'status-online' : 'status-offline'}">
+                            </div>
+                        </div>
+                        <div class="doctor-info">
+                            <div class="doctor-name" th:text="'Dr. ' + ${doctor.name} + ' ' + ${doctor.prenom}">
+                                Dr. Name
+                            </div>
+                            <div class="text-muted debug-info">
+                                ID: <span th:text="${doctor.id}">0</span> |
+                                Status: <span th:text="${doctor.status}">N/A</span>
+                            </div>
+                            <!-- SIMPLIFIED LAST MESSAGE - Always show something -->
+                            <div class="last-msg">
+                                <small class="text-muted">Click to start chatting</small>
+                            </div>
+                        </div>
+                    </a>
                 </div>
 
-                <!-- Messages -->
-                <div class="messages-container">
-                    <!-- Date Separator -->
-                    <div style="text-align: center; color: #94a3b8; font-size: 12px; margin: 10px 0;">
-                        Today, December 22
-                    </div>
+                <!-- EMPTY STATE - Only show if doctors list is truly empty -->
+                <div th:if="${doctors == null or doctors.isEmpty()}" class="text-center p-5">
+                    <i class="bi bi-person-x" style="font-size: 3rem; color: #6c757d;"></i>
+                    <h5 class="mt-3">No Doctors Available</h5>
+                    <p class="text-muted">There are no approved doctors in the system.</p>
 
-                    <!-- Received Messages -->
-                    <div class="message message-received">
-                        <p>Hello John! How are you feeling today?</p>
-                        <div class="message-time">10:30 AM</div>
+                    <!-- EXTRA DEBUG INFO -->
+                    <div class="mt-3">
+                        <small class="text-danger">
+                            <strong>Debug - This should NOT show since we have doctors!</strong><br>
+                            Patient: <span th:text="${patient != null ? patient.name : 'null'}"></span><br>
+                            Doctors list: <span th:text="${doctors != null ? 'exists' : 'null'}"></span><br>
+                            Doctors count: <span th:text="${doctors != null ? doctors.size() : 0}"></span>
+                        </small>
                     </div>
-
-                    <!-- Sent Messages -->
-                    <div class="message message-sent">
-                        <p>Hi Dr. Johnson, I'm feeling better but still have some chest discomfort.</p>
-                        <div class="message-time">10:32 AM</div>
-                    </div>
-
-                    <div class="message message-received">
-                        <p>I see. Can you describe the discomfort? Is it sharp or dull pain?</p>
-                        <div class="message-time">10:33 AM</div>
-                    </div>
-
-                    <div class="message message-sent">
-                        <p>It's more of a dull ache, mostly on the left side. Comes and goes.</p>
-                        <div class="message-time">10:35 AM</div>
-                    </div>
-
-                    <div class="message message-received">
-                        <p>Any shortness of breath or dizziness?</p>
-                        <div class="message-time">10:36 AM</div>
-                    </div>
-
-                    <div class="message message-sent">
-                        <p>No shortness of breath, but I did feel lightheaded yesterday evening.</p>
-                        <div class="message-time">10:37 AM</div>
-                    </div>
-
-                    <div class="message message-received">
-                        <p>Based on what you're describing, I'd like to schedule an ECG test. Are you available tomorrow for a quick video consultation?</p>
-                        <div class="message-time">10:38 AM</div>
-                    </div>
-
-                    <div class="message message-sent">
-                        <p>Yes, tomorrow works for me. What time would be good?</p>
-                        <div class="message-time">10:40 AM</div>
-                    </div>
-
-                    <div class="message message-received">
-                        <p>How about 2 PM? We can do a 30-minute video consultation and I'll order the necessary tests.</p>
-                        <div class="message-time">10:41 AM</div>
-                    </div>
-
-                    <div class="message message-sent">
-                        <p>2 PM works perfectly. Thank you, doctor!</p>
-                        <div class="message-time">10:42 AM</div>
-                    </div>
-
-                    <div class="message message-received">
-                        <p>Great! I'll send you the appointment confirmation. In the meantime, please avoid strenuous activity and let me know immediately if the pain worsens.</p>
-                        <div class="message-time">10:43 AM</div>
-                    </div>
-                </div>
-
-                <!-- Message Input -->
-                <div class="message-input-area">
-                    <input type="text" placeholder="Type your message here..." class="message-input">
-                    <button class="send-btn">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- Video Call Promotion -->
-        <div class="video-call-section">
-            <h3><i class="fas fa-video"></i> Need Immediate Assistance?</h3>
-            <p>Start a secure video consultation with your doctor for real-time diagnosis and treatment.</p>
-            <button class="video-call-btn">
-                <i class="fas fa-video"></i> Start Video Consultation
-            </button>
+        <!-- Main Content: Welcome -->
+        <div class="col-md-8 d-none d-md-block">
+            <div class="welcome-screen">
+                <i class="bi bi-chat-dots" style="font-size: 4rem; opacity: 0.3;"></i>
+                <h4 class="mt-3">Your Conversations</h4>
+                <p>Select a doctor from the list to start chatting.</p>
+
+                <!-- DEBUG: List all doctors -->
+                <div class="mt-4 text-start p-3" style="background: #f8f9fa; border-radius: 5px; max-width: 400px;">
+                    <h6>Debug - Doctors in Model:</h6>
+                    <div th:if="${doctors != null}">
+                        <div th:each="d : ${doctors}" class="mb-2">
+                            <small>
+                                <span th:text="${d.name}">Name</span>
+                                (ID: <span th:text="${d.id}">0</span>)
+                            </small>
+                        </div>
+                    </div>
+                    <div th:if="${doctors == null}">
+                        <small class="text-danger">Doctors list is NULL!</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    console.log("=== CHAT PAGE LOADED ===");
+    console.log("Patient ID:", /*[[${patient != null ? patient.id : 'null'}]]*/ );
+    console.log("Doctors count:", /*[[${doctors != null ? doctors.size() : 0}]]*/ );
+
+    let stompClient = null;
+    const patientId = /*[[${patient.id}]]*/ 0;
+
+    function connect() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({}, function (frame) {
+            console.log('WebSocket Connected: ' + frame);
+
+            // Notify server of connection
+            stompClient.send("/app/chat.connect", {}, JSON.stringify({
+                userId: patientId,
+                sessionId: 'session-' + Math.random().toString(36).substr(2, 9),
+                userRole: 'PATIENT'
+            }));
+
+            // Subscribe to status updates
+            stompClient.subscribe('/topic/user.status', function (statusUpdate) {
+                const status = JSON.parse(statusUpdate.body);
+                console.log('Status update:', status);
+                updateUserStatus(status.userId, status.isOnline);
+            });
+
+            // Subscribe to private messages
+            stompClient.subscribe('/user/' + patientId + '/queue/messages', function (message) {
+                console.log('New message received');
+                // Refresh to update last message
+                location.reload();
+            });
+        });
+    }
+
+    function updateUserStatus(userId, isOnline) {
+        console.log('Updating status for user', userId, 'isOnline:', isOnline);
+        const indicator = document.querySelector('.status-indicator[data-user="' + userId + '"]');
+        if (indicator) {
+            indicator.className = 'status-indicator ' + (isOnline ? 'status-online' : 'status-offline');
+        }
+    }
+
+    // Search functionality
+    document.getElementById('doctorSearch')?.addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase();
+        const items = document.querySelectorAll('.doctor-list-item');
+        items.forEach(item => {
+            const nameElement = item.querySelector('.doctor-name');
+            if (nameElement) {
+                const name = nameElement.textContent.toLowerCase();
+                item.style.display = name.includes(query) ? 'block' : 'none';
+            }
+        });
+    });
+
+    window.onload = function() {
+        console.log("Page loaded, doctors count:", document.querySelectorAll('.doctor-list-item').length);
+        connect();
+    };
+    /*]]>*/
+</script>
 </body>
 </html>

@@ -16,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/dossier-medical")
-public class DossierMedicalController {
+public class DossierMedicalRestController {
 
     @Autowired
     private DossierMedicalServiceImp dossierMedicalService;

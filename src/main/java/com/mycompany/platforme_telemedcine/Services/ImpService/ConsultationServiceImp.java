@@ -10,6 +10,7 @@ import java.util.List;
 
 @Service
 public class ConsultationServiceImp implements ConsultationService {
+
     @Autowired
     private ConsultationRepository consultationRepository;
 
@@ -30,11 +31,24 @@ public class ConsultationServiceImp implements ConsultationService {
 
     @Override
     public void deleteConsultation(Long id) {
-        this.consultationRepository.deleteById(id);
+        consultationRepository.deleteById(id);
     }
 
     @Override
     public List<Consultation> getAllConsultations() {
         return consultationRepository.findAll();
+    }
+
+    // Add these additional methods for consultation controller
+    public List<Consultation> getConsultationsByPatientId(Long patientId) {
+        return consultationRepository.findByRendezVousPatientId(patientId);
+    }
+
+    public List<Consultation> getActiveConsultations() {
+        return consultationRepository.findByIsActiveTrue();
+    }
+
+    public List<Consultation> getActiveConsultationsByPatientId(Long patientId) {
+        return consultationRepository.findByRendezVousPatientIdAndIsActiveTrue(patientId);
     }
 }

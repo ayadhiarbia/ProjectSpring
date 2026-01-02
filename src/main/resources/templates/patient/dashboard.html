@@ -3,207 +3,284 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Dashboard | TeleHealth</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Patient Dashboard - Telemedicine Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <style>
         :root {
-            --primary: #4f46e5;
-            --secondary: #7c3aed;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --light: #f8fafc;
-            --dark: #1e293b;
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --bg-light: #f8f9fa;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; }
-
-        .dashboard-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 250px; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); position: fixed; height: 100vh; }
-        .main-content { flex: 1; margin-left: 250px; padding: 30px; }
-
-        .sidebar-header { padding: 25px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
-        .sidebar-nav { padding: 20px 0; }
-        .nav-item { display: flex; align-items: center; padding: 15px 25px; color: #64748b; text-decoration: none; transition: all 0.3s; }
-        .nav-item:hover, .nav-item.active { background: #f1f5f9; color: var(--primary); border-left: 4px solid var(--primary); }
-        .nav-item i { margin-right: 12px; width: 20px; }
-
-        .welcome-card { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 40px; border-radius: 15px; margin-bottom: 30px; }
-        .welcome-card h1 { font-size: 32px; margin-bottom: 10px; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); text-align: center; }
-        .stat-number { font-size: 36px; font-weight: 700; color: var(--primary); margin: 10px 0; }
-        .stat-icon { width: 60px; height: 60px; border-radius: 50%; background: rgba(79, 70, 229, 0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; }
-        .stat-icon i { font-size: 24px; color: var(--primary); }
-
-        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 30px 0; }
-        .action-btn { background: white; border: 2px solid #e2e8f0; padding: 25px; border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.3s; text-decoration: none; color: var(--dark); display: block; }
-        .action-btn:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(79, 70, 229, 0.15); border-color: var(--primary); }
-        .action-btn i { font-size: 32px; color: var(--primary); margin-bottom: 15px; display: block; }
-
-        .upcoming-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 30px; }
-        .appointment-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #e2e8f0; }
-        .appointment-item:last-child { border-bottom: none; }
-        .appointment-time { background: #f1f5f9; padding: 5px 15px; border-radius: 20px; font-weight: 600; }
-        .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: 500; }
-        .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-warning { background: #fef3c7; color: #92400e; }
-
-        .emergency-btn { background: var(--danger); color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 30px; width: 100%; }
-        .emergency-btn:hover { background: #dc2626; }
+        body {
+            background-color: var(--bg-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background: white;
+            border-right: 1px solid #dee2e6;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+            margin-bottom: 1.5rem;
+        }
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            transform: translate(50%, -50%);
+        }
+        .unread-notification {
+            background-color: #e7f1ff;
+        }
+        .status-pending { color: #ffc107; }
+        .status-confirmed { color: #198754; }
+        .status-cancelled { color: #dc3545; }
     </style>
 </head>
 <body>
-<div class="dashboard-container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h2><i class="fas fa-heartbeat"></i> TeleHealth</h2>
-            <p>Patient Portal</p>
-        </div>
 
-        <div class="sidebar-nav">
-            <a href="/patient/dashboard" class="nav-item active">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
-            <a th:href="@{/patient/profile/{id}(id=${patient.id})}" class="nav-item">
-                <i class="fas fa-user"></i> My Profile
-            </a>
-            <a href="/patient/rendezvous" class="nav-item">
-                <i class="fas fa-calendar-check"></i> Appointments
-            </a>
-            <a href="/patient/dossier" class="nav-item">
-                <i class="fas fa-file-medical"></i> Medical Records
-            </a>
-            <a href="/patient/chat" class="nav-item">
-                <i class="fas fa-comments"></i> Chat with Doctor
-            </a>
-            <a href="/logout" class="nav-item">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#"><i class="fas fa-heartbeat me-2"></i>TeleMed</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link active" th:href="@{/patient/dashboard}">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/patient/appointments}">Appointments</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/patient/consultation-history}">Consultations</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/patient/prescriptions}">Prescriptions</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Profile</a></li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <!-- Notifications Dropdown -->
+                <div class="dropdown me-3">
+                    <a class="nav-link text-white position-relative" href="#" role="button" id="notificationDropdown" data-bs-toggle="dropdown">
+                        <i class="fas fa-bell fa-lg"></i>
+                        <span id="notification-count" class="badge rounded-pill bg-danger notification-badge"
+                              th:text="${unreadCount > 0 ? unreadCount : ''}"
+                              th:style="${unreadCount > 0 ? '' : 'display:none'}">0</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" id="notification-list" style="width: 300px; max-height: 400px; overflow-y: auto;">
+                        <li><h6 class="dropdown-header">Notifications</h6></li>
+                        <div id="notification-items">
+                            <li th:each="notif : ${notifications}">
+                                <a class="dropdown-item py-2 border-bottom" th:classappend="${!notif.read ? 'unread-notification' : ''}" href="#">
+                                    <div class="small text-muted" th:text="${#temporals.format(notif.createdAt, 'dd MMM, HH:mm')}">Time</div>
+                                    <div th:text="${notif.message}">Notification message</div>
+                                </a>
+                            </li>
+                            <li th:if="${#lists.isEmpty(notifications)}">
+                                <span class="dropdown-item text-center text-muted">No notifications</span>
+                            </li>
+                        </div>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-center small text-primary" href="#">View All Notifications</a></li>
+                    </ul>
+                </div>
+                <span class="text-white me-3" th:text="${'Welcome, ' + patient.prenom + ' ' + patient.name}">Welcome, Patient</span>
+                <a th:href="@{/logout}" class="btn btn-outline-light btn-sm">Logout</a>
+            </div>
         </div>
     </div>
+</nav>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Welcome Card -->
-        <div class="welcome-card">
-            <h1>Welcome back, <span th:text="${userName}">Patient</span>! 👋</h1>
-            <p>Here's your health summary and quick access to services</p>
-        </div>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar (Optional) -->
+        <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse p-3">
+            <div class="position-sticky">
+                <button class="btn btn-primary w-100 mb-4" data-bs-toggle="modal" data-bs-target="#bookAppointmentModal">
+                    <i class="fas fa-plus me-2"></i>Book Appointment
+                </button>
+                <ul class="nav flex-column">
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-dark" th:href="@{/patient/chat}">
+                            <i class="fas fa-comments me-2 text-primary"></i>Messages
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-dark" th:href="@{/patient/medical-records}">
+                            <i class="fas fa-file-medical me-2 text-primary"></i>Medical Records
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-dark" th:href="@{/patient/lab-results}">
+                            <i class="fas fa-flask me-2 text-primary"></i>Lab Results
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-dark" th:href="@{/patient/vaccinations}">
+                            <i class="fas fa-syringe me-2 text-primary"></i>Vaccinations
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
 
-        <!-- Stats Grid -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-check"></i>
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Dashboard</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <span class="badge bg-info text-dark p-2" id="live-status">
+                        <i class="fas fa-circle text-success me-1"></i>Live Updates Active
+                    </span>
                 </div>
-                <div class="stat-number">3</div>
-                <p>Upcoming Appointments</p>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-prescription-bottle-alt"></i>
-                </div>
-                <div class="stat-number">5</div>
-                <p>Active Prescriptions</p>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-file-medical"></i>
-                </div>
-                <div class="stat-number">12</div>
-                <p>Medical Records</p>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-heartbeat"></i>
-                </div>
-                <div class="stat-number">98.6°F</div>
-                <p>Last Vital Reading</p>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <h2 style="margin-bottom: 20px; color: var(--dark);">Quick Actions</h2>
-        <div class="quick-actions">
-            <a href="/patient/rendezvous" class="action-btn">
-                <i class="fas fa-calendar-plus"></i>
-                <h3>Book Appointment</h3>
-                <p>Schedule a new consultation</p>
-            </a>
-
-            <a href="/patient/chat" class="action-btn">
-                <i class="fas fa-comment-medical"></i>
-                <h3>Virtual Consultation</h3>
-                <p>Chat with your doctor</p>
-            </a>
-
-            <a href="/patient/dossier" class="action-btn">
-                <i class="fas fa-file-download"></i>
-                <h3>Download Records</h3>
-                <p>Get your medical files</p>
-            </a>
-
-            <a th:href="@{/patient/profile/{id}(id=${patient.id})}" class="action-btn">
-                <i class="fas fa-user-edit"></i>
-                <h3>Update Profile</h3>
-                <p>Edit personal information</p>
-            </a>
-        </div>
-
-        <!-- Upcoming Appointments -->
-        <div class="upcoming-card">
-            <h2 style="margin-bottom: 20px; color: var(--dark);">
-                <i class="fas fa-calendar-alt"></i> Upcoming Appointments
-            </h2>
-
-            <div class="appointment-item">
+            <!-- Active Consultations Alert -->
+            <div th:each="consultation : ${activeConsultations}" class="alert alert-success d-flex align-items-center shadow-sm" role="alert">
+                <i class="fas fa-video me-3 fa-lg"></i>
                 <div>
-                    <h3>Dr. Sarah Johnson</h3>
-                    <p>Cardiology Consultation</p>
-                    <span class="badge badge-success">Confirmed</span>
-                </div>
-                <div style="text-align: right;">
-                    <div class="appointment-time">Tomorrow, 10:00 AM</div>
-                    <p>Video Consultation</p>
+                    <strong>Active Consultation:</strong> Your session with Dr. <span th:text="${consultation.rendezVous.medecin.name}">Doctor</span> is ready.
+                    <a th:href="@{'/patient/consultation-room?id=' + ${consultation.id}}" class="btn btn-success btn-sm ms-3">Join Room</a>
                 </div>
             </div>
 
-            <div class="appointment-item">
-                <div>
-                    <h3>Dr. Michael Chen</h3>
-                    <p>Annual Physical Exam</p>
-                    <span class="badge badge-warning">Pending</span>
+            <div class="row">
+                <!-- Upcoming Appointments -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Upcoming Appointments</h5>
+                            <a th:href="@{/patient/appointments}" class="btn btn-link btn-sm">View All</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Doctor</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="apt : ${upcomingAppointments}">
+                                        <td th:text="${apt.date}">2023-10-25</td>
+                                        <td th:text="${apt.time}">10:00 AM</td>
+                                        <td th:text="${'Dr. ' + apt.medecin.name}">Dr. Smith</td>
+                                        <td>
+                                                <span th:class="${'badge bg-opacity-10 p-2 ' +
+                                                    (apt.status.name() == 'CONFIRMED' ? 'bg-success text-success' :
+                                                     apt.status.name() == 'PENDING' ? 'bg-warning text-warning' : 'bg-danger text-danger')}"
+                                                      th:text="${apt.status}">Confirmed</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a th:href="@{'/patient/appointments/details?id=' + ${apt.id}}" class="btn btn-outline-primary btn-sm"><i class="fas fa-eye"></i></a>
+                                                <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-calendar-alt"></i></button>
+                                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-times"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(upcomingAppointments)}">
+                                        <td colspan="5" class="text-center py-4 text-muted">No upcoming appointments found.</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div style="text-align: right;">
-                    <div class="appointment-time">Dec 28, 2:30 PM</div>
-                    <p>In-person Visit</p>
+
+                <!-- Recent Activity / Notifications -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Recent Notifications</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush" id="recent-notifications-list">
+                                <div th:each="notif : ${notifications}" class="list-group-item" th:classappend="${!notif.read ? 'unread-notification' : ''}">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <small class="text-muted" th:text="${#temporals.format(notif.createdAt, 'dd MMM')}">Date</small>
+                                    </div>
+                                    <p class="mb-1 small" th:text="${notif.message}">Notification message</p>
+                                </div>
+                                <div th:if="${#lists.isEmpty(notifications)}" class="list-group-item text-center py-4 text-muted">
+                                    No recent activity.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div class="appointment-item">
-                <div>
-                    <h3>Dr. Lisa Park</h3>
-                    <p>Follow-up Consultation</p>
-                    <span class="badge badge-success">Confirmed</span>
-                </div>
-                <div style="text-align: right;">
-                    <div class="appointment-time">Jan 5, 11:15 AM</div>
-                    <p>Phone Consultation</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Emergency Button -->
-        <button class="emergency-btn">
-            <i class="fas fa-phone-alt"></i> EMERGENCY CONTACT
-        </button>
+        </main>
     </div>
 </div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const patientId = [[${patient.id}]];
+    let stompClient = null;
+
+    function connect() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+
+            // Subscribe to patient-specific notifications
+            stompClient.subscribe('/topic/notifications/patient/' + patientId, function (notification) {
+                showNotification(JSON.parse(notification.body));
+            });
+        });
+    }
+
+    function showNotification(notif) {
+        // Update notification count
+        const countBadge = document.getElementById('notification-count');
+        let currentCount = parseInt(countBadge.innerText) || 0;
+        countBadge.innerText = currentCount + 1;
+        countBadge.style.display = 'block';
+
+        // Add to dropdown list
+        const list = document.getElementById('notification-items');
+        const newItem = `
+            <li>
+                <a class="dropdown-item py-2 border-bottom unread-notification" href="#">
+                    <div class="small text-muted">Just now</div>
+                    <div>${notif.message}</div>
+                </a>
+            </li>
+        `;
+        list.insertAdjacentHTML('afterbegin', newItem);
+
+        // Add to recent activity list
+        const recentList = document.getElementById('recent-notifications-list');
+        const recentItem = `
+            <div class="list-group-item unread-notification">
+                <div class="d-flex w-100 justify-content-between">
+                    <small class="text-muted">Just now</small>
+                </div>
+                <p class="mb-1 small">${notif.message}</p>
+            </div>
+        `;
+        recentList.insertAdjacentHTML('afterbegin', recentItem);
+
+        // Optional: Show a browser toast or alert
+        console.log("New Notification:", notif.message);
+    }
+
+    // Connect on page load
+    document.addEventListener('DOMContentLoaded', connect);
+    /*]]>*/
+</script>
 </body>
 </html>

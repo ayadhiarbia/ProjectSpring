@@ -75,6 +75,9 @@ public class User {
     public void setPassword(String password) { this.password = password; }
 
     public UserStatus getStatus() { return status; }
+    public String getStatusString() {
+        return status != null ? status.toString() : null;
+    }
     public void setStatus(UserStatus status) { this.status = status; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }

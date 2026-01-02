@@ -3,11 +3,11 @@ package com.mycompany.platforme_telemedcine.Services.ImpService;
 import com.mycompany.platforme_telemedcine.Models.Medecin;
 import com.mycompany.platforme_telemedcine.Models.Patient;
 import com.mycompany.platforme_telemedcine.Models.User;
+import com.mycompany.platforme_telemedcine.Models.UserStatus;
 import com.mycompany.platforme_telemedcine.Repository.MedecinRepository;
 import com.mycompany.platforme_telemedcine.Repository.PatientRepository;
 import com.mycompany.platforme_telemedcine.Repository.UserRepository;
 import com.mycompany.platforme_telemedcine.Services.MedecinService;
-import com.mycompany.platforme_telemedcine.Services.UserService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,13 +16,43 @@ import java.util.List;
 
 @Service
 public class MedecinServiceImp implements MedecinService {
+
     @Autowired
     private MedecinRepository medecinRepository;
+
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private PatientRepository patientRepository;
+
+    // ... (keep all your existing methods) ...
+
+    @Override
+    public List<Medecin> getApprovedDoctors() {
+        // This is the cleanest and safest way
+        return medecinRepository.findByStatus(UserStatus.APPROVED);
+    }
+
+    @Override
+    public List<Medecin> getDoctorsByStatus(String statusStr) {
+        try {
+            // Convert the String from the UI/Controller into the actual Enum
+            UserStatus statusEnum = UserStatus.valueOf(statusStr.toUpperCase());
+            return medecinRepository.findByStatus(statusEnum);
+        } catch (IllegalArgumentException e) {
+            return List.of(); // Return empty list if the status string is invalid
+        }
+    }
+    // Also add this method for filtering by specialty
+    @Override
+    public List<Medecin> getApprovedDoctorsBySpecialty(String specialty) {
+        List<Medecin> allApproved = medecinRepository.findApprovedDoctors();
+        return allApproved.stream()
+                .filter(d -> d.getSpecialte() != null && d.getSpecialte().equalsIgnoreCase(specialty))
+                .toList();
+    }
+
 
 
     @Override
@@ -43,7 +73,8 @@ public class MedecinServiceImp implements MedecinService {
 
     @Override
     public Medecin getMedecinById(Long id) {
-        return medecinRepository.findById(id).get();
+        return medecinRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Médecin non trouvé avec l'ID: " + id));
     }
 
     @Override
@@ -51,18 +82,28 @@ public class MedecinServiceImp implements MedecinService {
         return medecinRepository.findAll();
     }
 
+    // ADD THIS METHOD - It's in your interface
+    @Override
+    public List<Medecin> getAllMedecins() {
+        return getAllMedecin(); // Call the existing method
+    }
+
     @Override
     public Medecin getMedecinByEmail(String email) {
-        return medecinRepository.findMedecinByEmail(email);
+        Medecin medecin = medecinRepository.findMedecinByEmail(email);
+        if (medecin == null) {
+            throw new RuntimeException("Médecin non trouvé avec l'email: " + email);
+        }
+        return medecin;
     }
 
     @Override
     @Transactional
     public void addPatientToMedecin(Long medecinId, Long patientId) {
         Medecin medecin = medecinRepository.findById(medecinId)
-                .orElseThrow(() -> new RuntimeException("Medecin not found"));
+                .orElseThrow(() -> new RuntimeException("Médecin non trouvé"));
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                .orElseThrow(() -> new RuntimeException("Patient non trouvé"));
 
         medecin.addPatient(patient);
         medecinRepository.save(medecin);
@@ -72,9 +113,9 @@ public class MedecinServiceImp implements MedecinService {
     @Transactional
     public void removePatientFromMedecin(Long medecinId, Long patientId) {
         Medecin medecin = medecinRepository.findById(medecinId)
-                .orElseThrow(() -> new RuntimeException("Medecin not found"));
+                .orElseThrow(() -> new RuntimeException("Médecin non trouvé"));
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                .orElseThrow(() -> new RuntimeException("Patient non trouvé"));
 
         medecin.removePatient(patient);
         medecinRepository.save(medecin);
@@ -83,7 +124,7 @@ public class MedecinServiceImp implements MedecinService {
     @Override
     public List<Patient> getPatientsByMedecin(Long medecinId) {
         Medecin medecin = medecinRepository.findById(medecinId)
-                .orElseThrow(() -> new RuntimeException("Medecin not found"));
+                .orElseThrow(() -> new RuntimeException("Médecin non trouvé"));
         return medecin.getPatients();
     }
 }

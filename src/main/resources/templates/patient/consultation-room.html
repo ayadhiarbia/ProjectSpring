@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation Room - TeleMed</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <!-- SimpleWebRTC or similar library would be included here -->
+    <style>
+        body { background-color: #1a1a1a; color: white; height: 100vh; overflow: hidden; }
+        .main-container { height: 100vh; display: flex; }
+        .video-section { flex: 1; position: relative; background: #000; display: flex; flex-direction: column; }
+        .chat-section { width: 350px; background: #fff; color: #333; display: flex; flex-direction: column; }
+
+        /* Video Layout */
+        #remote-video { width: 100%; height: 100%; object-fit: cover; }
+        #local-video {
+            position: absolute; bottom: 20px; right: 20px;
+            width: 200px; height: 150px; border: 2px solid #fff;
+            border-radius: 10px; object-fit: cover; z-index: 10;
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute; bottom: 30px; left: 50%;
+            transform: translateX(-50%); display: flex; gap: 15px; z-index: 20;
+        }
+        .control-btn {
+            width: 50px; height: 50px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.2); border: none; color: white;
+            transition: all 0.3s;
+        }
+        .control-btn:hover { background: rgba(255,255,255,0.4); }
+        .control-btn.btn-danger { background: #dc3545; }
+        .control-btn.btn-danger:hover { background: #bb2d3b; }
+
+        /* Waiting Room Overlay */
+        #waiting-room {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
+        }
+
+        /* Chat UI */
+        .chat-header { padding: 15px; border-bottom: 1px solid #eee; font-weight: bold; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; background: #f8f9fa; }
+        .message { margin-bottom: 15px; max-width: 85%; }
+        .message.sent { margin-left: auto; background: #0d6efd; color: white; border-radius: 15px 15px 0 15px; padding: 8px 12px; }
+        .message.received { background: #e9ecef; border-radius: 15px 15px 15px 0; padding: 8px 12px; }
+        .chat-input { padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <!-- Video Section -->
+    <div class="video-section">
+        <!-- Waiting Room Overlay -->
+        <div id="waiting-room" th:style="${isActive ? 'display:none' : 'display:flex'}">
+            <div class="spinner-border text-primary mb-4" style="width: 3rem; height: 3rem;" role="status"></div>
+            <h2 class="mb-3">Waiting Room</h2>
+            <p class="lead">Dr. <span th:text="${doctor.name}">Doctor</span> will join you shortly.</p>
+            <p class="text-muted">Please keep this window open. Your consultation will start automatically.</p>
+        </div>
+
+        <!-- Video Feeds -->
+        <video id="remote-video" autoplay playsinline></video>
+        <video id="local-video" autoplay playsinline muted></video>
+
+        <!-- Call Controls -->
+        <div class="controls" th:if="${isActive}">
+            <button class="control-btn" id="toggle-mic" title="Mute/Unmute"><i class="fas fa-microphone"></i></button>
+            <button class="control-btn" id="toggle-video" title="Camera On/Off"><i class="fas fa-video"></i></button>
+            <button class="control-btn btn-danger" id="end-call" title="End Consultation"><i class="fas fa-phone-slash"></i></button>
+        </div>
+
+        <!-- Info Overlay -->
+        <div class="position-absolute top-0 start-0 p-3">
+            <span class="badge bg-primary" th:text="${consultationType}">VIDEO</span>
+            <span class="ms-2" th:text="${'Consultation with Dr. ' + doctor.name}">Dr. Name</span>
+        </div>
+    </div>
+
+    <!-- Chat Section -->
+    <div class="chat-section">
+        <div class="chat-header">
+            <i class="fas fa-comments me-2"></i> Consultation Chat
+        </div>
+        <div class="chat-messages" id="chat-box">
+            <!-- Messages will appear here -->
+            <div class="text-center small text-muted mb-3">Chat started</div>
+        </div>
+        <form class="chat-input" id="chat-form">
+            <input type="text" id="message-input" class="form-control" placeholder="Type a message..." autocomplete="off">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+        </form>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const roomId = /*[[${roomId}]]*/ 'default_room';
+    const patientId = /*[[${patient.id}]]*/ 0;
+    const patientName = /*[[${patient.prenom + ' ' + patient.name}]]*/ 'Patient';
+    const consultationId = /*[[${consultation.id}]]*/ 0;
+
+    let stompClient = null;
+    let localStream = null;
+
+    // 1. WebSocket Connection
+    function connect() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+
+            // Subscribe to private consultation events (Start/End)
+            stompClient.subscribe('/user/queue/consultation', function (event) {
+                handleConsultationEvent(JSON.parse(event.body));
+            });
+
+            // Subscribe to public chat for this room
+            stompClient.subscribe('/topic/consultation/' + roomId + '/chat', function (message) {
+                displayMessage(JSON.parse(message.body));
+            });
+        });
+    }
+
+    function handleConsultationEvent(event) {
+        if (event.type === 'CONSULTATION_STARTED') {
+            document.getElementById('waiting-room').style.display = 'none';
+            startVideoCall();
+            location.reload(); // Refresh to show controls if needed, or just toggle UI
+        } else if (event.type === 'CONSULTATION_ENDED') {
+            alert('The consultation has ended.');
+            window.location.href = '/patient/dashboard';
+        }
+    }
+
+    // 2. Chat Logic
+    document.getElementById('chat-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const input = document.getElementById('message-input');
+        const message = input.value.trim();
+
+        if (message && stompClient) {
+            const chatMsg = {
+                senderId: patientId,
+                senderName: patientName,
+                content: message,
+                timestamp: new Date().toISOString(),
+                type: 'CHAT'
+            };
+            stompClient.send("/app/consultation.chat/" + roomId, {}, JSON.stringify(chatMsg));
+            input.value = '';
+        }
+    });
+
+    function displayMessage(msg) {
+        const chatBox = document.getElementById('chat-box');
+        const isSent = msg.senderId === patientId;
+        const msgHtml = `
+            <div class="message ${isSent ? 'sent' : 'received'}">
+                <div class="small fw-bold mb-1">${isSent ? 'You' : msg.senderName}</div>
+                <div>${msg.content}</div>
+            </div>
+        `;
+        chatBox.insertAdjacentHTML('beforeend', msgHtml);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // 3. Video Call Logic (Placeholder for WebRTC implementation)
+    async function startVideoCall() {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.getElementById('local-video').srcObject = localStream;
+
+            // Here you would integrate with SimpleWebRTC or your WebRTC signaling
+            console.log("Video stream started for room:", roomId);
+        } catch (err) {
+            console.error("Error accessing media devices:", err);
+            alert("Could not access camera/microphone. Please check permissions.");
+        }
+    }
+
+    // Control Handlers
+    document.getElementById('toggle-mic')?.addEventListener('click', function() {
+        const audioTrack = localStream.getAudioTracks()[0];
+        audioTrack.enabled = !audioTrack.enabled;
+        this.querySelector('i').className = audioTrack.enabled ? 'fas fa-microphone' : 'fas fa-microphone-slash';
+        this.classList.toggle('btn-warning');
+    });
+
+    document.getElementById('toggle-video')?.addEventListener('click', function() {
+        const videoTrack = localStream.getVideoTracks()[0];
+        videoTrack.enabled = !videoTrack.enabled;
+        this.querySelector('i').className = videoTrack.enabled ? 'fas fa-video' : 'fas fa-video-slash';
+        this.classList.toggle('btn-warning');
+    });
+
+    document.getElementById('end-call')?.addEventListener('click', function() {
+        if (confirm('Are you sure you want to end this consultation?')) {
+            stompClient.send("/app/consultation.end", {}, JSON.stringify({
+                roomId: roomId,
+                endedBy: patientId
+            }));
+        }
+    });
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        connect();
+        const isActive = /*[[${isActive}]]*/ false;
+        if (isActive) {
+            startVideoCall();
+        }
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

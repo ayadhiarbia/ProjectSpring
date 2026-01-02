@@ -2,39 +2,24 @@ package com.mycompany.platforme_telemedcine.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class CorsConfig {
 
     @Bean
-    public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        
-        CorsConfiguration wsConfig = new CorsConfiguration();
-        wsConfig.addAllowedOrigin("http://localhost:5173");
-        wsConfig.addAllowedOrigin("http://localhost:5174");
-        wsConfig.addAllowedOrigin("http://localhost:3000");
-        wsConfig.addAllowedHeader("*");
-        wsConfig.addAllowedMethod("*");
-        wsConfig.setAllowCredentials(true);
-        source.registerCorsConfiguration("/ws/**", wsConfig);
-        
-        CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("http://localhost:5173");
-        config.addAllowedOrigin("http://localhost:5174");
-        config.addAllowedOrigin("http://localhost:3000");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-        config.setAllowCredentials(true);
-        source.registerCorsConfiguration("/**", config);
-        
-        return new CorsFilter(source);
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins("http://localhost:8082", "http://127.0.0.1:8082")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedHeaders("*")
+                        .allowCredentials(true)
+                        .maxAge(3600);
+            }
+        };
     }
-
-
-
 }
-

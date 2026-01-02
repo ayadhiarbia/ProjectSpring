@@ -1,7 +1,7 @@
 package com.mycompany.platforme_telemedcine.RestControllers;
 
 import com.mycompany.platforme_telemedcine.Models.Messagerie;
-import com.mycompany.platforme_telemedcine.Services.ImpService.MessagerieService;
+import com.mycompany.platforme_telemedcine.Services.ImpService.MessagerieServiceImp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -18,7 +18,7 @@ public class ChatWebSocketController {
     private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
-    private MessagerieService messageService;
+    private MessagerieServiceImp messageService;
 
     @MessageMapping("/chat/send")
     public void sendMessage(@Payload Map<String, Object> messageData) {

@@ -1,5 +1,6 @@
 package com.mycompany.platforme_telemedcine.RestControllers;
 
+import com.mycompany.platforme_telemedcine.Controllers.NotificationController;
 import com.mycompany.platforme_telemedcine.Models.*;
 import com.mycompany.platforme_telemedcine.Services.ConsultationService;
 import com.mycompany.platforme_telemedcine.Services.MedecinService;

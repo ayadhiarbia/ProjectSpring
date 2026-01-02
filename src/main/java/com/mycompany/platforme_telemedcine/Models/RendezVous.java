@@ -18,11 +18,14 @@ public class RendezVous {
     private StatusRendezVous status = StatusRendezVous.PENDING;
 
     @ManyToOne
+    @JoinColumn(name = "medecin_id")
     Medecin medecin;
     @ManyToOne
+    @JoinColumn(name = "patient_id")
     Patient patient;
 
     @OneToOne
+    @JoinColumn(name = "consultation_id")
     Consultation consultation;
 
     public Long getId() {
