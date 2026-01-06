@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Dashboard - Telemedicine Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        /* NOTE: Using the exact same CSS you provided earlier for consistency */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100% ); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .auth-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(10px); }
+        .auth-card { background: white; border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); max-width: 400px; width: 100%; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .auth-icon { font-size: 60px; margin-bottom: 20px; color: #667eea; }
+        .auth-title { font-size: 24px; font-weight: 600; color: #333; margin-bottom: 10px; font-family: 'Poppins', sans-serif; }
+        .auth-message { color: #666; margin-bottom: 30px; line-height: 1.5; }
+        .auth-btn { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; border-radius: 50px; text-decoration: none; font-weight: 500; transition: transform 0.2s, box-shadow 0.2s; }
+        .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); }
+        .chat-container { display: flex; width: 100%; max-width: 1200px; height: 85vh; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2); }
+        .sidebar { width: 350px; background: #f8f9fa; border-right: 1px solid #e9ecef; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 25px; border-bottom: 1px solid #e9ecef; background: white; }
+        .sidebar-header h1 { font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 600; color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .search-box { position: relative; }
+        .search-box input { width: 100%; padding: 12px 15px 12px 45px; border: 2px solid #e9ecef; border-radius: 12px; font-size: 14px; background: #f8f9fa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cpath d='M21 21l-4.35-4.35'%3E%3C/path%3E%3C/svg%3E" ) no-repeat 15px center; background-size: 20px; transition: all 0.3s; }
+        .search-box input:focus { outline: none; border-color: #667eea; background-color: white; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        .conversations-list { flex: 1; overflow-y: auto; padding: 15px; }
+        .conversation-item { display: flex; align-items: center; padding: 15px; border-radius: 12px; margin-bottom: 10px; background: white; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+        .conversation-item:hover { background: #f0f2ff; transform: translateX(5px); border-color: #667eea; }
+        .conversation-avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px; margin-right: 15px; position: relative; flex-shrink: 0; }
+        .online-indicator { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background: #4CAF50; border: 2px solid white; border-radius: 50%; }
+        .offline-indicator { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background: #95a5a6; border: 2px solid white; border-radius: 50%; }
+        .conversation-info { flex: 1; min-width: 0; }
+        .conversation-name { font-weight: 600; color: #333; font-size: 15px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .conversation-preview { color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+        .conversation-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; margin-left: 10px; }
+        .conversation-time { font-size: 12px; color: #999; white-space: nowrap; }
+        .unread-badge { background: #667eea; color: white; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; min-width: 20px; text-align: center; }
+        .content-area { flex: 1; display: flex; flex-direction: column; background: #f8f9fa; }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px 20px; color: #666; }
+        .empty-state-icon { font-size: 60px; margin-bottom: 20px; opacity: 0.3; }
+        .empty-state-text { font-size: 18px; font-weight: 500; margin-bottom: 10px; color: #333; }
+        .empty-state-subtext { font-size: 14px; color: #999; max-width: 300px; line-height: 1.5; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        @media (max-width: 768px) { .chat-container { flex-direction: column; height: 95vh; } .sidebar { width: 100%; height: 40%; } .content-area { height: 60%; } }
+        .loading { display: flex; justify-content: center; align-items: center; height: 200px; }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- AUTHENTICATION OVERLAY (Shown if doctor is not logged in) -->
+<div th:if="${medecin == null}" class="auth-overlay">
+    <div class="auth-card">
+        <div class="auth-icon">🔒</div>
+        <div class="auth-title">Authentication Required</div>
+        <div class="auth-message">Please log in as a doctor to access the chat dashboard.</div>
+        <a href="/login?redirect=/medecin/chat" class="auth-btn">Login as Doctor</a>
+        <div style="margin-top: 15px;"><a href="/" style="color: #0066cc; text-decoration: none;">← Back to Home</a></div>
+    </div>
+</div>
+
+<!-- CHAT INTERFACE (Shown if doctor is logged in) -->
+<div th:if="${medecin != null}" class="chat-container">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>💬 Messages</h1>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search patients..." oninput="handleSearch()">
+            </div>
+        </div>
+        <div class="conversations-list" id="conversationsList">
+            <!-- Dynamic conversations will be loaded here by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Right Content Area (Placeholder) -->
+    <div class="content-area">
+        <div class="empty-state">
+            <div class="empty-state-icon">👋</div>
+            <div class="empty-state-text">Welcome, Dr. <span th:text="${medecin.name}"></span>!</div>
+            <div class="empty-state-subtext">Select a patient from the list on the left to start chatting.</div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+
+    // --- DATA FROM THYMELEAF ---
+    const doctorId = /*[[${medecin?.id}]]*/ null;
+    const initialConversations = /*[[${conversations}]]*/ [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!doctorId) {
+            console.log("Doctor not authenticated. Showing login prompt.");
+            return;
+        }
+        console.log("Doctor authenticated. ID:", doctorId);
+
+        // Load initial conversations passed from the server
+        if (initialConversations && initialConversations.length > 0) {
+            console.log(`Rendering ${initialConversations.length} initial conversations.`);
+            renderConversationList(initialConversations);
+        } else {
+            console.log("No initial conversations. Loading from API...");
+            loadConversations();
+        }
+
+        // Set up auto-refresh for conversations and unread counts
+        setInterval(loadConversations, 30000); // Refresh conversations every 30 seconds
+        setInterval(updateUnreadTitle, 60000); // Update title with unread count every minute
+        updateUnreadTitle(); // Initial check
+    });
+
+    let searchTimeout;
+    function handleSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (searchTerm.length > 0) {
+                searchPatients(searchTerm);
+            } else {
+                loadConversations(); // If search is cleared, load all conversations
+            }
+        }, 300); // Debounce for 300ms
+    }
+
+    function loadConversations() {
+        if (!doctorId) return;
+        setLoadingState("Loading conversations...");
+        axios.get('/medecin/chat/conversations')
+            .then(response => {
+                if (response.data && response.data.success) {
+                    renderConversationList(response.data.conversations || []);
+                } else {
+                    renderErrorState("Failed to load conversations.");
+                }
+            })
+            .catch(error => {
+                console.error("Error loading conversations:", error);
+                renderErrorState("An error occurred while loading conversations.");
+            });
+    }
+
+    function searchPatients(query) {
+        if (!doctorId) return;
+        setLoadingState("Searching patients...");
+        axios.get(`/medecin/chat/search?query=${encodeURIComponent(query)}`)
+            .then(response => {
+                if (response.data && response.data.success) {
+                    renderConversationList(response.data.patients || []);
+                } else {
+                    renderNoSearchResults();
+                }
+            })
+            .catch(error => {
+                console.error("Error searching patients:", error);
+                renderErrorState("An error occurred during the search.");
+            });
+    }
+
+    function renderConversationList(conversations) {
+        const listElement = document.getElementById('conversationsList');
+        if (!conversations || conversations.length === 0) {
+            renderEmptyConversations();
+            return;
+        }
+
+        // Sort by most recent message timestamp
+        conversations.sort((a, b) => {
+            const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp).getTime() : 0;
+            const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp).getTime() : 0;
+            return timeB - timeA;
+        });
+
+        let html = '';
+        conversations.forEach(convo => {
+            const patientId = convo.patientId || 0;
+            const patientName = convo.patientName || '';
+            const patientPrenom = convo.patientPrenom || '';
+            const lastMessageContent = convo.lastMessageContent || '';
+            const lastMessageTimestamp = convo.lastMessageTimestamp || '';
+            const lastMessageSenderRole = convo.lastMessageSenderRole || '';
+            const unreadCount = convo.unreadCount || 0;
+            const isOnline = convo.online || false;
+
+            const fullName = `${patientPrenom || ''} ${patientName || ''}`.trim();
+            const initials = ((patientPrenom || ' ')[0] + (patientName || ' ')[0]).trim().toUpperCase() || 'P';
+
+            let preview = 'No messages yet.';
+            let timeAgo = '';
+            if (lastMessageContent) {
+                preview = lastMessageSenderRole === 'MEDECIN' ? 'You: ' + lastMessageContent : lastMessageContent;
+                timeAgo = getTimeAgo(new Date(lastMessageTimestamp));
+            }
+
+            html += `
+                <div class="conversation-item" onclick="openChat(${patientId})">
+                    <div class="conversation-avatar">
+                        ${initials}
+                        <div class="${isOnline ? 'online-indicator' : 'offline-indicator'}"></div>
+                    </div>
+                    <div class="conversation-info">
+                        <div class="conversation-name" title="${escapeHtml(fullName)}">${escapeHtml(fullName)}</div>
+                        <div class="conversation-preview" title="${escapeHtml(preview)}">${escapeHtml(preview)}</div>
+                    </div>
+                    <div class="conversation-meta">
+                        ${timeAgo ? `<div class="conversation-time">${timeAgo}</div>` : ''}
+                        ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        listElement.innerHTML = html;
+    }
+
+    // --- UI STATE RENDERERS ---
+    function setLoadingState(message) {
+        document.getElementById('conversationsList').innerHTML = `<div class="loading"><div class="loading-spinner"></div><div style="margin-left: 10px;">${message}</div></div>`;
+    }
+    function renderEmptyConversations() {
+        document.getElementById('conversationsList').innerHTML = `<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">No Conversations</div><div class="empty-state-subtext">New patient messages will appear here.</div></div>`;
+    }
+    function renderNoSearchResults() {
+        document.getElementById('conversationsList').innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-text">No Patients Found</div><div class="empty-state-subtext">Try a different search term.</div></div>`;
+    }
+    function renderErrorState(message) {
+        document.getElementById('conversationsList').innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${message}</div><button onclick="loadConversations()" style="margin-top: 15px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">Retry</button></div>`;
+    }
+
+    // --- UTILITY FUNCTIONS ---
+    function openChat(patientId) {
+        if (patientId) {
+            window.location.href = `/medecin/chat/${patientId}`;
+        }
+    }
+    function updateUnreadTitle() {
+        axios.get('/medecin/chat/unread-count')
+            .then(response => {
+                if (response.data && response.data.success) {
+                    const count = response.data.count || 0;
+                    document.title = count > 0 ? `(${count}) Chat Dashboard` : 'Chat Dashboard';
+                }
+            }).catch(console.error);
+    }
+    function getTimeAgo(date) {
+        if (!date || isNaN(date.getTime())) return '';
+        const diffMs = new Date() - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `${diffHours}h ago`;
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return date.toLocaleDateString();
+    }
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    /*]]>*/
+</script>
+
+</body>
+</html>

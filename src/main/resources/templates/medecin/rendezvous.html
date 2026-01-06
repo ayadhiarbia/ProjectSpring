@@ -1,880 +1,350 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Appointments | TeleHealth Doctor</title>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
-
-    <!-- FullCalendar CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
-
+    <title>Appointments Management | TeleMed Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --doctor-primary: #4cd9c5;
-            --doctor-secondary: #6a82fb;
-            --doctor-accent: #ff9a8b;
-            --doctor-success: #38b2ac;
-            --doctor-warning: #ffb74d;
-            --doctor-danger: #f67280;
-            --doctor-light: #f7f9fc;
-            --doctor-dark: #2d3748;
-            --doctor-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            --doctor-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f5f7fa;
-            color: var(--doctor-dark);
-        }
-
-        /* Reuse header and sidebar styles from dashboard */
-        .doctor-main {
-            margin-left: 280px;
-            padding: 30px;
-            min-height: calc(100vh - 80px);
-        }
-
-        .page-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--doctor-dark);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .page-title i {
-            color: var(--doctor-primary);
-            font-size: 24px;
-        }
-
-        /* Appointments Header */
-        .appointments-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .view-toggle {
-            display: flex;
-            background: var(--doctor-light);
-            border-radius: 12px;
-            padding: 5px;
-        }
-
-        .view-btn {
-            padding: 12px 25px;
-            border: none;
-            background: transparent;
-            border-radius: 8px;
-            font-weight: 500;
-            color: #718096;
-            cursor: pointer;
-            transition: var(--doctor-transition);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .view-btn.active {
-            background: white;
-            color: var(--doctor-primary);
-            box-shadow: var(--doctor-shadow);
-        }
-
-        .date-navigation {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .nav-btn {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #e2e8f0;
-            background: white;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--doctor-transition);
-        }
-
-        .nav-btn:hover {
-            border-color: var(--doctor-primary);
-            color: var(--doctor-primary);
-        }
-
-        .current-date {
-            font-weight: 600;
-            color: var(--doctor-dark);
-            min-width: 150px;
-            text-align: center;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-        }
-
-        .action-btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--doctor-transition);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .action-btn.primary {
-            background: linear-gradient(135deg, var(--doctor-primary), var(--doctor-secondary));
-            color: white;
-        }
-
-        .action-btn.secondary {
-            background: white;
-            border: 2px solid #e2e8f0;
-            color: var(--doctor-dark);
-        }
-
-        .action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--doctor-shadow);
-        }
-
-        /* Calendar View */
-        .calendar-container {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: var(--doctor-shadow);
-            margin-bottom: 30px;
-            height: 600px;
-        }
-
-        /* Calendar Customization */
-        .fc {
-            height: 100%;
-        }
-
-        .fc-toolbar-chunk {
-            display: flex;
-            gap: 10px;
-        }
-
-        .fc-button {
-            background: var(--doctor-light) !important;
-            border: 2px solid #e2e8f0 !important;
-            color: var(--doctor-dark) !important;
-            border-radius: 8px !important;
-            font-weight: 500 !important;
-            transition: var(--doctor-transition) !important;
-        }
-
-        .fc-button:hover {
-            background: white !important;
-            border-color: var(--doctor-primary) !important;
-            color: var(--doctor-primary) !important;
-        }
-
-        .fc-button-primary:not(:disabled).fc-button-active {
-            background: var(--doctor-primary) !important;
-            border-color: var(--doctor-primary) !important;
-            color: white !important;
-        }
-
-        .fc-event {
-            border-radius: 8px !important;
-            border: none !important;
-            padding: 5px !important;
-            cursor: pointer !important;
-        }
-
-        .fc-event-title {
-            font-weight: 500 !important;
-            font-size: 13px !important;
-        }
-
-        .event-video {
-            background: rgba(76, 217, 197, 0.2) !important;
-            border-left: 4px solid var(--doctor-primary) !important;
-            color: var(--doctor-dark) !important;
-        }
-
-        .event-inperson {
-            background: rgba(106, 130, 251, 0.2) !important;
-            border-left: 4px solid var(--doctor-secondary) !important;
-            color: var(--doctor-dark) !important;
-        }
-
-        .event-followup {
-            background: rgba(56, 178, 172, 0.2) !important;
-            border-left: 4px solid var(--doctor-success) !important;
-            color: var(--doctor-dark) !important;
-        }
-
-        .event-urgent {
-            background: rgba(246, 114, 128, 0.2) !important;
-            border-left: 4px solid var(--doctor-danger) !important;
-            color: var(--doctor-dark) !important;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        /* Appointments List (for list view) */
-        .appointments-list {
-            display: none;
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: var(--doctor-shadow);
-            margin-bottom: 30px;
-        }
-
-        .list-view.active {
-            display: block;
-        }
-
-        .appointment-item {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #e2e8f0;
-            transition: var(--doctor-transition);
-        }
-
-        .appointment-item:hover {
-            background: var(--doctor-light);
-            transform: translateX(10px);
-        }
-
-        .appointment-time {
-            min-width: 120px;
-            font-weight: 600;
-            color: var(--doctor-dark);
-        }
-
-        .appointment-details {
-            flex: 1;
-            margin-left: 20px;
-        }
-
-        .appointment-details h4 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .appointment-details p {
-            color: #718096;
-            font-size: 14px;
-        }
-
-        .appointment-type {
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            margin-right: 15px;
-        }
-
-        .appointment-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .icon-btn {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #e2e8f0;
-            background: white;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--doctor-transition);
-        }
-
-        .icon-btn:hover {
-            border-color: var(--doctor-primary);
-            color: var(--doctor-primary);
-        }
-
-        /* Appointment Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 500px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .modal-header {
-            padding: 25px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h3 {
-            color: var(--doctor-dark);
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #718096;
-            cursor: pointer;
-        }
-
-        .modal-body {
-            padding: 25px;
-        }
-
-        .modal-form .form-group {
-            margin-bottom: 20px;
-        }
-
-        .modal-form label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--doctor-dark);
-        }
-
-        .modal-form input,
-        .modal-form select,
-        .modal-form textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .modal-form input:focus,
-        .modal-form select:focus,
-        .modal-form textarea:focus {
-            outline: none;
-            border-color: var(--doctor-primary);
-        }
-
-        .modal-footer {
-            padding: 25px;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .doctor-main {
-                margin-left: 80px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .doctor-main {
-                margin-left: 0;
-                padding: 20px;
-            }
-
-            .appointments-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .view-toggle {
-                order: 3;
-                margin-top: 20px;
-            }
-
-            .calendar-container {
-                height: 400px;
-                padding: 15px;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
     </style>
 </head>
-<body>
-<!-- Header (copy from dashboard) -->
-<header class="doctor-header">
-    <div class="logo-section">
-        <button class="menu-toggle" id="menuToggle">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="doctor-logo">
-            <i class="fas fa-user-md"></i> TeleHealth Doctor
+<body class="bg-slate-50 min-h-screen">
+
+<!-- Sidebar Navigation -->
+<nav class="fixed top-0 left-0 h-full w-64 bg-white border-r border-slate-200 z-50 hidden lg:block">
+    <div class="p-6">
+        <div class="flex items-center gap-3 mb-10">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                <i class="fas fa-heartbeat text-xl"></i>
+            </div>
+            <span class="text-xl font-bold text-slate-800 tracking-tight">TeleMed</span>
+        </div>
+
+        <div class="space-y-2">
+            <a href="/medecin/dashboard" class="flex items-center gap-3 p-3 text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                <i class="fas fa-th-large w-5"></i> Dashboard
+            </a>
+            <a href="/medecin/patients" class="flex items-center gap-3 p-3 text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                <i class="fas fa-user-injured w-5"></i> Patients
+            </a>
+            <a href="/medecin/rendezvous" class="flex items-center gap-3 p-3 bg-blue-50 text-blue-600 rounded-xl font-semibold">
+                <i class="fas fa-calendar-alt w-5"></i> Appointments
+            </a>
+            <a href="/medecin/consultation" class="flex items-center gap-3 p-3 text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                <i class="fas fa-notes-medical w-5"></i> Consultations
+            </a>
+            <a href="/medecin/notifications" class="flex items-center gap-3 p-3 text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                <i class="fas fa-bell w-5"></i> Notifications
+            </a>
         </div>
     </div>
-
-    <div class="welcome-text">
-        <h1>Appointments</h1>
-        <p>Manage your schedule and patient meetings</p>
-    </div>
-
-    <div class="header-actions">
-        <!-- Copy from dashboard -->
-    </div>
-</header>
-
-<!-- Sidebar (copy from dashboard) -->
-<aside class="doctor-sidebar" id="sidebar">
-    <nav class="sidebar-menu">
-        <a th:href="@{/medecins/dashboard}" class="menu-item">
-            <i class="fas fa-tachometer-alt"></i>
-            <span>Dashboard</span>
-        </a>
-
-        <a th:href="@{/medecins/patients}" class="menu-item">
-            <i class="fas fa-user-injured"></i>
-            <span>My Patients</span>
-        </a>
-
-        <a th:href="@{/medecins/rendezvous}" class="menu-item active">
-            <i class="fas fa-calendar-check"></i>
-            <span>Appointments</span>
-            <span class="menu-badge">8</span>
-        </a>
-
-        <!-- Other menu items -->
-    </nav>
-</aside>
+</nav>
 
 <!-- Main Content -->
-<main class="doctor-main">
-    <div class="page-header">
-        <h1 class="page-title">
-            <i class="fas fa-calendar-check"></i>
-            Appointments
-        </h1>
+<main class="lg:ml-64 p-4 lg:p-8">
+
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Appointments</h1>
+            <p class="text-slate-500 text-sm">Manage your schedule and patient requests</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="text-sm text-slate-500">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                <span th:text="${#temporals.format(today, 'dd MMMM yyyy')}">Today's date</span>
+            </div>
+            <button onclick="window.location.href='/medecin/patients'" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all">
+                <i class="fas fa-plus mr-2"></i> New Appointment
+            </button>
+        </div>
+    </header>
+
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total</p>
+            <div class="flex items-end justify-between">
+                <h3 class="text-3xl font-bold text-slate-800" th:text="${stats.totalAppointments}">0</h3>
+                <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">All Time</span>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Pending</p>
+            <div class="flex items-end justify-between">
+                <h3 class="text-3xl font-bold text-slate-800" th:text="${stats.pendingApproval}">0</h3>
+                <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded">Action Required</span>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Today</p>
+            <div class="flex items-end justify-between">
+                <h3 class="text-3xl font-bold text-slate-800" th:text="${stats.todayAppointments}">0</h3>
+                <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded" th:text="${stats.todayAppointments} + ' Scheduled'">0 Scheduled</span>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Upcoming</p>
+            <div class="flex items-end justify-between">
+                <h3 class="text-3xl font-bold text-slate-800" th:text="${stats.upcomingAppointments}">0</h3>
+                <span class="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">Next 7 Days</span>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Completed</p>
+            <div class="flex items-end justify-between">
+                <h3 class="text-3xl font-bold text-slate-800" th:text="${stats.completedAppointments}">0</h3>
+                <span class="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">Done</span>
+            </div>
+        </div>
     </div>
 
-    <!-- Appointments Header -->
-    <div class="appointments-header">
-        <div class="view-toggle">
-            <button class="view-btn active" data-view="calendar">
-                <i class="fas fa-calendar-alt"></i>
-                Calendar
-            </button>
-            <button class="view-btn" data-view="list">
-                <i class="fas fa-list"></i>
-                List
-            </button>
+    <!-- Pending Approval Section -->
+    <div class="mb-8" th:if="${not #lists.isEmpty(pendingApproval)}">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-clock text-amber-500"></i> Pending Approval
+                <span class="text-sm font-normal text-slate-500 ml-2" th:text="'(' + ${stats.pendingApproval} + ' requests)'"></span>
+            </h2>
         </div>
-
-        <div class="date-navigation">
-            <button class="nav-btn" id="prevDate">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <div class="current-date" id="currentDate">
-                December 2025
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div th:each="app : ${pendingApproval}" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-bold" th:text="${app.patient?.name != null ? #strings.substring(app.patient.name,0,1) : 'P'}">P</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800" th:text="${app.patient?.name != null ? app.patient.name : 'Patient'}">Patient</h4>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase" th:text="${#temporals.format(app.date, 'dd MMM yyyy')} + ' @ ' + ${app.time}">Date @ Time</p>
+                        </div>
+                    </div>
+                    <span class="px-2 py-1 bg-amber-50 text-amber-600 text-[10px] font-bold rounded uppercase">Pending</span>
+                </div>
+                <p class="text-sm text-slate-600 mb-4 italic" th:if="${app.description != null and app.description != ''}" th:text="'&quot;' + ${app.description} + '&quot;'">"Description"</p>
+                <p class="text-sm text-slate-400 mb-4 italic" th:if="${app.description == null or app.description == ''}">No description provided</p>
+                <div class="flex gap-2">
+                    <form th:action="@{'/medecin/rendezvous/approve/' + ${app.id}}" method="POST" class="flex-1">
+                        <button type="submit" class="w-full py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                    </form>
+                    <button onclick="openRejectModal(this)" th:data-id="${app.id}" class="flex-1 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
             </div>
-            <button class="nav-btn" id="nextDate">
-                <i class="fas fa-chevron-right"></i>
-            </button>
-        </div>
-
-        <div class="action-buttons">
-            <button class="action-btn secondary" onclick="openFilters()">
-                <i class="fas fa-filter"></i>
-                Filter
-            </button>
-            <button class="action-btn primary" onclick="openNewAppointmentModal()">
-                <i class="fas fa-plus"></i>
-                New Appointment
-            </button>
         </div>
     </div>
 
-    <!-- Calendar View -->
-    <div class="calendar-container" id="calendarView">
-        <div id="calendar"></div>
+    <!-- Today's Appointments -->
+    <div class="mb-8" th:if="${not #lists.isEmpty(todayAppointments)}">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-calendar-day text-blue-600"></i> Today's Schedule
+                <span class="text-sm font-normal text-slate-500 ml-2" th:text="'(' + ${#lists.size(todayAppointments)} + ' appointments)'"></span>
+            </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div th:each="app : ${todayAppointments}" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold" th:text="${app.patient?.name != null ? #strings.substring(app.patient.name,0,1) : 'P'}">P</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800" th:text="${app.patient?.name != null ? app.patient.name : 'Patient'}">Patient</h4>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase" th:text="${app.time}">Time</p>
+                        </div>
+                    </div>
+                    <!-- Fixed status badge using helper method -->
+                    <span th:classappend="${getStatusBadgeClass.apply(app.status)}"
+                          class="px-2 py-1 text-[10px] font-bold rounded uppercase"
+                          th:text="${app.status}">Status</span>
+                </div>
+                <div class="flex gap-2">
+                    <a th:href="@{'/medecin/rendezvous/details/' + ${app.id}}" class="flex-1 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-100 transition-all text-center">
+                        View Details
+                    </a>
+                    <a th:href="@{'/medecin/consultation/' + ${app.id}}" th:if="${app.status == 'APPROVED' and app.consultation == null}" class="flex-1 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-all text-center">
+                        Start Consultation
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- List View -->
-    <div class="appointments-list list-view" id="listView">
-        <div class="appointment-item">
-            <div class="appointment-time">
-                09:00 AM - 09:30 AM
-            </div>
-            <div class="appointment-details">
-                <h4>John Doe - Hypertension Follow-up</h4>
-                <p>Video Consultation • Recurring appointment</p>
-            </div>
-            <span class="appointment-type event-video">
-                    <i class="fas fa-video"></i> Video
-                </span>
-            <div class="appointment-actions">
-                <button class="icon-btn" title="Start Consultation">
-                    <i class="fas fa-play"></i>
-                </button>
-                <button class="icon-btn" title="Edit">
-                    <i class="fas fa-edit"></i>
-                </button>
-            </div>
+    <!-- Upcoming Appointments Table -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-calendar-check text-green-600"></i> Upcoming Appointments (Next 7 Days)
+                <span class="text-sm font-normal text-slate-500 ml-2" th:text="'(' + ${#lists.size(upcomingAppointments)} + ' appointments)'"></span>
+            </h2>
         </div>
 
-        <div class="appointment-item urgent">
-            <div class="appointment-time">
-                10:30 AM - 11:00 AM
-            </div>
-            <div class="appointment-details">
-                <h4>Sarah Johnson - Initial Consultation</h4>
-                <p>In-person • New patient</p>
-            </div>
-            <span class="appointment-type event-inperson">
-                    <i class="fas fa-user"></i> In-person
-                </span>
-            <div class="appointment-actions">
-                <button class="icon-btn" title="View Details">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="icon-btn" title="Reschedule">
-                    <i class="fas fa-calendar-alt"></i>
-                </button>
-            </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" th:if="${not #lists.isEmpty(upcomingAppointments)}">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50/50">
+                <tr>
+                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Patient</th>
+                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Time</th>
+                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                <tr th:each="app : ${upcomingAppointments}" class="hover:bg-slate-50/80 transition-all group">
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-xs font-bold" th:text="${app.patient?.name != null ? #strings.substring(app.patient.name,0,1) : 'P'}">P</div>
+                            <p class="text-sm font-bold text-slate-800" th:text="${app.patient?.name != null ? app.patient.name : 'Patient'}">Patient</p>
+                        </div>
+                    </td>
+                    <td class="p-4 text-sm text-slate-600" th:text="${#temporals.format(app.date, 'dd MMM yyyy')}">Date</td>
+                    <td class="p-4 text-sm text-slate-600 font-bold" th:text="${app.time}">Time</td>
+                    <td class="p-4">
+                        <!-- Fixed status badge using helper method -->
+                        <span th:classappend="${getStatusBadgeClass.apply(app.status)}"
+                              class="px-2 py-1 text-[10px] font-bold rounded uppercase"
+                              th:text="${app.status}">Status</span>
+                    </td>
+                    <td class="p-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            <a th:href="@{'/medecin/rendezvous/details/' + ${app.id}}" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a th:href="@{'/medecin/consultation/' + ${app.id}}" th:if="${app.status == 'APPROVED' and app.consultation == null}" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Start Consultation">
+                                <i class="fas fa-video"></i>
+                            </a>
+                            <form th:action="@{'/medecin/rendezvous/complete/' + ${app.id}}" method="POST" class="inline" th:if="${app.status == 'APPROVED' or app.status == 'IN_PROGRESS'}">
+                                <button type="submit" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Mark as Complete">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
 
-        <!-- More appointments -->
+        <div th:if="${#lists.isEmpty(upcomingAppointments)}" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center">
+            <i class="fas fa-calendar-times text-4xl text-slate-300 mb-4"></i>
+            <p class="text-slate-500">No upcoming appointments in the next 7 days</p>
+        </div>
     </div>
 
-    <!-- Appointment Stats -->
-    <div class="patient-stats" style="margin-top: 30px;">
-        <div class="stat-card">
-            <h3 id="todayCount">8</h3>
-            <p>Today's Appointments</p>
-        </div>
-        <div class="stat-card">
-            <h3 id="weekCount">24</h3>
-            <p>This Week</p>
-        </div>
-        <div class="stat-card">
-            <h3 id="videoCount">15</h3>
-            <p>Video Consultations</p>
-        </div>
-        <div class="stat-card">
-            <h3 id="cancelledCount">2</h3>
-            <p>Cancelled</p>
-        </div>
-    </div>
 </main>
 
-<!-- New Appointment Modal -->
-<div class="modal" id="appointmentModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Schedule New Appointment</h3>
-            <button class="close-modal" onclick="closeModal()">
-                <i class="fas fa-times"></i>
-            </button>
+<!-- Reject Modal -->
+<div id="rejectModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-slate-800">Reject Appointment</h3>
+            <button onclick="closeRejectModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
         </div>
-
-        <div class="modal-body">
-            <form class="modal-form" id="appointmentForm">
-                <div class="form-group">
-                    <label>Patient</label>
-                    <select id="patientSelect" required>
-                        <option value="">Select a patient</option>
-                        <option value="PT-001234">John Doe (Hypertension)</option>
-                        <option value="PT-001235">Sarah Johnson (Asthma)</option>
-                        <option value="PT-001236">Robert Chen (Diabetes)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Appointment Type</label>
-                    <select id="typeSelect" required>
-                        <option value="">Select type</option>
-                        <option value="video">Video Consultation</option>
-                        <option value="inperson">In-person Visit</option>
-                        <option value="followup">Follow-up</option>
-                        <option value="emergency">Emergency</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Date & Time</label>
-                    <input type="datetime-local" id="appointmentDateTime" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Duration (minutes)</label>
-                    <select id="durationSelect">
-                        <option value="30">30 minutes</option>
-                        <option value="45">45 minutes</option>
-                        <option value="60">60 minutes</option>
-                        <option value="90">90 minutes</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Reason / Notes</label>
-                    <textarea id="appointmentNotes" rows="3" placeholder="Brief description of the appointment purpose..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="isRecurring">
-                        Recurring Appointment
-                    </label>
-                </div>
-            </form>
-        </div>
-
-        <div class="modal-footer">
-            <button class="action-btn secondary" onclick="closeModal()">
-                Cancel
-            </button>
-            <button class="action-btn primary" onclick="saveAppointment()">
-                <i class="fas fa-save"></i>
-                Save Appointment
-            </button>
-        </div>
+        <form id="rejectForm" method="POST" class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Reason for Rejection</label>
+                <textarea name="reason" rows="3" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Please provide a reason for the patient..."></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeRejectModal()" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">Cancel</button>
+                <button type="submit" class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all">Confirm Reject</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- FullCalendar JS -->
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-
 <script>
-    // Initialize FullCalendar
+    function openRejectModal(btn) {
+        const id = btn.getAttribute('data-id');
+        document.getElementById('rejectForm').action = '/medecin/rendezvous/reject/' + id;
+        document.getElementById('rejectModal').classList.remove('hidden');
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.add('hidden');
+    }
+
+    // Show success/error messages from URL parameters
     document.addEventListener('DOMContentLoaded', function() {
-        const calendarEl = document.getElementById('calendar');
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'timeGridWeek',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
-            },
-            events: [
-                {
-                    title: 'John Doe - Hypertension',
-                    start: new Date().setHours(9, 0, 0, 0),
-                    end: new Date().setHours(9, 30, 0, 0),
-                    className: 'event-video',
-                    extendedProps: {
-                        type: 'video',
-                        patientId: 'PT-001234',
-                        urgent: false
-                    }
-                },
-                {
-                    title: 'Sarah Johnson - Asthma',
-                    start: new Date().setHours(10, 30, 0, 0),
-                    end: new Date().setHours(11, 0, 0, 0),
-                    className: 'event-inperson',
-                    extendedProps: {
-                        type: 'inperson',
-                        patientId: 'PT-001235',
-                        urgent: true
-                    }
-                },
-                {
-                    title: 'Robert Chen - Diabetes',
-                    start: new Date().setHours(14, 0, 0, 0),
-                    end: new Date().setHours(14, 45, 0, 0),
-                    className: 'event-followup',
-                    extendedProps: {
-                        type: 'followup',
-                        patientId: 'PT-001236',
-                        urgent: false
-                    }
-                }
-            ],
-            eventClick: function(info) {
-                const event = info.event;
-                alert(`Appointment Details:\nPatient: ${event.title}\nTime: ${event.start.toLocaleTimeString()}\nType: ${event.extendedProps.type}`);
-            },
-            dateClick: function(info) {
-                openNewAppointmentModal();
-                // Pre-fill date/time in modal
-                document.getElementById('appointmentDateTime').value =
-                    info.dateStr.substring(0, 16);
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('success')) {
+            const successType = urlParams.get('success');
+            let message = '';
+
+            switch(successType) {
+                case 'approved':
+                    message = 'Appointment approved successfully!';
+                    break;
+                case 'rejected':
+                    message = 'Appointment rejected successfully!';
+                    break;
+                case 'completed':
+                    message = 'Appointment marked as completed!';
+                    break;
+                case 'rescheduled':
+                    message = 'Appointment rescheduled successfully!';
+                    break;
             }
-        });
 
-        calendar.render();
-        window.calendar = calendar;
+            if (message) {
+                showNotification(message, 'success');
+            }
+        }
 
-        // Update current date display
-        updateCurrentDate();
-    });
+        if (urlParams.has('error')) {
+            const errorType = urlParams.get('error');
+            let message = 'An error occurred.';
 
-    // Sidebar toggle
-    document.getElementById('menuToggle').addEventListener('click', function() {
-        document.getElementById('sidebar').classList.toggle('active');
-    });
+            switch(errorType) {
+                case 'cannotApprove':
+                    message = 'Cannot approve this appointment.';
+                    break;
+                case 'cannotReject':
+                    message = 'Cannot reject this appointment.';
+                    break;
+                case 'cannotComplete':
+                    message = 'Cannot complete this appointment.';
+                    break;
+                case 'cannotReschedule':
+                    message = 'Cannot reschedule this appointment.';
+                    break;
+                case 'notFound':
+                    message = 'Appointment not found.';
+                    break;
+            }
 
-    // View toggle
-    document.querySelectorAll('.view-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-
-            const view = this.dataset.view;
-            document.getElementById('calendarView').style.display =
-                view === 'calendar' ? 'block' : 'none';
-            document.getElementById('listView').classList.toggle('active', view === 'list');
-        });
-    });
-
-    // Date navigation
-    document.getElementById('prevDate').addEventListener('click', function() {
-        if (window.calendar) {
-            window.calendar.prev();
-            updateCurrentDate();
+            showNotification(message, 'error');
         }
     });
 
-    document.getElementById('nextDate').addEventListener('click', function() {
-        if (window.calendar) {
-            window.calendar.next();
-            updateCurrentDate();
-        }
-    });
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 p-4 rounded-xl shadow-lg z-[101] ${
+            type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`;
+        notification.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white/70 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        document.body.appendChild(notification);
 
-    function updateCurrentDate() {
-        if (window.calendar) {
-            const currentDate = window.calendar.getDate();
-            const options = { month: 'long', year: 'numeric' };
-            document.getElementById('currentDate').textContent =
-                currentDate.toLocaleDateString('en-US', options);
-        }
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
     }
-
-    // Modal functions
-    function openNewAppointmentModal() {
-        document.getElementById('appointmentModal').classList.add('active');
-        // Set default time to next hour
-        const now = new Date();
-        now.setHours(now.getHours() + 1, 0, 0, 0);
-        document.getElementById('appointmentDateTime').value =
-            now.toISOString().slice(0, 16);
-    }
-
-    function closeModal() {
-        document.getElementById('appointmentModal').classList.remove('active');
-        document.getElementById('appointmentForm').reset();
-    }
-
-    function saveAppointment() {
-        const patient = document.getElementById('patientSelect').value;
-        const type = document.getElementById('typeSelect').value;
-        const datetime = document.getElementById('appointmentDateTime').value;
-
-        if (!patient || !type || !datetime) {
-            alert('Please fill in all required fields');
-            return;
-        }
-
-        // In real app, this would send to API
-        alert(`Appointment scheduled!\nPatient: ${patient}\nType: ${type}\nTime: ${datetime}`);
-
-        // Add to calendar
-        if (window.calendar) {
-            const event = {
-                title: `New Appointment - ${patient}`,
-                start: new Date(datetime),
-                end: new Date(new Date(datetime).getTime() + 30 * 60000),
-                className: `event-${type}`,
-                extendedProps: {
-                    type: type,
-                    patientId: patient,
-                    urgent: false
-                }
-            };
-            window.calendar.addEvent(event);
-        }
-
-        closeModal();
-    }
-
-    // Open filters (simulated)
-    function openFilters() {
-        alert('Filter dialog would open here');
-        // In real app, this would show filter options
-    }
-
-    // Auto-refresh appointments every minute
-    setInterval(() => {
-        console.log('Refreshing appointments...');
-        // In real app, this would fetch updated appointments
-    }, 60000);
-
-    // Update appointment stats
-    function updateStats() {
-        // In real app, these would come from API
-        document.getElementById('todayCount').textContent = '8';
-        document.getElementById('weekCount').textContent = '24';
-        document.getElementById('videoCount').textContent = '15';
-        document.getElementById('cancelledCount').textContent = '2';
-    }
-
-    // Initial stats update
-    updateStats();
 </script>
 </body>
 </html>

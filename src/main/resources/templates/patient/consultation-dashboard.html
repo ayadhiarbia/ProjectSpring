@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Consultations</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .dashboard-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status-scheduled {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-completed {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        .status-cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .consultation-card {
+            border-left: 4px solid #0d6efd;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .consultation-card:hover {
+            background-color: #f8f9fa;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        .tab-content {
+            min-height: 300px;
+        }
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .info-box {
+            background-color: #e7f1ff;
+            border-left: 4px solid #0d6efd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/patient/dashboard}">
+            <i class="fas fa-heartbeat text-primary"></i> TéléMédecine
+        </a>
+        <div class="d-flex align-items-center">
+            <div class="dropdown me-3">
+                <button class="btn btn-outline-primary position-relative" type="button" id="notificationDropdown" data-bs-toggle="dropdown">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
+                    <li><h6 class="dropdown-header">Notifications</h6></li>
+                    <li><a class="dropdown-item" href="#" id="notificationList">No notifications</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-center" href="#">View All</a></li>
+                </ul>
+            </div>
+            <span class="me-3" th:text="${patient.name}">Patient Name</span>
+            <a th:href="@{/patient/dashboard}" class="btn btn-outline-primary">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Success/Error Messages -->
+    <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle"></i>
+        <span th:switch="${param.success}">
+            <span th:case="'consultationCreated'">Consultation created successfully!</span>
+            <span th:case="'requestSubmitted'">Consultation request submitted successfully!</span>
+            <span th:case="'cancelled'">Consultation cancelled successfully!</span>
+            <span th:case="'rescheduled'">Reschedule request sent to doctor!</span>
+        </span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle"></i>
+        <span th:text="${param.error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Information Box -->
+    <div class="info-box">
+        <h5><i class="fas fa-info-circle text-primary me-2"></i>How to Create a Consultation</h5>
+        <p class="mb-0">
+            To create a new consultation, you must first have an approved appointment.
+            <strong>Workflow:</strong> Book Appointment → Doctor Approves → Create Consultation
+            <a th:href="@{/patient/appointments}" class="btn btn-sm btn-primary ms-3">
+                <i class="fas fa-calendar-plus"></i> Go to Appointments
+            </a>
+        </p>
+    </div>
+
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-comments-medical text-primary"></i> My Consultations</h2>
+            <p class="text-muted">Manage your medical consultation with doctors</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a th:href="@{/patient/appointments}" class="btn btn-primary">
+                <i class="fas fa-calendar-plus"></i> Book Appointment / Create Consultation
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending</h6>
+                            <h3 class="mb-0" th:text="${pendingConsultations.size()}">0</h3>
+                        </div>
+                        <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center"
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-clock fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Upcoming</h6>
+                            <h3 class="mb-0" th:text="${upcomingConsultations.size()}">0</h3>
+                        </div>
+                        <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center"
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-calendar-alt fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Completed</h6>
+                            <h3 class="mb-0" th:text="${completedConsultations.size()}">0</h3>
+                        </div>
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-check-circle fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Cancelled</h6>
+                            <h3 class="mb-0" th:text="${cancelledConsultations.size()}">0</h3>
+                        </div>
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-times-circle fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="consultationTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button">
+                <i class="fas fa-clock"></i> Pending
+                <span class="badge bg-warning" th:text="${pendingConsultations.size()}">0</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button">
+                <i class="fas fa-calendar-alt"></i> Upcoming
+                <span class="badge bg-info" th:text="${upcomingConsultations.size()}">0</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button">
+                <i class="fas fa-check-circle"></i> Completed
+                <span class="badge bg-success" th:text="${completedConsultations.size()}">0</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" type="button">
+                <i class="fas fa-times-circle"></i> Cancelled
+                <span class="badge bg-secondary" th:text="${cancelledConsultations.size()}">0</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content p-3 border border-top-0 rounded-bottom" id="consultationTabsContent">
+        <!-- Pending Tab -->
+        <div class="tab-pane fade show active" id="pending" role="tabpanel">
+            <div th:if="${not #lists.isEmpty(pendingConsultations)}">
+                <div class="row">
+                    <div th:each="consultation : ${pendingConsultations}" class="col-md-6">
+                        <div class="card consultation-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="card-title mb-1" th:text="'Dr. ' + ${consultation.rendezVous.medecin.name}">
+                                            Dr. Name
+                                        </h6>
+                                        <span class="status-badge status-pending">
+                                            <i class="fas fa-clock"></i> PENDING
+                                        </span>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" th:href="@{/patient/consultation/{id}(id=${consultation.id})}">
+                                                    <i class="fas fa-eye"></i> View Details
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" th:href="@{/patient/consultation/{id}/cancel(id=${consultation.id})}">
+                                                    <i class="fas fa-times"></i> Cancel Request
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <p class="card-text text-muted small" th:text="${consultation.reason}">
+                                    Consultation reason
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i> Requested:
+                                        <span th:text="${#dates.format(consultation.requestedDate, 'MMM dd, yyyy')}">
+                                            Date
+                                        </span>
+                                    </small>
+                                    <a th:href="@{/patient/consultation/{id}(id=${consultation.id})}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(pendingConsultations)}" class="empty-state">
+                <i class="fas fa-clock fa-3x mb-3"></i>
+                <h4>No Pending Consultations</h4>
+                <p class="text-muted">You don't have any pending consultation requests</p>
+                <a th:href="@{/patient/appointments}" class="btn btn-primary">
+                    <i class="fas fa-calendar-plus"></i> Go to Appointments
+                </a>
+            </div>
+        </div>
+
+        <!-- Upcoming Tab -->
+        <div class="tab-pane fade" id="upcoming" role="tabpanel">
+            <div th:if="${not #lists.isEmpty(upcomingConsultations)}">
+                <div class="row">
+                    <div th:each="consultation : ${upcomingConsultations}" class="col-md-6">
+                        <div class="card consultation-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="card-title mb-1" th:text="'Dr. ' + ${consultation.rendezVous.medecin.name}">
+                                            Dr. Name
+                                        </h6>
+                                        <span class="status-badge status-scheduled">
+                                            <i class="fas fa-calendar-check"></i>
+                                            <span th:if="${consultation.status == 'SCHEDULED'}">SCHEDULED</span>
+                                            <span th:if="${consultation.status == 'APPROVED'}">APPROVED</span>
+                                        </span>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" th:href="@{/patient/consultation/{id}(id=${consultation.id})}">
+                                                    <i class="fas fa-eye"></i> View Details
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" th:if="${consultation.canReschedule}"
+                                                   th:href="@{/patient/consultation/{id}/reschedule(id=${consultation.id})}">
+                                                    <i class="fas fa-calendar-alt"></i> Reschedule
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" th:if="${consultation.canCancel}"
+                                                   th:href="@{/patient/consultation/{id}/cancel(id=${consultation.id})}">
+                                                    <i class="fas fa-times"></i> Cancel
+                                                </a>
+                                            </li>
+                                            <li th:if="${consultation.canStart}">
+                                                <a class="dropdown-item text-success"
+                                                   th:href="@{/patient/consultation/room/{id}(id=${consultation.id})}">
+                                                    <i class="fas fa-video"></i> Join Consultation
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <p class="card-text text-muted small" th:text="${consultation.reason}">
+                                    Consultation reason
+                                </p>
+                                <div class="row mt-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar"></i> Date:
+                                        </small>
+                                        <div th:if="${consultation.scheduledDate}">
+                                            <strong th:text="${#dates.format(consultation.scheduledDate, 'MMM dd, yyyy')}">
+                                                Date
+                                            </strong>
+                                        </div>
+                                        <div th:unless="${consultation.scheduledDate}">
+                                            <strong>To be scheduled</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock"></i> Type:
+                                        </small>
+                                        <div>
+                                            <strong th:text="${consultation.consultationType}">
+                                                Type
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-stethoscope"></i>
+                                        <span th:text="${consultation.consultationType}">Video Call</span>
+                                    </small>
+                                    <a th:href="@{/patient/consultation/{id}(id=${consultation.id})}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-external-link-alt"></i> Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(upcomingConsultations)}" class="empty-state">
+                <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                <h4>No Upcoming Consultations</h4>
+                <p class="text-muted">You don't have any upcoming consultation scheduled</p>
+                <a th:href="@{/patient/appointments}" class="btn btn-primary">
+                    <i class="fas fa-calendar-plus"></i> Go to Appointments
+                </a>
+            </div>
+        </div>
+
+        <!-- Completed Tab -->
+        <div class="tab-pane fade" id="completed" role="tabpanel">
+            <div th:if="${not #lists.isEmpty(completedConsultations)}">
+                <div class="row">
+                    <div th:each="consultation : ${completedConsultations}" class="col-md-6">
+                        <div class="card consultation-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="card-title mb-1" th:text="'Dr. ' + ${consultation.rendezVous.medecin.name}">
+                                            Dr. Name
+                                        </h6>
+                                        <span class="status-badge status-completed">
+                                            <i class="fas fa-check-circle"></i> COMPLETED
+                                        </span>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" th:href="@{/patient/consultation/summary/{id}(id=${consultation.id})}">
+                                                    <i class="fas fa-file-medical"></i> View Summary
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" th:href="@{/patient/consultation/{id}(id=${consultation.id})}">
+                                                    <i class="fas fa-eye"></i> View Details
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <p class="card-text text-muted small" th:text="${consultation.reason}">
+                                    Consultation reason
+                                </p>
+                                <div class="row mt-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar"></i> Date:
+                                        </small>
+                                        <div>
+                                            <strong th:text="${#dates.format(consultation.date, 'MMM dd, yyyy')}">
+                                                Date
+                                            </strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock"></i> Duration:
+                                        </small>
+                                        <div>
+                                            <strong th:text="${consultation.durationMinutes} + ' min'">
+                                                30 min
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-prescription"></i>
+                                        <span th:if="${consultation.ordonance != null}">Prescription available</span>
+                                        <span th:unless="${consultation.ordonance != null}">No prescription</span>
+                                    </small>
+                                    <a th:href="@{/patient/consultation/summary/{id}(id=${consultation.id})}"
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-file-medical-alt"></i> Summary
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(completedConsultations)}" class="empty-state">
+                <i class="fas fa-check-circle fa-3x mb-3"></i>
+                <h4>No Completed Consultations</h4>
+                <p class="text-muted">You haven't completed any consultation yet</p>
+            </div>
+        </div>
+
+        <!-- Cancelled Tab -->
+        <div class="tab-pane fade" id="cancelled" role="tabpanel">
+            <div th:if="${not #lists.isEmpty(cancelledConsultations)}">
+                <div class="row">
+                    <div th:each="consultation : ${cancelledConsultations}" class="col-md-6">
+                        <div class="card consultation-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="card-title mb-1" th:text="'Dr. ' + ${consultation.rendezVous.medecin.name}">
+                                            Dr. Name
+                                        </h6>
+                                        <span class="status-badge status-cancelled">
+                                            <i class="fas fa-times-circle"></i>
+                                            <span th:if="${consultation.status == 'CANCELLED'}">CANCELLED</span>
+                                            <span th:if="${consultation.status == 'REJECTED'}">REJECTED</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <p class="card-text text-muted small" th:text="${consultation.reason}">
+                                    Consultation reason
+                                </p>
+                                <div th:if="${consultation.rejectionReason}" class="alert alert-warning small">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Reason:</strong>
+                                    <span th:text="${consultation.rejectionReason}"></span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i>
+                                        <span th:text="${#dates.format(consultation.createdAt, 'MMM dd, yyyy')}">
+                                            Date
+                                        </span>
+                                    </small>
+                                    <a th:href="@{/patient/appointments}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-redo"></i> Book New Appointment
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(cancelledConsultations)}" class="empty-state">
+                <i class="fas fa-times-circle fa-3x mb-3"></i>
+                <h4>No Cancelled Consultations</h4>
+                <p class="text-muted">You haven't cancelled any consultation</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="mt-5 py-3 bg-light">
+    <div class="container text-center">
+        <p class="text-muted mb-0">
+            <i class="fas fa-heartbeat text-primary"></i> TéléMédecine Platform
+            © <span th:text="${#dates.year(#dates.createNow())}">2024</span>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Auto refresh notifications
+    async function fetchNotifications() {
+        try {
+            const response = await fetch('/api/notifications/unread-count');
+            const count = await response.json();
+
+            if (count > 0) {
+                document.getElementById('notificationCount').textContent = count;
+                document.getElementById('notificationCount').style.display = 'flex';
+            } else {
+                document.getElementById('notificationCount').style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+        }
+    }
+
+    // Fetch notifications every 30 seconds
+    setInterval(fetchNotifications, 30000);
+
+    // Initial fetch
+    fetchNotifications();
+</script>
+</body>
+</html>

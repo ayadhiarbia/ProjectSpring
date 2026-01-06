@@ -11,9 +11,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/patient/appointments")
@@ -65,7 +68,24 @@ public class RendezVousController {
         List<Medecin> doctors = medecinService.getAllMedecin();
         System.out.println("Found " + doctors.size() + " doctors");
 
+        // Separate appointments for different UI handling
+        List<RendezVous> pendingAppointments = appointments.stream()
+                .filter(a -> a.getStatus() == StatusRendezVous.PENDING)
+                .collect(Collectors.toList());
+
+        List<RendezVous> approvedAppointments = appointments.stream()
+                .filter(a -> a.getStatus() == StatusRendezVous.APPROVED)
+                .collect(Collectors.toList());
+
+        List<RendezVous> otherAppointments = appointments.stream()
+                .filter(a -> a.getStatus() != StatusRendezVous.PENDING &&
+                        a.getStatus() != StatusRendezVous.APPROVED)
+                .collect(Collectors.toList());
+
         model.addAttribute("appointments", appointments);
+        model.addAttribute("pendingAppointments", pendingAppointments);
+        model.addAttribute("approvedAppointments", approvedAppointments);
+        model.addAttribute("otherAppointments", otherAppointments);
         model.addAttribute("doctors", doctors);
         model.addAttribute("today", LocalDate.now());
         model.addAttribute("patient", patient);
@@ -111,7 +131,7 @@ public class RendezVousController {
 
             // Create notification for doctor
             notificationService.createNotification(
-                    "Nouveau rendez-vous demandé par " + patient.getName() + " pour " + date + " à " + time,
+                    "New appointment requested by " + patient.getName() + " for " + date + " at " + time,
                     doctor.getId()
             );
 
@@ -132,12 +152,20 @@ public class RendezVousController {
 
         RendezVous appointment = rendezVousService.getRendezVousById(id);
         if (appointment != null && appointment.getPatient().getId().equals(patient.getId())) {
+            // Check if appointment has a consultation
+            if (appointment.getConsultation() != null) {
+                // If consultation exists, cancel it first
+                Consultation consultation = appointment.getConsultation();
+                consultation.cancel("Appointment was cancelled");
+                consultationService.updateConsultation(consultation);
+            }
+
             appointment.setStatus(StatusRendezVous.CANCELLED);
             rendezVousService.updateRendezVous(appointment);
 
             // Notify doctor
             notificationService.createNotification(
-                    "Rendez-vous annulé par " + patient.getName(),
+                    "Appointment cancelled by " + patient.getName(),
                     appointment.getMedecin().getId()
             );
         }
@@ -145,12 +173,19 @@ public class RendezVousController {
         return "redirect:/patient/appointments";
     }
 
-    // Choose consultation type
-    @PostMapping("/choose-consultation/{id}")
-    public String chooseConsultationType(
+    // ============ NEW: CREATE CONSULTATION FROM APPROVED APPOINTMENT ============
+
+
+
+    // Submit consultation creation
+    @PostMapping("/create-consultation/{id}")
+    public String createConsultation(
             @PathVariable Long id,
-            @RequestParam String consultationType,
-            HttpSession session) {
+            @RequestParam ConsultationType consultationType,
+            @RequestParam String reason,
+            @RequestParam String symptoms,
+            HttpSession session,
+            Model model) {
 
         Patient patient = (Patient) session.getAttribute("user");
         if (patient == null) {
@@ -158,45 +193,54 @@ public class RendezVousController {
         }
 
         RendezVous appointment = rendezVousService.getRendezVousById(id);
-        if (appointment != null &&
-                appointment.getPatient().getId().equals(patient.getId()) &&
-                appointment.getStatus() == StatusRendezVous.APPROVED) {
 
-            // Create consultation
-            Consultation consultation = new Consultation();
-            consultation.setDate(new Date());
+        // Validate: appointment exists, belongs to patient, is approved, and has no consultation
+        if (appointment == null ||
+                !appointment.getPatient().getId().equals(patient.getId()) ||
+                appointment.getStatus() != StatusRendezVous.APPROVED ||
+                appointment.getConsultation() != null) {
 
-            // Convert String to ConsultationType enum
-            ConsultationType type = ConsultationType.valueOf(consultationType.toUpperCase());
-            consultation.setConsultationType(type);
+            return "redirect:/patient/appointments?error=invalidAppointment";
+        }
 
-            consultation.setCallRoomId("room_" + id + "_" + System.currentTimeMillis());
-            consultation.setActive(false);
-            consultation.setRendezVous(appointment);
+        try {
+            // Create consultation using the service method
+            Consultation consultation = consultationService.createPatientConsultationRequest(
+                    patient.getId(),
+                    appointment.getMedecin().getId(),
+                    consultationType,
+                    reason,
+                    symptoms,
+                    convertToDate(appointment.getDate(), appointment.getTime())
+            );
 
-            consultationService.createConsultation(consultation);
-
-            // Update appointment
+            // Link consultation to appointment
             appointment.setConsultation(consultation);
-            appointment.setStatus(StatusRendezVous.IN_PROGRESS);
             rendezVousService.updateRendezVous(appointment);
 
             // Notify doctor
             notificationService.createNotification(
-                    "Patient a choisi une consultation " + consultationType.toLowerCase(),
+                    "New consultation request from " + patient.getName() +
+                            " for appointment on " + appointment.getDate() + " at " + appointment.getTime(),
                     appointment.getMedecin().getId()
             );
 
-            return "redirect:/patient/consultation/" + consultation.getId();
-        }
+            return "redirect:/patient/consultations?success=consultationCreated";
 
-        return "redirect:/patient/appointments?error=invalidAppointment";
+        } catch (Exception e) {
+            System.err.println("ERROR creating consultation: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/patient/appointments?error=consultationFailed";
+        }
     }
 
-    // Add this method to your controller
+    // ============ MODIFIED: REMOVE CHOOSE-CONSULTATION (replaced by create-consultation) ============
+    // REMOVE THIS METHOD: chooseConsultationType()
+    // It's now replaced by createConsultation() above
+
+    // View appointment details
     @GetMapping("/details/{id}")
     public String viewAppointmentDetailsAlt(@PathVariable Long id, HttpSession session, Model model) {
-        // Same implementation as the other method
         Patient patient = (Patient) session.getAttribute("user");
         if (patient == null) {
             return "redirect:/login";
@@ -210,10 +254,15 @@ public class RendezVousController {
         model.addAttribute("appointment", appointment);
         model.addAttribute("patient", patient);
 
+        // Add consultation info if exists
+        if (appointment.getConsultation() != null) {
+            model.addAttribute("consultation", appointment.getConsultation());
+        }
+
         return "patient/appointments-details";
     }
 
-    // Reschedule appointment
+    // Reschedule appointment (only for PENDING appointments)
     @PostMapping("/reschedule/{id}")
     public String rescheduleAppointment(
             @PathVariable Long id,
@@ -238,7 +287,7 @@ public class RendezVousController {
 
             // Notify doctor
             notificationService.createNotification(
-                    "Rendez-vous reprogrammé par " + patient.getName() + " pour " + newDate + " à " + newTime,
+                    "Appointment rescheduled by " + patient.getName() + " for " + newDate + " at " + newTime,
                     appointment.getMedecin().getId()
             );
 
@@ -246,5 +295,18 @@ public class RendezVousController {
         }
 
         return "redirect:/patient/appointments?error=cannotReschedule";
+    }
+
+    // ============ HELPER METHODS ============
+
+    private Date convertToDate(LocalDate date, String time) {
+        try {
+            LocalTime localTime = LocalTime.parse(time);
+            LocalDateTime dateTime = LocalDateTime.of(date, localTime);
+            return java.sql.Timestamp.valueOf(dateTime);
+        } catch (Exception e) {
+            // If time parsing fails, use start of day
+            return java.sql.Date.valueOf(date);
+        }
     }
 }

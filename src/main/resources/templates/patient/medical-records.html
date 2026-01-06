@@ -1,244 +1,1132 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medical Records - TeleMed</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <title>Mon Dossier Médical - Télémedecine</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
     <style>
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
-        .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; }
-        .card:hover { transform: translateY(-2px); }
-        .stat-card { background: white; padding: 20px; border-left: 4px solid #0d6efd; }
-        .category-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; }
-        .nav-tabs .nav-link { border: none; color: #6c757d; font-weight: 500; padding: 12px 20px; }
-        .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
-        .document-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #e9ecef; color: #495057; }
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            min-height: 100vh;
+            position: fixed;
+            width: 250px;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-left: -250px;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .sidebar.active {
+                margin-left: 0;
+            }
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar-menu li {
+            margin: 5px 0;
+        }
+
+        .sidebar-menu a {
+            color: white;
+            padding: 12px 20px;
+            display: block;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 3px solid var(--secondary-color);
+        }
+
+        .sidebar-menu i {
+            width: 25px;
+            text-align: center;
+        }
+
+        .navbar-custom {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .card-custom {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .card-custom:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header-custom {
+            background: linear-gradient(90deg, var(--primary-color), #2980b9);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 15px 20px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .stat-card.documents {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-card.lab {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-card.prescriptions {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .stat-card.consultations {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .stat-card i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .document-item {
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .document-item.lab-result {
+            border-left-color: var(--danger-color);
+        }
+
+        .document-item.patient-upload {
+            border-left-color: var(--secondary-color);
+        }
+
+        .btn-action {
+            background: linear-gradient(90deg, var(--secondary-color), #27ae60);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(46, 204, 113, 0.3);
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e0e0e0;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px var(--primary-color);
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding-right: 40px;
+            border-radius: 25px;
+            border: 1px solid #ddd;
+        }
+
+        .search-box button {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            border: none;
+            background: none;
+            color: #666;
+        }
+
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-toggle {
+                display: block;
+            }
+        }
+
+        .tab-content {
+            padding: 20px 0;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #666;
+            font-weight: 600;
+            padding: 10px 20px;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .medication-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .medication-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .medication-list li:last-child {
+            border-bottom: none;
+        }
+
+        .patient-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), #2980b9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin: 2px;
+        }
+
+        .category-badge.reports { background-color: #e3f2fd; color: #1976d2; }
+        .category-badge.scans { background-color: #f3e5f5; color: #7b1fa2; }
+        .category-badge.prescriptions { background-color: #e8f5e9; color: #388e3c; }
+        .category-badge.vaccinations { background-color: #fff3e0; color: #f57c00; }
+        .category-badge.other { background-color: #f5f5f5; color: #616161; }
+
+        .upload-form {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .medical-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
+<!-- Mobile Toggle Button -->
+<button class="mobile-toggle" id="sidebarToggle">
+    <i class="fas fa-bars"></i>
+</button>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
-    <div class="container">
-        <a class="navbar-brand" th:href="@{/patient/dashboard}"><i class="fas fa-heartbeat me-2"></i>TeleMed</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" th:href="@{/patient/dashboard}">Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link active" th:href="@{/medical-records}">Medical Records</a></li>
-            </ul>
-            <span class="text-white" th:text="${patient.prenom + ' ' + patient.name}">Patient Name</span>
-        </div>
-    </div>
-</nav>
-
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">My Medical Records</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
-            <i class="fas fa-upload me-2"></i>Upload Document
-        </button>
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h4 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Télémedecine</h4>
+        <p class="text-muted mb-0" th:text="${user.name}">Patient Name</p>
     </div>
 
-    <!-- Stats Overview -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small">Total Documents</div>
-                        <h3 class="fw-bold mb-0" th:text="${documentCount}">0</h3>
+    <ul class="sidebar-menu">
+        <li><a href="/patient/dashboard" class="d-flex align-items-center">
+            <i class="fas fa-home"></i> <span>Tableau de Bord</span>
+        </a></li>
+        <li><a href="#" class="d-flex align-items-center active">
+            <i class="fas fa-folder-medical"></i> <span>Mon Dossier Médical</span>
+        </a></li>
+        <li><a href="/patient/appointments" class="d-flex align-items-center">
+            <i class="fas fa-calendar-alt"></i> <span>Mes Rendez-vous</span>
+        </a></li>
+        <li><a href="/patient/consultations" class="d-flex align-items-center">
+            <i class="fas fa-stethoscope"></i> <span>Mes Consultations</span>
+        </a></li>
+        <li><a href="/patient/prescriptions" class="d-flex align-items-center">
+            <i class="fas fa-prescription-bottle-alt"></i> <span>Mes Ordonnances</span>
+        </a></li>
+        <li><a href="/patient/chat" class="d-flex align-items-center">
+            <i class="fas fa-comments"></i> <span>Messagerie</span>
+        </a></li>
+        <li><hr class="bg-white mx-3"></li>
+        <li><a href="/patient/profile" class="d-flex align-items-center">
+            <i class="fas fa-user"></i> <span>Mon Profil</span>
+        </a></li>
+        <li><a href="/logout" class="d-flex align-items-center">
+            <i class="fas fa-sign-out-alt"></i> <span>Déconnexion</span>
+        </a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content" id="mainContent">
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center w-100">
+                <h4 class="mb-0"><i class="fas fa-folder-medical text-primary me-2"></i> Mon Dossier Médical</h4>
+
+                <div class="ms-auto d-flex align-items-center">
+                    <!-- Search Box -->
+                    <div class="search-box me-3">
+                        <input type="text" class="form-control" placeholder="Rechercher un document..." id="searchInput">
+                        <button type="button"><i class="fas fa-search"></i></button>
                     </div>
-                    <i class="fas fa-file-medical fa-2x text-primary opacity-25"></i>
+
+                    <!-- Upload Button -->
+                    <button class="btn btn-action me-3" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="fas fa-upload me-1"></i> Ajouter Document
+                    </button>
+
+                    <!-- Notifications -->
+                    <div class="dropdown me-3">
+                        <button class="btn btn-light rounded-circle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                3
+                            </span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <h6 class="dropdown-header">Notifications</h6>
+                            <a class="dropdown-item" href="#"><i class="fas fa-flask text-danger me-2"></i> Nouveaux résultats de labo</a>
+                            <a class="dropdown-item" href="#"><i class="fas fa-prescription text-success me-2"></i> Nouvelle ordonnance</a>
+                            <a class="dropdown-item" href="#"><i class="fas fa-calendar text-primary me-2"></i> Rendez-vous confirmé</a>
+                        </div>
+                    </div>
+
+                    <!-- User Menu -->
+                    <div class="dropdown">
+                        <button class="btn btn-light d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                            <div class="patient-avatar me-2" style="width: 35px; height: 35px; font-size: 1rem;">
+                                <span th:text="${user.name != null ? user.name.substring(0, 1).toUpperCase() : 'P'}">P</span>
+                            </div>
+                            <span th:text="${user.name}">Patient</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="/patient/profile"><i class="fas fa-user me-2"></i> Mon Profil</a>
+                            <a class="dropdown-item" href="/patient/settings"><i class="fas fa-cog me-2"></i> Paramètres</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card stat-card" style="border-left-color: #198754;">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small">Consultations</div>
-                        <h3 class="fw-bold mb-0" th:text="${consultationCount}">0</h3>
-                    </div>
-                    <i class="fas fa-user-md fa-2x text-success opacity-25"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card stat-card" style="border-left-color: #ffc107;">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small">Prescriptions</div>
-                        <h3 class="fw-bold mb-0" th:text="${prescriptionCount}">0</h3>
-                    </div>
-                    <i class="fas fa-prescription fa-2x text-warning opacity-25"></i>
-                </div>
-            </div>
-        </div>
-    </div>
+    </nav>
 
-    <!-- Success/Error Alerts -->
-    <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show" role="alert">
-        Document uploaded successfully!
+    <!-- Success/Error Messages -->
+    <div th:if="${param.success}" class="alert alert-success alert-custom alert-dismissible fade show">
+        <i class="fas fa-check-circle me-2"></i>
+        <span th:switch="${param.success}">
+            <span th:case="'documentUploaded'">Document téléchargé avec succès!</span>
+            <span th:case="'documentDeleted'">Document supprimé avec succès!</span>
+        </span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <!-- Main Content Tabs -->
-    <div class="card">
-        <div class="card-header bg-white p-0">
-            <ul class="nav nav-tabs px-3" id="recordTabs" role="tablist">
-                <li class="nav-item">
-                    <button class="nav-link active" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs" type="button">Documents</button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" id="consults-tab" data-bs-toggle="tab" data-bs-target="#consults" type="button">Consultations</button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" id="prescriptions-tab" data-bs-toggle="tab" data-bs-target="#prescriptions" type="button">Prescriptions</button>
-                </li>
-            </ul>
+    <div th:if="${param.error}" class="alert alert-danger alert-custom alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <span th:switch="${param.error}">
+            <span th:case="'invalidFileType'">Type de fichier non autorisé. Formats acceptés: PDF, JPG, PNG, DOC, TXT</span>
+            <span th:case="'fileTooLarge'">Fichier trop volumineux. Maximum 10MB</span>
+            <span th:case="'documentNotFound'">Document non trouvé</span>
+            <span th:case="'cannotDeleteLabResults'">Vous ne pouvez pas supprimer les résultats de laboratoire</span>
+        </span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card documents">
+                <i class="fas fa-file-medical"></i>
+                <div class="stat-number" th:text="${totalDocuments != null ? totalDocuments : 0}">0</div>
+                <div>Documents Totaux</div>
+            </div>
         </div>
-        <div class="card-body p-0">
-            <div class="tab-content" id="recordTabsContent">
-                <!-- Documents Tab -->
-                <div class="tab-pane fade show active p-4" id="docs" role="tabpanel">
-                    <div th:each="entry : ${documentsByCategory}" class="mb-4">
-                        <h6 class="fw-bold text-muted mb-3" th:text="${entry.key}">CATEGORY</h6>
-                        <div class="row g-3">
-                            <div th:each="doc : ${entry.value}" class="col-md-6 col-lg-4">
-                                <div class="card border p-3 h-100">
-                                    <div class="d-flex align-items-start justify-content-between mb-2">
-                                        <div class="document-icon">
-                                            <i class="fas fa-file-pdf" th:if="${doc.fileName.endsWith('.pdf')}"></i>
-                                            <i class="fas fa-file-image" th:if="${doc.fileName.endsWith('.jpg') || doc.fileName.endsWith('.png')}"></i>
-                                            <i class="fas fa-file-alt" th:unless="${doc.fileName.endsWith('.pdf') || doc.fileName.endsWith('.jpg') || doc.fileName.endsWith('.png')}"></i>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card lab">
+                <i class="fas fa-flask"></i>
+                <div class="stat-number" th:text="${labResultCount != null ? labResultCount : 0}">0</div>
+                <div>Résultats Labo</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card prescriptions">
+                <i class="fas fa-prescription-bottle-alt"></i>
+                <div class="stat-number" th:text="${prescriptionCount != null ? prescriptionCount : 0}">0</div>
+                <div>Ordonnances</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card consultations">
+                <i class="fas fa-stethoscope"></i>
+                <div class="stat-number" th:text="${consultationCount != null ? consultationCount : 0}">0</div>
+                <div>Consultations</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Medical Summary -->
+    <div class="card card-custom mb-4">
+        <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i> Résumé Médical</h5>
+            <a th:href="@{/patient/medical-records/export/pdf}" class="btn btn-sm btn-light">
+                <i class="fas fa-download me-1"></i> Télécharger PDF
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="summary-item">
+                                <strong><i class="fas fa-user me-2"></i> Nom:</strong>
+                                <span th:text="${summary != null ? summary.patientName : user.name}">Patient Name</span>
+                            </div>
+                            <div class="summary-item">
+                                <strong><i class="fas fa-birthday-cake me-2"></i> Âge:</strong>
+                                <span th:text="${summary != null ? summary.age : 'N/A'}">0</span> ans
+                            </div>
+                            <div class="summary-item">
+                                <strong><i class="fas fa-allergies me-2"></i> Allergies:</strong>
+                                <div th:if="${summary != null && summary.allergies != null && !summary.allergies.isEmpty()}">
+                                    <span th:each="allergy, iter : ${summary.allergies}"
+                                          class="badge bg-warning me-1">
+                                        <span th:text="${allergy}">Allergy</span>
+                                    </span>
+                                </div>
+                                <span th:if="${summary == null || summary.allergies == null || summary.allergies.isEmpty()}"
+                                      class="text-muted">Aucune allergie connue</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="summary-item">
+                                <strong><i class="fas fa-heartbeat me-2"></i> Conditions Chroniques:</strong>
+                                <div th:if="${summary != null && summary.chronicConditions != null && !summary.chronicConditions.isEmpty()}">
+                                    <span th:each="condition, iter : ${summary.chronicConditions}"
+                                          class="badge bg-info me-1">
+                                        <span th:text="${condition}">Condition</span>
+                                    </span>
+                                </div>
+                                <span th:if="${summary == null || summary.chronicConditions == null || summary.chronicConditions.isEmpty()}"
+                                      class="text-muted">Aucune condition chronique</span>
+                            </div>
+                            <div class="summary-item">
+                                <strong><i class="fas fa-pills me-2"></i> Médicaments Actuels:</strong>
+                                <div th:if="${summary != null && summary.currentMedications != null && !summary.currentMedications.isEmpty()}">
+                                    <span th:each="med, iter : ${summary.currentMedications}"
+                                          class="badge bg-success me-1">
+                                        <span th:text="${med}">Medication</span>
+                                    </span>
+                                </div>
+                                <span th:if="${summary == null || summary.currentMedications == null || summary.currentMedications.isEmpty()}"
+                                      class="text-muted">Aucun médicament actuel</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6><i class="fas fa-calendar-check text-primary me-2"></i> Dernière Consultation</h6>
+                            <p class="mb-3" th:if="${summary != null && summary.lastConsultation != null}">
+                                <span th:text="${#dates.format(summary.lastConsultation, 'dd/MM/yyyy')}">Date</span>
+                            </p>
+                            <p class="mb-3 text-muted" th:if="${summary == null || summary.lastConsultation == null}">
+                                Aucune consultation
+                            </p>
+
+                            <h6><i class="fas fa-calendar-alt text-success me-2"></i> Prochain Rendez-vous</h6>
+                            <p class="mb-0" th:if="${summary != null && summary.nextAppointment != null}">
+                                <span th:text="${summary.nextAppointment}">Date</span>
+                            </p>
+                            <p class="mb-0 text-muted" th:if="${summary == null || summary.nextAppointment == null}">
+                                Aucun rendez-vous planifié
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs" id="medicalRecordsTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button">
+                <i class="fas fa-folder me-1"></i> Mes Documents
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="lab-results-tab" data-bs-toggle="tab" data-bs-target="#lab-results" type="button">
+                <i class="fas fa-flask me-1"></i> Résultats de Labo
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="prescriptions-tab" data-bs-toggle="tab" data-bs-target="#prescriptions" type="button">
+                <i class="fas fa-prescription-bottle-alt me-1"></i> Mes Ordonnances
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="consultations-tab" data-bs-toggle="tab" data-bs-target="#consultations" type="button">
+                <i class="fas fa-stethoscope me-1"></i> Mes Consultations
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="medicalRecordsTabContent">
+        <!-- Documents Tab -->
+        <div class="tab-pane fade show active" id="documents" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+                <h5>Mes Documents Médicaux</h5>
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-filter me-1"></i> Filtrer par Catégorie
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item filter-documents" href="#" data-category="all">Tous les documents</a></li>
+                        <li><a class="dropdown-item filter-documents" href="#" data-category="Medical Reports">Rapports médicaux</a></li>
+                        <li><a class="dropdown-item filter-documents" href="#" data-category="Scans/Imaging">Scans/Imagerie</a></li>
+                        <li><a class="dropdown-item filter-documents" href="#" data-category="Prescriptions">Ordonnances</a></li>
+                        <li><a class="dropdown-item filter-documents" href="#" data-category="Vaccinations">Vaccinations</a></li>
+                        <li><a class="dropdown-item filter-documents" href="#" data-category="Other">Autres</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Documents by Category -->
+            <div th:each="categoryEntry : ${documentsByCategory}">
+                <div th:if="${categoryEntry.value != null and !categoryEntry.value.isEmpty()}" class="mb-4">
+                    <h6 class="mb-3">
+                        <span th:text="${categoryEntry.key}">Category</span>
+                        <span class="badge bg-primary ms-2" th:text="${categoryEntry.value.size()}">0</span>
+                    </h6>
+                    <div class="row">
+                        <div th:each="document : ${categoryEntry.value}" class="col-md-6 mb-3">
+                            <div class="document-item patient-upload">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 th:text="${document.title}">Document Title</h6>
+                                        <div class="mb-2">
+                              <span class="category-badge"
+                                    th:classappend="${@medicalRecordsController.getCategoryClass(categoryEntry.key)}">
+    <span th:text="${categoryEntry.key}">Category</span>
+</span>
                                         </div>
-                                        <div class="dropdown">
-                                            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                <li><a class="dropdown-item" th:href="@{'/medical-records/document/' + ${doc.id}}"><i class="fas fa-eye me-2"></i>View</a></li>
-                                                <li><a class="dropdown-item" th:href="@{'/medical-records/download/' + ${doc.id}}"><i class="fas fa-download me-2"></i>Download</a></li>
-                                            </ul>
+                                        <p class="text-muted mb-2 small" th:if="${document.description != null}">
+                                            <span th:text="${#strings.substring(document.description, 0, 100)}">Description...</span>
+                                            <span th:if="${#strings.length(document.description) > 100}">...</span>
+                                        </p>
+                                        <div class="d-flex align-items-center">
+                                            <small class="text-muted me-3">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                <td th:text="${#temporals.format(document.uploadDate, 'dd/MM/yyyy')}"></td>
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="fas fa-file me-1"></i>
+                                                <span th:text="${#strings.substring(document.fileName, document.fileName.lastIndexOf('.') + 1)}"></span>
+                                            </small>
                                         </div>
                                     </div>
-                                    <h6 class="fw-bold mb-1 text-truncate" th:text="${doc.title}">Document Title</h6>
-                                    <p class="small text-muted mb-2 text-truncate" th:text="${doc.description}">Description</p>
-                                    <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
-                                        <span class="small text-muted" th:text="${#temporals.format(doc.dateCreation, 'dd MMM yyyy')}">Date</span>
-                                        <span class="badge bg-light text-dark category-badge" th:text="${doc.fileName.substring(doc.fileName.lastIndexOf('.') + 1).toUpperCase()}">PDF</span>
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" th:href="@{/patient/medical-records/document/{id}(id=${document.id})}">
+                                                    <i class="fas fa-eye me-2"></i> Voir
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" th:href="@{/patient/medical-records/download/{id}(id=${document.id})}">
+                                                    <i class="fas fa-download me-2"></i> Télécharger
+                                                </a>
+                                            </li>
+                                            <li th:if="${document.description != null and document.description.contains('=== PATIENT UPLOAD ===')}">
+                                                <form th:action="@{/patient/medical-records/document/{id}/delete(id=${document.id})}"
+                                                      method="post" class="d-inline">
+                                                    <button type="submit" class="dropdown-item text-danger"
+                                                            onclick="return confirm('Supprimer ce document?')">
+                                                        <i class="fas fa-trash me-2"></i> Supprimer
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div th:if="${#lists.isEmpty(documents)}" class="text-center py-5 text-muted">
-                        <i class="fas fa-folder-open fa-3x mb-3"></i>
-                        <p>No medical documents found.</p>
+                </div>
+            </div>
+
+            <!-- Empty State for Documents -->
+            <div th:if="${patientUploads == null || patientUploads.isEmpty()}" class="empty-state">
+                <i class="fas fa-file-medical"></i>
+                <h5>Aucun document personnel</h5>
+                <p class="text-muted">Vous n'avez pas encore téléchargé de documents médicaux</p>
+                <button class="btn btn-action" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="fas fa-upload me-1"></i> Ajouter mon premier document
+                </button>
+            </div>
+        </div>
+
+        <!-- Lab Results Tab -->
+        <div class="tab-pane fade" id="lab-results" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+                <h5>Résultats de Laboratoire</h5>
+                <div class="dropdown">
+                    <button class="btn btn-outline-danger dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-filter me-1"></i> Filtrer par Type
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item filter-lab-results" href="#" data-type="all">Tous les résultats</a></li>
+                        <li th:each="typeEntry : ${resultsByType}">
+                            <a class="dropdown-item filter-lab-results" href="#" th:data-type="${typeEntry.key}">
+                                <span th:text="${typeEntry.key}">Type</span>
+                                <span class="badge bg-danger ms-2" th:text="${typeEntry.value.size()}">0</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Lab Results by Type -->
+            <div th:each="typeEntry : ${resultsByType}">
+                <div th:if="${!typeEntry.value.isEmpty()}" class="mb-4">
+                    <h6 class="mb-3">
+                        <span th:text="${typeEntry.key}">Test Type</span>
+                        <span class="badge bg-danger ms-2" th:text="${typeEntry.value.size()}">0</span>
+                    </h6>
+                    <div class="row">
+                        <div th:each="lab : ${typeEntry.value}" class="col-md-6 mb-3">
+                            <div class="document-item lab-result">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 th:text="${lab.title}">Lab Result Title</h6>
+                                        <p class="text-muted mb-2 small" th:if="${lab.description != null}">
+                                            <span th:text="${#strings.substring(lab.description, 0, 150)}">Description...</span>
+                                            <span th:if="${#strings.length(lab.description) > 150}">...</span>
+                                        </p>
+                                        <div class="d-flex align-items-center">
+                                            <small class="text-muted me-3">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                <span th:text="${#dates.format(lab.uploadDate, 'dd/MM/yyyy')}">Date</span>
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="fas fa-file-pdf me-1"></i>
+                                                <span th:if="${lab.fileName != null}"
+                                                      th:text="${#strings.substring(lab.fileName, #strings.lastIndexOf(lab.fileName, '.') + 1)?: 'File'}">PDF</span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" th:href="@{/patient/medical-records/document/{id}(id=${lab.id})}">
+                                                    <i class="fas fa-eye me-2"></i> Voir
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" th:href="@{/patient/medical-records/download/{id}(id=${lab.id})}">
+                                                    <i class="fas fa-download me-2"></i> Télécharger
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Consultations Tab -->
-                <div class="tab-pane fade p-4" id="consults" role="tabpanel">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                            <tr>
-                                <th>Date</th>
-                                <th>Doctor</th>
-                                <th>Type</th>
-                                <th>Notes</th>
-                                <th class="text-end">Action</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr th:each="c : ${consultations}">
-                                <td th:text="${#dates.format(c.date, 'dd MMM yyyy')}">Date</td>
-                                <td th:text="${'Dr. ' + c.rendezVous.medecin.name}">Doctor</td>
-                                <td><span class="badge bg-info text-dark" th:text="${c.consultationType}">VIDEO</span></td>
-                                <td class="text-truncate" style="max-width: 200px;" th:text="${c.notes}">Notes...</td>
-                                <td class="text-end">
-                                    <a th:href="@{'/medical-records/consultation/' + ${c.id}}" class="btn btn-outline-primary btn-sm">Details</a>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <!-- Empty State for Lab Results -->
+            <div th:if="${labResults == null || labResults.isEmpty()}" class="empty-state">
+                <i class="fas fa-flask"></i>
+                <h5>Aucun résultat de laboratoire</h5>
+                <p class="text-muted">Vos médecins n'ont pas encore téléchargé de résultats de laboratoire</p>
+            </div>
+        </div>
 
-                <!-- Prescriptions Tab -->
-                <div class="tab-pane fade p-4" id="prescriptions" role="tabpanel">
-                    <div class="row g-3">
-                        <div th:each="p : ${prescriptions}" class="col-md-6">
-                            <div class="card border p-3">
+        <!-- Prescriptions Tab -->
+        <div class="tab-pane fade" id="prescriptions" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+                <h5>Mes Ordonnances</h5>
+                <a th:href="@{/patient/prescriptions}" class="btn btn-outline-success">
+                    Voir toutes les ordonnances
+                </a>
+            </div>
+
+            <!-- Active Prescriptions -->
+            <div th:if="${prescriptionsByStatus != null && !prescriptionsByStatus.get('active').isEmpty()}" class="mb-4">
+                <h6 class="mb-3">
+                    Ordonnances Actives
+                    <span class="badge bg-success ms-2" th:text="${activeCount}">0</span>
+                </h6>
+                <div class="row">
+                    <div th:each="prescription : ${prescriptionsByStatus.get('active')}" class="col-md-6 mb-3">
+                        <div class="card card-custom">
+                            <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <div>
-                                        <h6 class="fw-bold mb-0" th:text="${'Prescription #' + p.id}">Prescription #123</h6>
-                                        <small class="text-muted" th:text="${#dates.format(p.dateCreation, 'dd MMM yyyy')}">Date</small>
+                                        <h6 class="mb-0" th:text="'Ordonnance #' + ${prescription.id}">Prescription #</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-user-md me-1"></i>
+                                            <span th:if="${prescription.consultation != null && prescription.consultation.rendezVous != null && prescription.consultation.rendezVous.medecin != null}"
+                                                  th:text="'Dr. ' + ${prescription.consultation.rendezVous.medecin.name}">Dr. Name</span>
+                                        </small>
                                     </div>
-                                    <a th:href="@{'/medical-records/prescription/download/' + ${p.id}}" class="btn btn-outline-success btn-sm">
-                                        <i class="fas fa-download me-1"></i>PDF
-                                    </a>
+                                    <span class="badge bg-success">Active</span>
                                 </div>
-                                <div class="bg-light p-2 rounded mb-2">
-                                    <div class="small text-muted">Prescribed by:</div>
-                                    <div class="fw-bold" th:text="${'Dr. ' + p.consultation.rendezVous.medecin.name}">Doctor Name</div>
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        <span th:text="${#dates.format(prescription.dateCreation, 'dd/MM/yyyy')}">Date</span>
+                                    </small>
                                 </div>
-                                <a th:href="@{'/medical-records/prescription/' + ${p.id}}" class="btn btn-link btn-sm p-0 text-decoration-none">View Medications</a>
+                                <ul class="medication-list mb-3">
+                                    <li th:each="med : ${prescription.medicaments}" th:if="${medStat.index < 3}">
+                                        <i class="fas fa-pills text-success me-2"></i>
+                                        <span th:text="${med}">Medication</span>
+                                    </li>
+                                    <li th:if="${prescription.medicaments.size() > 3}">
+                                        <i class="fas fa-ellipsis-h text-muted me-2"></i>
+                                        <span class="text-muted" th:text="${prescription.medicaments.size() - 3} + ' de plus'">more</span>
+                                    </li>
+                                </ul>
+                                <a th:href="@{/patient/medical-records/prescription/{id}(id=${prescription.id})}"
+                                   class="btn btn-sm btn-outline-success w-100">
+                                    <i class="fas fa-eye me-1"></i> Voir les détails
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Completed Prescriptions -->
+            <div th:if="${prescriptionsByStatus != null && !prescriptionsByStatus.get('completed').isEmpty()}">
+                <h6 class="mb-3">
+                    Ordonnances Terminées
+                    <span class="badge bg-secondary ms-2" th:text="${completedCount}">0</span>
+                </h6>
+                <div class="row">
+                    <div th:each="prescription : ${prescriptionsByStatus.get('completed')}" th:if="${medStat.index < 4}" class="col-md-6 mb-3">
+                        <div class="card card-custom">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h6 class="mb-0" th:text="'Ordonnance #' + ${prescription.id}">Prescription #</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-user-md me-1"></i>
+                                            <span th:if="${prescription.consultation != null && prescription.consultation.rendezVous != null && prescription.consultation.rendezVous.medecin != null}"
+                                                  th:text="'Dr. ' + ${prescription.consultation.rendezVous.medecin.name}">Dr. Name</span>
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-secondary">Terminée</span>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        <span th:text="${#dates.format(prescription.dateCreation, 'dd/MM/yyyy')}">Date</span>
+                                    </small>
+                                </div>
+                                <ul class="medication-list mb-3">
+                                    <li th:each="med : ${prescription.medicaments}" th:if="${medStat.index < 2}">
+                                        <i class="fas fa-pills text-secondary me-2"></i>
+                                        <span th:text="${med}">Medication</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div th:if="${prescriptionsByStatus.get('completed').size() > 4}" class="text-center mt-3">
+                    <a th:href="@{/patient/prescriptions}" class="btn btn-sm btn-outline-secondary">
+                        Voir toutes les ordonnances terminées
+                    </a>
+                </div>
+            </div>
+
+            <!-- Empty State for Prescriptions -->
+            <div th:if="${prescriptions == null || prescriptions.isEmpty()}" class="empty-state">
+                <i class="fas fa-prescription-bottle-alt"></i>
+                <h5>Aucune ordonnance</h5>
+                <p class="text-muted">Vous n'avez pas encore d'ordonnances médicales</p>
+            </div>
+        </div>
+
+        <!-- Consultations Tab -->
+        <div class="tab-pane fade" id="consultations" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+                <h5>Historique des Consultations</h5>
+                <a th:href="@{/patient/consultations}" class="btn btn-outline-primary">
+                    Voir toutes les consultations
+                </a>
+            </div>
+
+            <!-- Recent Consultations -->
+            <div th:if="${consultations != null && !consultations.isEmpty()}">
+                <div class="timeline">
+                    <div th:each="consultation : ${consultations}" th:if="${consStat.index < 5}" class="timeline-item">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6><i class="fas fa-stethoscope text-primary me-2"></i>
+                                            <span th:text="${consultation.consultationType}">Consultation</span>
+                                        </h6>
+                                        <p class="mb-1">
+                                            <i class="fas fa-user-md me-1"></i>
+                                            <span th:if="${consultation.rendezVous != null && consultation.rendezVous.medecin != null}"
+                                                  th:text="'Dr. ' + ${consultation.rendezVous.medecin.name}">Dr. Name</span>
+                                        </p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            <span th:text="${#dates.format(consultation.date, 'dd/MM/yyyy HH:mm')}">Date</span>
+                                        </small>
+                                    </div>
+                                    <a th:href="@{/patient/consultations/{id}(id=${consultation.id})}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i> Voir
+                                    </a>
+                                </div>
+                                <p class="mt-2 mb-0" th:if="${consultation.notes != null && !consultation.notes.isEmpty()}">
+                                    <span th:text="${#strings.substring(consultation.notes, 0, 100)}">Notes...</span>
+                                    <span th:if="${#strings.length(consultation.notes) > 100}">...</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${consultations.size() > 5}" class="text-center mt-3">
+                    <a th:href="@{/patient/consultations}" class="btn btn-sm btn-primary">
+                        Voir tout l'historique
+                    </a>
+                </div>
+            </div>
+
+            <!-- Empty State for Consultations -->
+            <div th:if="${consultations == null || consultations.isEmpty()}" class="empty-state">
+                <i class="fas fa-stethoscope"></i>
+                <h5>Aucune consultation</h5>
+                <p class="text-muted">Vous n'avez pas encore eu de consultations</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Upload Modal -->
-<div class="modal fade" id="uploadModal" tabindex="-1">
-    <div class="modal-dialog">
+<!-- Upload Document Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form th:action="@{/medical-records/upload}" method="post" enctype="multipart/form-data">
-                <div class="modal-header">
-                    <h5 class="modal-title">Upload Medical Document</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadModalLabel">
+                    <i class="fas fa-upload me-2"></i> Ajouter un Document Médical
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form th:action="@{/patient/medical-records/upload}" method="post" enctype="multipart/form-data">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Document Title</label>
-                        <input type="text" name="title" class="form-control" placeholder="e.g., Blood Test Results" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Category</label>
-                        <select name="category" class="form-select" required>
-                            <option value="LAB_RESULTS">Lab Results</option>
-                            <option value="RADIOLOGY">Radiology / Imaging</option>
-                            <option value="PRESCRIPTIONS">Prescriptions</option>
-                            <option value="VACCINATIONS">Vaccinations</option>
-                            <option value="OTHER">Other</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="2"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Select File (PDF, JPG, PNG)</label>
-                        <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                        <div class="form-text">Max file size: 10MB</div>
+                    <div class="upload-form">
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Sélectionner le fichier *</label>
+                            <input type="file" class="form-control" id="file" name="file" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt">
+                            <div class="form-text">
+                                Formats acceptés: PDF, JPG, PNG, DOC, TXT (max 10MB)
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Titre du document *</label>
+                            <input type="text" class="form-control" id="title" name="title" required
+                                   placeholder="Ex: Rapport de consultation, Radiographie...">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Catégorie *</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Sélectionner une catégorie</option>
+                                <option value="Medical Reports">Rapport médical</option>
+                                <option value="Scans/Imaging">Scan/Imagerie</option>
+                                <option value="Prescriptions">Ordonnance</option>
+                                <option value="Vaccinations">Vaccination</option>
+                                <option value="Other">Autre</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"
+                                      placeholder="Décrivez brièvement le contenu du document..."></textarea>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Note: Vous ne pouvez supprimer que les documents que vous avez téléchargés vous-même.
+                            Les résultats de laboratoire téléchargés par les médecins ne peuvent pas être supprimés.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Upload Document</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-action">
+                        <i class="fas fa-upload me-1"></i> Télécharger le document
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script>
+    // Mobile sidebar toggle
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.getElementById('mainContent').addEventListener('click', function() {
+        if (window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.remove('active');
+        }
+    });
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const documentItems = document.querySelectorAll('.document-item');
+
+        documentItems.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    // Document filtering by category
+    document.querySelectorAll('.filter-documents').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const category = this.getAttribute('data-category');
+            const documentItems = document.querySelectorAll('.document-item');
+
+            documentItems.forEach(item => {
+                const itemCategory = item.querySelector('.category-badge').textContent.trim();
+                if (category === 'all' || itemCategory === category) {
+                    item.closest('.col-md-6').style.display = 'block';
+                } else {
+                    item.closest('.col-md-6').style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Lab results filtering by type
+    document.querySelectorAll('.filter-lab-results').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const type = this.getAttribute('data-type');
+            const labItems = document.querySelectorAll('#lab-results .document-item');
+
+            labItems.forEach(item => {
+                const section = item.closest('.mb-4');
+                if (section) {
+                    const sectionType = section.querySelector('h6').textContent.split(' ')[0];
+                    if (type === 'all' || sectionType === type) {
+                        section.style.display = 'block';
+                    } else {
+                        section.style.display = 'none';
+                    }
+                }
+            });
+        });
+    });
+
+    // Auto-dismiss alerts after 5 seconds
+    setTimeout(function() {
+        var alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            var bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 5000);
+
+    // File size validation
+    document.getElementById('file').addEventListener('change', function() {
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (this.files[0] && this.files[0].size > maxSize) {
+            alert('Le fichier est trop volumineux. La taille maximale est de 10MB.');
+            this.value = '';
+        }
+    });
+
+    // Tab switching functionality
+    const tabLinks = document.querySelectorAll('#medicalRecordsTab .nav-link');
+    tabLinks.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabLinks.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Initialize modal events
+    const uploadModal = document.getElementById('uploadModal');
+    if (uploadModal) {
+        uploadModal.addEventListener('hidden.bs.modal', function() {
+            this.querySelector('form').reset();
+        });
+    }
+</script>
 </body>
 </html>

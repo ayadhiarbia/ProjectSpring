@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer Ordonnance - Télémedecine</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Datepicker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            transition: all 0.3s;
+            z-index: 1000;
+            box-shadow: 3px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h4 {
+            color: white;
+            font-weight: 600;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+
+        .sidebar-menu a {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            display: block;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: white;
+        }
+
+        .sidebar-menu a i {
+            width: 25px;
+            margin-right: 10px;
+        }
+
+        .mobile-toggle {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1100;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            display: none;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+            min-height: 100vh;
+        }
+
+        /* Custom Navbar */
+        .navbar-custom {
+            background: white;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            border: 1px solid #eef1f5;
+        }
+
+        .navbar-custom h4 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .navbar-custom h4 i {
+            color: var(--primary-color);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        /* Form Styles */
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            border: 1px solid #eef1f5;
+        }
+
+        .form-header {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-header h4 {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-header .patient-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        /* Patient Info Card */
+        .patient-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #e1e8ed;
+        }
+
+        .patient-card h5 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .patient-card h5 i {
+            color: var(--primary-color);
+        }
+
+        /* Medication List */
+        .medication-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            transition: all 0.3s;
+        }
+
+        .medication-item:hover {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .remove-medication {
+            height: 38px;
+        }
+
+        /* Form Controls */
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            padding: 10px 15px;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .form-text {
+            color: #6c757d;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                left: -250px;
+            }
+            .sidebar.active {
+                left: 0;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .mobile-toggle {
+                display: block;
+            }
+            .form-card {
+                padding: 20px;
+            }
+            .patient-card {
+                padding: 15px;
+            }
+            .navbar-custom {
+                padding: 10px 15px;
+            }
+        }
+
+        /* Dropdown */
+        .dropdown-menu {
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 1px solid #eef1f5;
+        }
+
+        .dropdown-item {
+            padding: 8px 15px;
+            transition: all 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: #f8f9fa;
+        }
+
+        /* Flatpickr customization */
+        .flatpickr-input {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px 15px;
+            width: 100%;
+        }
+
+        /* Example text */
+        .example-text {
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<!-- Mobile Toggle -->
+<button class="mobile-toggle" id="sidebarToggle">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h4 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Télémedecine</h4>
+        <p class="text-muted mb-0" th:text="'Dr. ' + ${user.name}">Dr. Medecin</p>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li><a href="/medecin/dashboard" class="d-flex align-items-center">
+            <i class="fas fa-home"></i> <span>Tableau de Bord</span>
+        </a></li>
+        <li><a href="/medecin/medical-records" class="d-flex align-items-center">
+            <i class="fas fa-folder-medical"></i> <span>Dossier Médical</span>
+        </a></li>
+        <li><a href="/medecin/rendezvous" class="d-flex align-items-center">
+            <i class="fas fa-calendar-alt"></i> <span>Rendez-vous</span>
+        </a></li>
+        <li><a href="/medecin/consultations" class="d-flex align-items-center">
+            <i class="fas fa-stethoscope"></i> <span>Consultations</span>
+        </a></li>
+        <li><a href="/medecin/medical-records/prescriptions" class="d-flex align-items-center active">
+            <i class="fas fa-prescription-bottle-alt"></i> <span>Ordonnances</span>
+        </a></li>
+        <li><a href="/medecin/chat" class="d-flex align-items-center">
+            <i class="fas fa-comments"></i> <span>Messagerie</span>
+        </a></li>
+        <li><hr class="bg-white mx-3"></li>
+        <li><a href="/medecin/profile" class="d-flex align-items-center">
+            <i class="fas fa-user-md"></i> <span>Mon Profil</span>
+        </a></li>
+        <li><a href="/logout" class="d-flex align-items-center">
+            <i class="fas fa-sign-out-alt"></i> <span>Déconnexion</span>
+        </a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content" id="mainContent">
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center w-100">
+                <h4 class="mb-0"><i class="fas fa-prescription-bottle-alt text-primary me-2"></i> Créer une Ordonnance</h4>
+                <div class="ms-auto d-flex align-items-center">
+                    <div class="dropdown">
+                        <button class="btn btn-light d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-2"
+                                 style="width: 35px; height: 35px;">
+                                <i class="fas fa-user-md text-white"></i>
+                            </div>
+                            <span th:text="'Dr. ' + ${user.name}">Dr. Medecin</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="/medecin/profile"><i class="fas fa-user-md me-2"></i> Mon Profil</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Patient Information -->
+    <div class="patient-card">
+        <div class="row">
+            <div class="col-md-8">
+                <h5><i class="fas fa-user me-2"></i> Informations Patient</h5>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong>Nom:</strong> <span th:text="${patient.name}">Patient</span></p>
+                        <p class="mb-2"><strong>Prénom:</strong>
+                            <span th:if="${patient.prenom}" th:text="${patient.prenom}">Prénom</span>
+                            <span th:unless="${patient.prenom}" class="text-muted">Non spécifié</span>
+                        </p>
+                        <p class="mb-2"><strong>Email:</strong> <span th:text="${patient.email}">Email</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong>Date de naissance:</strong>
+                            <span th:if="${patient.dataNaissance}"
+                                  th:text="${#dates.format(patient.dataNaissance, 'dd/MM/yyyy')}">
+                                Date
+                            </span>
+                            <span th:unless="${patient.dataNaissance}" class="text-muted">Non spécifiée</span>
+                        </p>
+                        <p class="mb-2"><strong>Adresse:</strong>
+                            <span th:if="${patient.adresse}" th:text="${patient.adresse}">Adresse</span>
+                            <span th:unless="${patient.adresse}" class="text-muted">Non spécifiée</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h5><i class="fas fa-history me-2"></i> Dernières Consultations</h5>
+                <div th:if="${consultations != null && !consultations.isEmpty()}">
+                    <select class="form-select mt-2" id="consultationSelect">
+                        <option value="">-- Sélectionner une consultation récente --</option>
+                        <option th:each="consultation : ${consultations}"
+                                th:value="${consultation.id}"
+                                th:text="${#dates.format(consultation.date, 'dd/MM/yyyy')} + ' - ' + ${consultation.reason}">
+                        </option>
+                    </select>
+                </div>
+                <div th:if="${consultations == null || consultations.isEmpty()}" class="mt-2">
+                    <p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i> Aucune consultation récente</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prescription Form -->
+    <div class="form-card">
+        <div class="form-header">
+            <h4><i class="fas fa-prescription me-2"></i> Nouvelle Ordonnance Médicale</h4>
+            <div class="patient-info">
+                <p class="mb-0">Patient: <strong th:text="${patient.name}">Patient</strong> |
+                    Médecin prescripteur: <strong th:text="'Dr. ' + ${user.name}">Dr. Medecin</strong> |
+                    Date: <strong th:text="${#dates.format(#dates.createNow(), 'dd/MM/yyyy')}">Date</strong></p>
+            </div>
+        </div>
+
+        <form th:action="@{/medecin/medical-records/patient/{patientId}/prescription/create(patientId=${patient.id})}"
+              method="post" id="prescriptionForm" novalidate>
+
+            <!-- Consultation Reference -->
+            <input type="hidden" name="consultationId" id="consultationId" value="">
+
+            <!-- Prescription Title -->
+            <div class="mb-4">
+                <label for="title" class="form-label fw-bold">
+                    <i class="fas fa-heading me-1"></i> Titre de l'Ordonnance *
+                </label>
+                <input type="text" class="form-control" id="title" name="title"
+                       placeholder="Ex: Traitement grippe saisonnière" required>
+                <div class="form-text">Donnez un titre descriptif à cette ordonnance</div>
+            </div>
+
+            <!-- Medications Section -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-pills me-1"></i> Médicaments Prescrits *
+                    </label>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addMedication">
+                        <i class="fas fa-plus me-1"></i> Ajouter un médicament
+                    </button>
+                </div>
+
+                <div class="example-text">
+                    <strong>Exemple de format:</strong> <em>Nom du médicament + Dosage - Posologie (Durée)</em><br>
+                    <strong>Exemples:</strong><br>
+                    • Paracétamol 500mg - 1 comprimé 3 fois par jour pendant 7 jours<br>
+                    • Amoxicilline 1g - 1 comprimé matin et soir pendant 10 jours<br>
+                    • Vitamine C - 1 comprimé par jour le matin
+                </div>
+
+                <div id="medicationsContainer">
+                    <!-- Template for new medications (hidden) -->
+                    <div class="medication-item" id="medicationTemplate" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <textarea class="form-control medicament-text"
+                                          name="medicaments"
+                                          rows="2"
+                                          placeholder="Entrez la description complète du médicament..."
+                                          required></textarea>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-start">
+                                <button type="button" class="btn btn-danger w-100 remove-medication">
+                                    <i class="fas fa-trash"></i> Supprimer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Initial medication (required) -->
+                    <div class="medication-item">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <textarea class="form-control medicament-text"
+                                          name="medicaments"
+                                          rows="2"
+                                          placeholder="Ex: Paracétamol 500mg - 1 comprimé 3 fois par jour pendant 7 jours"
+                                          required></textarea>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-start">
+                                <button type="button" class="btn btn-danger w-100 remove-medication">
+                                    <i class="fas fa-trash"></i> Supprimer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Chaque champ ci-dessus créera un médicament distinct dans l'ordonnance.
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="mb-4">
+                <label for="instructions" class="form-label fw-bold">
+                    <i class="fas fa-file-alt me-1"></i> Instructions et Recommandations *
+                </label>
+                <textarea class="form-control" id="instructions" name="instructions"
+                          rows="4" placeholder="Instructions détaillées pour le patient..." required></textarea>
+                <div class="form-text">Précisez les instructions d'utilisation, précautions, etc.</div>
+            </div>
+
+            <!-- Notes (optional) -->
+            <div class="mb-4">
+                <label for="notes" class="form-label fw-bold">
+                    <i class="fas fa-sticky-note me-1"></i> Notes supplémentaires
+                </label>
+                <textarea class="form-control" id="notes" name="notes"
+                          rows="2" placeholder="Notes supplémentaires pour cette ordonnance..."></textarea>
+            </div>
+
+            <!-- Expiration Date -->
+            <div class="mb-4">
+                <label for="expirationDate" class="form-label fw-bold">
+                    <i class="fas fa-calendar-times me-1"></i> Date d'Expiration
+                </label>
+                <input type="text" class="form-control flatpickr-input" id="expirationDate"
+                       name="expirationDate" placeholder="Sélectionner une date">
+                <div class="form-text">Laisser vide si l'ordonnance n'a pas de date d'expiration</div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-between mt-5">
+                <a th:href="@{/medecin/medical-records/patient/{patientId}(patientId=${patient.id})}"
+                   class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Retour au dossier
+                </a>
+                <div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Enregistrer l'Ordonnance
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+
+<script>
+    // Initialize datepicker
+    flatpickr("#expirationDate", {
+        dateFormat: "Y-m-d",
+        locale: "fr",
+        minDate: "today",
+        disableMobile: true
+    });
+
+    // Consultation selection
+    document.getElementById('consultationSelect')?.addEventListener('change', function() {
+        document.getElementById('consultationId').value = this.value;
+    });
+
+    // Add medication
+    let medicationCount = 1;
+    document.getElementById('addMedication').addEventListener('click', function() {
+        const template = document.getElementById('medicationTemplate');
+        const clone = template.cloneNode(true);
+        clone.id = 'medication_' + medicationCount;
+        clone.style.display = 'block';
+
+        // Add remove functionality
+        const removeBtn = clone.querySelector('.remove-medication');
+        removeBtn.addEventListener('click', function() {
+            const medicationItems = document.querySelectorAll('.medication-item:not([id="medicationTemplate"])');
+            if (medicationItems.length > 1) {
+                clone.remove();
+            } else {
+                alert('Au moins un médicament est requis');
+            }
+        });
+
+        document.getElementById('medicationsContainer').appendChild(clone);
+        medicationCount++;
+
+        // Scroll to new medication
+        clone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // Focus on the new textarea
+        const newTextarea = clone.querySelector('.medicament-text');
+        if (newTextarea) {
+            setTimeout(() => newTextarea.focus(), 100);
+        }
+    });
+
+    // Initialize remove buttons
+    document.querySelectorAll('.remove-medication').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const medicationItems = document.querySelectorAll('.medication-item:not([id="medicationTemplate"])');
+            if (medicationItems.length > 1) {
+                this.closest('.medication-item').remove();
+            } else {
+                alert('Au moins un médicament est requis');
+            }
+        });
+    });
+
+    // Mobile sidebar toggle
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.getElementById('mainContent').addEventListener('click', function() {
+        if (window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.remove('active');
+        }
+    });
+
+    // Form validation before submit
+    document.getElementById('prescriptionForm').addEventListener('submit', function(e) {
+        // Check if at least one medication is filled
+        const medicationInputs = document.querySelectorAll('textarea[name="medicaments"]');
+        let hasValidMedication = false;
+
+        medicationInputs.forEach(input => {
+            if (input.value.trim() !== '') {
+                hasValidMedication = true;
+            }
+        });
+
+        if (!hasValidMedication) {
+            e.preventDefault();
+            alert('Veuillez saisir au moins un médicament');
+            return false;
+        }
+
+        // Check required fields
+        const titleInput = document.getElementById('title');
+        const instructionsInput = document.getElementById('instructions');
+
+        if (!titleInput.value.trim()) {
+            e.preventDefault();
+            alert('Veuillez saisir un titre pour l\'ordonnance');
+            titleInput.focus();
+            return false;
+        }
+
+        if (!instructionsInput.value.trim()) {
+            e.preventDefault();
+            alert('Veuillez saisir les instructions et recommandations');
+            instructionsInput.focus();
+            return false;
+        }
+
+        return true;
+    });
+
+    // Auto-resize textareas
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('.medicament-text')) {
+            e.target.style.height = 'auto';
+            e.target.style.height = (e.target.scrollHeight) + 'px';
+        }
+    });
+
+    // Debug: Log any JavaScript errors
+    window.addEventListener('error', function(e) {
+        console.error('JavaScript Error:', e.error);
+    });
+
+    // Console log for debugging
+    console.log('Prescription form loaded successfully');
+</script>
+</body>
+</html>

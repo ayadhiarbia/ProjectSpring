@@ -9,11 +9,12 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     User findByName(String name);
-    User findByEmail(String email);
+    Optional<User> findByEmail(String email);
     User findByPassword(String password);
     List<User> findByRole(UserRole role);  // This is correct
 

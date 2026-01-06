@@ -51,8 +51,8 @@ public class Messagerie {
         this.isRead = isRead;
     }
 
-    public Messagerie(Long id, Long doctorId, String name, String name1, String patient, String content, LocalDateTime now) {
-    }
+    //public Messagerie(Long id, Long doctorId, String name, String name1, String patient, String content, LocalDateTime now) {
+   // }
 
     // Getters et Setters
     public Long getId() { return id; }
@@ -80,4 +80,12 @@ public class Messagerie {
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     public boolean isRead() { return isRead; }
     public void setRead(boolean read) { isRead = read; }
+
+    public Object getDateTime() {
+        return timestamp;
+    }
+
+    public String getSenderType() {
+        return senderRole;
+    }
 }

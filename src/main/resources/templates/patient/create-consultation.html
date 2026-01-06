@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Consultation - Telemedicine Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .appointment-card {
+            border-left: 4px solid #28a745;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+        .form-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .required-field::after {
+            content: " *";
+            color: #dc3545;
+        }
+        .btn-create {
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+        .info-icon {
+            color: #0d6efd;
+            font-size: 1.2rem;
+        }
+        .consultation-type-card {
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 15px;
+            text-align: center;
+        }
+        .consultation-type-card:hover {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+        .consultation-type-card.selected {
+            border-color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+        .type-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/patient/dashboard}">
+            <i class="fas fa-heartbeat me-2"></i>TeleMed
+        </a>
+        <span class="navbar-text text-white">
+            <i class="fas fa-user me-1"></i>
+            <span th:text="${patient.prenom + ' ' + patient.name}">Patient Name</span>
+        </span>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <!-- Success/Error Messages -->
+    <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <span th:text="${param.success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <span th:text="${param.error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold text-dark">
+                <i class="fas fa-comment-medical text-primary me-2"></i>
+                Create Consultation Request
+            </h2>
+            <p class="text-muted">Create a consultation request based on your approved appointment</p>
+        </div>
+    </div>
+
+    <!-- Appointment Information Card -->
+    <div class="card appointment-card mb-4">
+        <div class="card-header bg-success bg-opacity-10">
+            <h5 class="mb-0 text-success">
+                <i class="fas fa-calendar-check me-2"></i>
+                Approved Appointment Details
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <small class="text-muted">Doctor</small>
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-md text-primary me-2"></i>
+                            Dr. <span th:text="${appointment.medecin.name}">Doctor Name</span>
+                        </h5>
+                        <p class="text-muted mb-0" th:text="${appointment.medecin.specialte}">Specialty</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <small class="text-muted">Date & Time</small>
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-alt text-primary me-2"></i>
+                            <span th:text="${appointment.date}">2024-01-15</span>
+                        </h5>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-clock me-1"></i>
+                            <span th:text="${appointment.time}">10:00 AM</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <small class="text-muted">Status</small>
+                        <div>
+                            <span class="badge bg-success fs-6">
+                                <i class="fas fa-check-circle me-1"></i>
+                                APPROVED
+                            </span>
+                        </div>
+                        <p class="text-muted mb-0 small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Ready for consultation creation
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${appointment.description}" class="mt-3">
+                <small class="text-muted">Appointment Reason</small>
+                <p class="mb-0" th:text="${appointment.description}">Original appointment reason</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consultation Form -->
+    <form th:action="@{/patient/appointments/create-consultation/{id}(id=${appointment.id})}"
+          method="post" id="consultationForm">
+
+        <!-- Consultation Type Selection -->
+        <div class="form-section">
+            <h4 class="mb-4">
+                <i class="fas fa-stethoscope text-primary me-2"></i>
+                <span class="required-field">Consultation Type</span>
+            </h4>
+
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-info-circle info-icon me-2"></i>
+                Select the type of consultation that best fits your needs. The doctor will use this to prepare.
+            </div>
+
+            <div class="row" id="consultationTypeSelection">
+                <div class="col-md-4 mb-3">
+                    <div class="consultation-type-card" data-type="VIDEO_CALL">
+                        <div class="type-icon text-primary">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <h5>Video Call</h5>
+                        <p class="text-muted small mb-0">
+                            Face-to-face consultation via video call
+                        </p>
+                        <input type="radio" name="consultationType" value="VIDEO_CALL"
+                               class="d-none" id="typeVideo" required>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="consultation-type-card" data-type="VOICE_CALL">
+                        <div class="type-icon text-info">
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        <h5>Voice Call</h5>
+                        <p class="text-muted small mb-0">
+                            Consultation via audio call only
+                        </p>
+                        <input type="radio" name="consultationType" value="VOICE_CALL"
+                               class="d-none" id="typeVoice" required>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="consultation-type-card" data-type="TEXT_CHAT">
+                        <div class="type-icon text-success">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h5>Text Chat</h5>
+                        <p class="text-muted small mb-0">
+                            Consultation via secure text messaging
+                        </p>
+                        <input type="radio" name="consultationType" value="TEXT_CHAT"
+                               class="d-none" id="typeText" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden input for form submission -->
+            <input type="hidden" name="selectedType" id="selectedTypeInput">
+        </div>
+
+        <!-- Consultation Details -->
+        <div class="form-section">
+            <h4 class="mb-4">
+                <i class="fas fa-file-medical text-primary me-2"></i>
+                <span class="required-field">Consultation Details</span>
+            </h4>
+
+            <!-- Reason for Consultation -->
+            <div class="mb-4">
+                <label class="form-label required-field">Reason for Consultation</label>
+                <div class="alert alert-light mb-3">
+                    <small class="text-muted">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        Please describe why you need this consultation. Be as specific as possible to help your doctor prepare.
+                    </small>
+                </div>
+                <textarea name="reason" class="form-control" rows="4"
+                          placeholder="Describe the main reason for your consultation. What medical concern or question do you have?"
+                          required></textarea>
+                <div class="form-text">
+                    Example: "I've been experiencing persistent headaches for the past week"
+                </div>
+            </div>
+
+            <!-- Symptoms Description -->
+            <div class="mb-4">
+                <label class="form-label required-field">Symptoms Description</label>
+                <div class="alert alert-light mb-3">
+                    <small class="text-muted">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Describe your symptoms in detail including duration, severity, and any patterns you've noticed.
+                    </small>
+                </div>
+                <textarea name="symptoms" class="form-control" rows="4"
+                          placeholder="Describe your symptoms in detail. Include:
+                          - When did they start?
+                          - How often do they occur?
+                          - What makes them better or worse?
+                          - Any other relevant information"
+                          required></textarea>
+                <div class="form-text">
+                    Be specific about duration, frequency, severity, and any factors that affect your symptoms.
+                </div>
+            </div>
+
+            <!-- Additional Information (Optional) -->
+            <div class="mb-3">
+                <label class="form-label">
+                    <i class="fas fa-plus-circle me-1"></i>
+                    Additional Information (Optional)
+                </label>
+                <textarea name="additionalInfo" class="form-control" rows="3"
+                          placeholder="Any additional information that might help your doctor understand your situation..."></textarea>
+                <div class="form-text">
+                    You can mention recent tests, medications, allergies, or any other relevant medical history.
+                </div>
+            </div>
+        </div>
+
+        <!-- Important Notes -->
+        <div class="form-section border-warning">
+            <div class="alert alert-warning mb-0">
+                <h5 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Important Information
+                </h5>
+                <ul class="mb-0">
+                    <li>Your consultation request will be sent to the doctor for review</li>
+                    <li>The doctor may request additional information before approving</li>
+                    <li>You will be notified when the doctor responds to your request</li>
+                    <li>Consultations are subject to the doctor's availability and approval</li>
+                    <li>Emergency situations should be addressed by calling emergency services</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-section text-center border-0">
+            <div class="d-flex justify-content-center gap-3">
+                <button type="submit" class="btn btn-primary btn-create">
+                    <i class="fas fa-paper-plane me-2"></i>
+                    Submit Consultation Request
+                </button>
+                <a th:href="@{/patient/appointments}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>
+                    Cancel
+                </a>
+            </div>
+            <p class="text-muted mt-3 small">
+                <i class="fas fa-shield-alt me-1"></i>
+                Your information is secure and confidential. All consultation are protected by doctor-patient confidentiality.
+            </p>
+        </div>
+    </form>
+</div>
+
+<!-- Footer -->
+<footer class="mt-5 py-3 bg-light">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <p class="mb-0">
+                    <i class="fas fa-heartbeat text-primary me-2"></i>
+                    <strong>TeleMed Platform</strong>
+                    <span class="text-muted ms-2">Secure Telemedicine Services</span>
+                </p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <p class="mb-0 text-muted">
+                    <i class="fas fa-clock me-1"></i>
+                    Available 24/7 for your healthcare needs
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Consultation Type Selection
+        const typeCards = document.querySelectorAll('.consultation-type-card');
+        const selectedTypeInput = document.getElementById('selectedTypeInput');
+
+        typeCards.forEach(card => {
+            card.addEventListener('click', function() {
+                // Remove selected class from all cards
+                typeCards.forEach(c => c.classList.remove('selected'));
+
+                // Add selected class to clicked card
+                this.classList.add('selected');
+
+                // Get the type value
+                const type = this.getAttribute('data-type');
+
+                // Check the corresponding radio button
+                const radioInput = this.querySelector('input[type="radio"]');
+                if (radioInput) {
+                    radioInput.checked = true;
+                    selectedTypeInput.value = type;
+                }
+            });
+        });
+
+        // Form validation
+        const form = document.getElementById('consultationForm');
+        form.addEventListener('submit', function(event) {
+            // Check if consultation type is selected
+            const selectedType = selectedTypeInput.value;
+            if (!selectedType) {
+                event.preventDefault();
+                alert('Please select a consultation type');
+                return;
+            }
+
+            // Check if required fields are filled
+            const reason = document.querySelector('textarea[name="reason"]').value.trim();
+            const symptoms = document.querySelector('textarea[name="symptoms"]').value.trim();
+
+            if (!reason || !symptoms) {
+                event.preventDefault();
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            // Optional: Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+            submitBtn.disabled = true;
+        });
+
+        // Auto-resize textareas
+        const textareas = document.querySelectorAll('textarea');
+        textareas.forEach(textarea => {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        });
+
+        // Initialize first type as selected if none selected
+        if (typeCards.length > 0 && !selectedTypeInput.value) {
+            typeCards[0].click();
+        }
+    });
+</script>
+</body>
+</html>

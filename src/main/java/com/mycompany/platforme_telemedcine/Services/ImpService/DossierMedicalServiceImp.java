@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,6 +25,11 @@ public class DossierMedicalServiceImp implements DossierMedicalService {
 
     @Value("${file.upload-dir:uploads/medical}")
     private String uploadDir;
+
+    @Override
+    public DossierMedical save(DossierMedical dossierMedical) {
+        return dossierMedicalRepository.save(dossierMedical);
+    }
 
     @Override
     public DossierMedical createDossierMedical(DossierMedical dossierMedical) {
@@ -40,15 +46,23 @@ public class DossierMedicalServiceImp implements DossierMedicalService {
         return dossierMedicalRepository.findById(id).orElse(null);
     }
 
+    // Alias method for getDossierMedicalById
+    @Override
+    public DossierMedical getDossierById(Long dossierId) {
+        return dossierMedicalRepository.findById(dossierId).orElse(null);
+    }
+
     @Override
     public void deleteDossierMedical(Long id) {
         DossierMedical dossier = getDossierMedicalById(id);
         if (dossier != null) {
             // Supprimer le fichier physique
             try {
-                String filename = dossier.getFileUrl().substring(dossier.getFileUrl().lastIndexOf("/") + 1);
-                Path filePath = Paths.get(uploadDir).resolve(filename);
-                Files.deleteIfExists(filePath);
+                if (dossier.getFileUrl() != null && dossier.getFileUrl().contains("/")) {
+                    String filename = dossier.getFileUrl().substring(dossier.getFileUrl().lastIndexOf("/") + 1);
+                    Path filePath = Paths.get(uploadDir).resolve(filename);
+                    Files.deleteIfExists(filePath);
+                }
             } catch (IOException e) {
                 System.err.println("Erreur lors de la suppression du fichier: " + e.getMessage());
             }
@@ -61,11 +75,7 @@ public class DossierMedicalServiceImp implements DossierMedicalService {
         return dossierMedicalRepository.save(dossierMedical);
     }
 
-    // Méthodes simplifiées
-    public List<DossierMedical> getDossiersByPatientId(Long patientId) {
-        return dossierMedicalRepository.findByPatientIdOrderByUploadDateDesc(patientId);
-    }
-
+    @Override
     public DossierMedical uploadDocumentMedical(Patient patient, MultipartFile file,
                                                 String title, String description) throws IOException {
 
@@ -77,7 +87,11 @@ public class DossierMedicalServiceImp implements DossierMedicalService {
 
         // Générer un nom de fichier sécurisé
         String originalFilename = file.getOriginalFilename();
-        String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String fileExtension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+
         String filename = "doc_" + patient.getId() + "_" + System.currentTimeMillis() + fileExtension;
         Path filePath = uploadPath.resolve(filename);
 
@@ -85,17 +99,23 @@ public class DossierMedicalServiceImp implements DossierMedicalService {
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         // Créer l'entité DossierMedical
-        DossierMedical dossierMedical = new DossierMedical(
-                patient,
-                title,
-                description,
-                originalFilename,
-                "/api/dossier-medical/files/" + filename
-        );
+        DossierMedical dossierMedical = new DossierMedical();
+        dossierMedical.setPatient(patient);
+        dossierMedical.setTitle(title);
+        dossierMedical.setDescription(description);
+        dossierMedical.setFileName(originalFilename);
+        dossierMedical.setFileUrl("/uploads/medical/" + filename); // Update URL format
+        dossierMedical.setUploadDate(LocalDateTime.now());
 
         return dossierMedicalRepository.save(dossierMedical);
     }
 
+    @Override
+    public List<DossierMedical> getDossiersByPatientId(Long patientId) {
+        return dossierMedicalRepository.findByPatientIdOrderByUploadDateDesc(patientId);
+    }
+
+    @Override
     public byte[] getDocumentFile(String filename) throws IOException {
         Path filePath = Paths.get(uploadDir).resolve(filename);
         if (Files.exists(filePath)) {
@@ -104,6 +124,7 @@ public class DossierMedicalServiceImp implements DossierMedicalService {
         throw new IOException("Fichier non trouvé: " + filename);
     }
 
+    @Override
     public long getDocumentCountByPatient(Long patientId) {
         return dossierMedicalRepository.countByPatientId(patientId);
     }

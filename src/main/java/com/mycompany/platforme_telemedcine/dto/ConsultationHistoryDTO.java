@@ -1,4 +1,4 @@
-package com.mycompany.platforme_telemedcine.DTO;
+package com.mycompany.platforme_telemedcine.dto;
 
 import com.mycompany.platforme_telemedcine.Models.ConsultationType;
 import java.util.Date;

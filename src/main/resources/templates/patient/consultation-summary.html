@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation Summary</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .summary-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px 15px 0 0;
+        }
+        .info-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .prescription-item {
+            background-color: #f8f9fa;
+            border-left: 4px solid #198754;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+        }
+        .notes-section {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .download-btn {
+            min-width: 200px;
+            margin: 5px;
+        }
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #0d6efd;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -23px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #0d6efd;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #0d6efd;
+        }
+        .stats-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .doctor-avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            margin: 0 auto 20px;
+        }
+        .print-only {
+            display: none;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            .print-only {
+                display: block;
+            }
+            .summary-card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            .header-section {
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Navigation (Hidden when printing) -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top no-print">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/patient/dashboard}">
+            <i class="fas fa-heartbeat text-primary"></i> TéléMédecine
+        </a>
+        <div class="d-flex align-items-center">
+            <a th:href="@{/patient/consultation/{id}(id=${consultation.id})}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i> Back to Details
+            </a>
+            <button class="btn btn-primary me-2" onclick="window.print()">
+                <i class="fas fa-print"></i> Print Summary
+            </button>
+            <span class="me-3" th:text="${patient.name}">Patient Name</span>
+        </div>
+    </div>
+</nav>
+
+<!-- Print Header -->
+<div class="print-only text-center mb-4">
+    <h1><i class="fas fa-heartbeat text-primary"></i> TéléMédecine</h1>
+    <h3>Consultation Summary Report</h3>
+    <p class="text-muted">Generated on: <span th:text="${#dates.format(#dates.createNow(), 'MMMM dd, yyyy HH:mm')}"></span></p>
+</div>
+
+<div class="container mt-4">
+    <!-- Consultation Summary Card -->
+    <div class="card summary-card">
+        <!-- Header Section -->
+        <div class="header-section">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2><i class="fas fa-file-medical-alt"></i> Consultation Summary</h2>
+                    <p class="mb-0">Complete summary of your medical consultation</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="badge bg-white text-dark p-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <strong>COMPLETED</strong>
+                    </div>
+                    <p class="mt-2 mb-0">
+                        <small>Consultation ID: #<span th:text="${consultation.id}">123</span></small>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <!-- Left Column: Consultation Details -->
+                <div class="col-md-8">
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <h6><i class="fas fa-calendar-alt"></i> Consultation Date</h6>
+                                <p class="mb-0">
+                                    <strong th:text="${#dates.format(consultation.date, 'MMMM dd, yyyy')}">
+                                        Date
+                                    </strong><br>
+                                    <small class="text-muted" th:text="${#dates.format(consultation.date, 'HH:mm') + ' - ' +
+                                                                               (consultation.durationMinutes ? consultation.durationMinutes + ' minutes' : '')}">
+                                        Time and Duration
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <h6><i class="fas fa-video"></i> Consultation Type</h6>
+                                <p class="mb-0">
+                                        <span class="badge bg-primary">
+                                            <span th:text="${consultation.consultationType}">Type</span>
+                                        </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline -->
+                    <div class="mb-4">
+                        <h5><i class="fas fa-history"></i> Consultation Timeline</h5>
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <h6>Consultation Requested</h6>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-clock"></i>
+                                    <span th:text="${#dates.format(consultation.requestedDate, 'MMM dd, yyyy HH:mm')}">
+                                            Date
+                                        </span>
+                                </p>
+                                <p th:text="${consultation.reason}" class="mb-0">
+                                    Initial consultation reason
+                                </p>
+                            </div>
+
+                            <div class="timeline-item">
+                                <h6>Consultation Approved</h6>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span th:if="${consultation.approvedDate}"
+                                          th:text="${#dates.format(consultation.approvedDate, 'MMM dd, yyyy HH:mm')}">
+                                            Date
+                                        </span>
+                                    <span th:unless="${consultation.approvedDate}">Pending approval</span>
+                                </p>
+                            </div>
+
+                            <div th:if="${consultation.scheduledDate}" class="timeline-item">
+                                <h6>Scheduled Appointment</h6>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <span th:text="${#dates.format(consultation.scheduledDate, 'MMM dd, yyyy HH:mm')}">
+                                            Date
+                                        </span>
+                                </p>
+                            </div>
+
+                            <div class="timeline-item">
+                                <h6>Consultation Completed</h6>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-check-double"></i>
+                                    <span th:text="${#dates.format(consultation.date, 'MMM dd, yyyy HH:mm')}">
+                                            Date
+                                        </span>
+                                </p>
+                                <p th:if="${consultation.durationMinutes}" class="mb-0">
+                                    Duration: <strong th:text="${consultation.durationMinutes} + ' minutes'">30 minutes</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Doctor's Notes -->
+                    <div th:if="${consultation.notes}" class="mb-4">
+                        <h5><i class="fas fa-sticky-note"></i> Doctor's Notes</h5>
+                        <div class="notes-section">
+                            <p th:text="${consultation.notes}" style="white-space: pre-line;">
+                                Doctor's notes will appear here...
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Prescription -->
+                    <div th:if="${prescription}" class="mb-4">
+                        <h5><i class="fas fa-prescription-bottle-alt"></i> Prescription</h5>
+                        <div class="alert alert-success">
+                            <i class="fas fa-info-circle"></i>
+                            The following prescription was issued during this consultation.
+                        </div>
+
+                        <div class="prescription-item">
+                            <h6><i class="fas fa-pills"></i> Prescribed Medications</h6>
+                            <div th:if="${prescription.medicaments}" class="mt-3">
+                                <div th:each="medicament : ${prescription.medicaments}" class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-capsules text-success me-2"></i>
+                                    <span th:text="${medicament}">Medication name</span>
+                                </div>
+                            </div>
+                            <div th:unless="${prescription.medicaments}" class="text-muted">
+                                No specific medications prescribed
+                            </div>
+
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> Prescription Date:
+                                    <span th:text="${#dates.format(prescription.dateCreation, 'MMM dd, yyyy')}">
+                                            Date
+                                        </span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No Prescription Message -->
+                    <div th:unless="${prescription}" class="mb-4">
+                        <h5><i class="fas fa-prescription-bottle-alt"></i> Prescription</h5>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            No prescription was issued during this consultation.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Doctor & Stats -->
+                <div class="col-md-4">
+                    <!-- Doctor Information -->
+                    <div class="card summary-card mb-4">
+                        <div class="card-body text-center">
+                            <div class="doctor-avatar">
+                                DR
+                            </div>
+                            <h5 th:text="'Dr. ' + ${doctor.name}">Dr. Name</h5>
+                            <p class="text-muted" th:text="${doctor.specialte}">Specialization</p>
+
+                            <div class="mt-4 text-start">
+                                <h6><i class="fas fa-graduation-cap"></i> Qualifications</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success"></i> Medical Degree</li>
+                                    <li><i class="fas fa-check text-success"></i> Board Certified</li>
+                                    <li><i class="fas fa-check text-success"></i> <span th:text="${doctor.specialte}">Specialization</span></li>
+                                </ul>
+
+                                <h6><i class="fas fa-star"></i> Rating</h6>
+                                <div class="mb-3">
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star-half-alt text-warning"></i>
+                                    <span class="ms-2">4.5/5.0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="card summary-card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Consultation Statistics</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-card" style="background-color: #e7f3ff;">
+                                <div class="stats-number" th:text="${consultation.durationMinutes ?: 'N/A'}">30</div>
+                                <div class="text-muted">Duration (minutes)</div>
+                            </div>
+
+                            <div class="stats-card" style="background-color: #d4edda;">
+                                <div class="stats-number">
+                                    <span th:if="${prescription}">✓</span>
+                                    <span th:unless="${prescription}">-</span>
+                                </div>
+                                <div class="text-muted">Prescription Issued</div>
+                            </div>
+
+                            <div class="stats-card" style="background-color: #fff3cd;">
+                                <div class="stats-number">
+                                    <span th:if="${consultation.notes}">✓</span>
+                                    <span th:unless="${consultation.notes}">-</span>
+                                </div>
+                                <div class="text-muted">Medical Notes</div>
+                            </div>
+
+                            <div class="alert alert-info small mt-3">
+                                <i class="fas fa-lightbulb"></i>
+                                This consultation has been added to your medical records.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Follow-up Recommendations -->
+                    <div class="card summary-card mt-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-calendar-check"></i> Follow-up</h6>
+                        </div>
+                        <div class="card-body">
+                            <div th:if="${consultation.notes and consultation.notes.contains('follow')}"
+                                 class="alert alert-warning small">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Doctor recommended a follow-up consultation.
+                            </div>
+                            <div th:unless="${consultation.notes and consultation.notes.contains('follow')}"
+                                 class="alert alert-success small">
+                                <i class="fas fa-check-circle"></i>
+                                No immediate follow-up required.
+                            </div>
+
+                            <a th:href="@{/patient/consultation/request/{doctorId}(doctorId=${consultation.rendezVous.medecin.id})}"
+                               class="btn btn-outline-primary btn-sm w-100 mt-2">
+                                <i class="fas fa-redo"></i>  Schedule Follow-up
+                            </a >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-4 pt-4 border-top no-print">
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <button class="btn btn-primary download-btn" onclick="downloadSummary()">
+                            <i class="fas fa-download"></i> Download PDF
+                        </button>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <button class="btn btn-success download-btn" onclick="shareSummary()">
+                            <i class="fas fa-share-alt"></i> Share Summary
+                        </button>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <a th:href="@{/patient/consultation}" class="btn btn-outline-secondary download-btn">
+                            <i class="fas fa-list"></i> All Consultations
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6 text-center">
+                        <a th:if="${prescription}" th:href="@{/patient/prescriptions}" class="btn btn-warning download-btn">
+                            <i class="fas fa-prescription-bottle-alt"></i> View Prescriptions
+                        </a>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <a th:href="@{/patient/medical-records}" class="btn btn-info download-btn">
+                            <i class="fas fa-file-medical"></i> Medical Records
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Note -->
+            <div class="mt-4 pt-3 border-top">
+                <div class="alert alert-light">
+                    <h6><i class="fas fa-shield-alt"></i> Confidentiality Notice</h6>
+                    <p class="small text-muted mb-0">
+                        This consultation summary contains confidential medical information.
+                        Please keep this document secure and do not share it with unauthorized individuals.
+                        For medical emergencies, contact emergency services immediately.
+                    </p>
+                </div>
+
+                <div class="text-center text-muted small">
+                    <p class="mb-0">
+                        Consultation Summary ID: <strong th:text="${consultation.id}">123</strong> |
+                        Generated on: <span th:text="${#dates.format(#dates.createNow(), 'MMMM dd, yyyy HH:mm:ss')}"></span>
+                    </p>
+                    <p class="mb-0">
+                        <i class="fas fa-heartbeat text-primary"></i> TéléMédecine Platform
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function downloadSummary() {
+        alert('PDF download functionality would be implemented here');
+        // In a real implementation, you would:
+        // 1. Collect all summary data
+        // 2. Generate PDF using jsPDF or similar library
+        // 3. Trigger download
+    }
+
+    function shareSummary() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Consultation Summary - TéléMédecine',
+                text: 'My consultation summary with Dr. [[${doctor.name}]]',
+                url: window.location.href
+            })
+                .then(() => console.log('Shared successfully'))
+                .catch(error => console.log('Error sharing:', error));
+        } else {
+            alert('Share functionality is not supported in your browser. You can copy the URL manually.');
+        }
+    }
+
+    // Add print styles
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-print if requested
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('print')) {
+            window.print();
+        }
+
+        // Add watermark for printed documents
+        const style = document.createElement('style');
+        style.innerHTML = `
+                @media print {
+                    @page {
+                        margin: 20mm;
+                    }
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        color-adjust: exact;
+                    }
+                    .summary-card {
+                        page-break-inside: avoid;
+                    }
+                    .header-section {
+                        page-break-after: avoid;
+                    }
+                    .no-print {
+                        display: none !important;
+                    }
+                }
+            `;
+        document.head.appendChild(style);
+    });
+</script>
+</body>
+</html>

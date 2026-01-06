@@ -11,5 +11,10 @@ public interface MessagerieService {
     void markMessagesAsRead(Long senderId, Long receiverId);
     List<Messagerie> getUnreadMessages(Long receiverId);
 
-    List<Messagerie> getUnreadMessagesForDoctor(Long id, Long id1);
+    // Doctor-specific methods - CORRECTED
+    List<Messagerie> getUnreadMessagesForDoctor(Long doctorId);
+    List<Messagerie> getUnreadMessagesForDoctorFromPatient(Long doctorId, Long patientId);
+    List<Messagerie> getDoctorConversations(Long doctorId);
+    void markDoctorMessagesAsRead(Long doctorId, Long patientId);
+    List<Long> getDoctorConversationPartners(Long doctorId);
 }

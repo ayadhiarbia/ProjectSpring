@@ -36,4 +36,7 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
     @Query("SELECT r FROM RendezVous r WHERE r.date BETWEEN :startDate AND :endDate")
     List<RendezVous> findByDateRange(@Param("startDate") LocalDate startDate,
                                      @Param("endDate") LocalDate endDate);
+
+
+
 }

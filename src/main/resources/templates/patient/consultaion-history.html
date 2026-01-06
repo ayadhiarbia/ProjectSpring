@@ -1,102 +1,527 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consultation History - TeleMed</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <title>Consultation History</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <style>
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
-        .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .timeline { position: relative; padding: 20px 0; }
-        .timeline-year { background: #0d6efd; color: white; padding: 5px 15px; border-radius: 20px; display: inline-block; margin-bottom: 20px; font-weight: bold; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-        .doctor-avatar { width: 50px; height: 50px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0d6efd; font-size: 1.2rem; }
-        .consultation-type { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .history-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .consultation-row {
+            border-left: 4px solid #0d6efd;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        .consultation-row:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .filter-btn {
+            margin: 2px;
+        }
+        .filter-btn.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        .stats-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
     <div class="container">
-        <a class="navbar-brand" th:href="@{/patient/dashboard}"><i class="fas fa-heartbeat me-2"></i>TeleMed</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" th:href="@{/patient/dashboard}">Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link" th:href="@{/medical-records}">Medical Records</a></li>
-                <li class="nav-item"><a class="nav-link active" th:href="@{/medical-records/consultations}">Consultation History</a></li>
-            </ul>
-            <span class="text-white" th:text="${patient.prenom + ' ' + patient.name}">Patient Name</span>
+        <a class="navbar-brand" th:href="@{/patient/dashboard}">
+            <i class="fas fa-heartbeat text-primary"></i> TéléMédecine
+        </a>
+        <div class="d-flex align-items-center">
+            <a th:href="@{/patient/consultation}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i> Back to Consultations
+            </a>
+            <span class="me-3" th:text="${patient.name}">Patient Name</span>
         </div>
     </div>
 </nav>
 
-<div class="container py-5">
-    <div class="row mb-5 align-items-center">
-        <div class="col-md-6">
-            <h2 class="fw-bold mb-1">Consultation History</h2>
-            <p class="text-muted" th:text="${'You have had ' + totalConsultations + ' consultations in total.'}">You have had 0 consultations.</p>
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-history text-primary"></i> Consultation History</h2>
+            <p class="text-muted">Complete history of all your consultation</p>
         </div>
-        <div class="col-md-6 text-md-end">
-            <a th:href="@{/patient/appointments}" class="btn btn-primary">
-                <i class="fas fa-calendar-plus me-2"></i>Book New Appointment
+        <div class="col-md-4 text-end">
+            <a th:href="@{/patient/consultation/request}" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> New Consultation
             </a>
+            <button class="btn btn-outline-secondary ms-2" onclick="printHistory()">
+                <i class="fas fa-print"></i> Print
+            </button>
         </div>
     </div>
 
-    <!-- Timeline View -->
-    <div class="timeline">
-        <div th:each="yearEntry : ${consultationsByYear}" class="mb-5">
-            <div class="timeline-year" th:text="${yearEntry.key}">2023</div>
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card bg-light">
+                <div class="stats-number" th:text="${#lists.size(consultation)}">0</div>
+                <div class="text-muted">Total Consultations</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background-color: #e7f3ff;">
+                <div class="stats-number" th:text="${#lists.size(#lists.select(consultation, ${status == 'COMPLETED'}))}">0</div>
+                <div class="text-muted">Completed</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background-color: #fff3cd;">
+                <div class="stats-number" th:text="${#lists.size(#lists.select(consultation, ${status == 'CANCELLED'}))}">0</div>
+                <div class="text-muted">Cancelled</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background-color: #f8d7da;">
+                <div class="stats-number" th:text="${#lists.size(#lists.select(consultation, ${status == 'REJECTED'}))}">0</div>
+                <div class="text-muted">Rejected</div>
+            </div>
+        </div>
+    </div>
 
-            <div class="row g-4">
-                <div th:each="c : ${yearEntry.value}" class="col-md-6 col-lg-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div class="doctor-avatar">
-                                    <i class="fas fa-user-md"></i>
-                                </div>
-                                <span class="badge bg-light text-primary consultation-type" th:text="${c.consultationType}">VIDEO</span>
-                            </div>
-
-                            <h5 class="fw-bold mb-1" th:text="${'Dr. ' + c.rendezVous.medecin.name}">Dr. Name</h5>
-                            <p class="text-muted small mb-3" th:text="${c.rendezVous.medecin.specialite}">Specialty</p>
-
-                            <div class="d-flex align-items-center text-muted small mb-3">
-                                <i class="fas fa-calendar-alt me-2"></i>
-                                <span th:text="${#dates.format(c.date, 'dd MMM yyyy')}">Date</span>
-                            </div>
-
-                            <div class="bg-light p-2 rounded mb-3">
-                                <p class="small mb-0 text-truncate" th:text="${c.notes != null ? c.notes : 'No notes provided.'}">Consultation notes...</p>
-                            </div>
-
-                            <div class="d-grid">
-                                <a th:href="@{'/medical-records/consultation/' + ${c.id}}" class="btn btn-outline-primary btn-sm">
-                                    View Full Details
-                                </a>
-                            </div>
-                        </div>
+    <!-- Filters -->
+    <div class="card history-card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Status</label>
+                    <div>
+                        <button class="btn btn-sm filter-btn" data-filter="all">All</button>
+                        <button class="btn btn-sm filter-btn" data-filter="completed">Completed</button>
+                        <button class="btn btn-sm filter-btn" data-filter="cancelled">Cancelled</button>
+                        <button class="btn btn-sm filter-btn" data-filter="rejected">Rejected</button>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Consultation Type</label>
+                    <div>
+                        <button class="btn btn-sm filter-btn" data-type="all">All Types</button>
+                        <button class="btn btn-sm filter-btn" data-type="VIDEO_CALL">Video</button>
+                        <button class="btn btn-sm filter-btn" data-type="TEXT_CHAT">Text</button>
+                        <button class="btn btn-sm filter-btn" data-type="VOICE_CALL">Voice</button>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="timePeriod" class="form-label">Time Period</label>
+                    <select class="form-select" id="timePeriod">
+                        <option value="all">All Time</option>
+                        <option value="30">Last 30 Days</option>
+                        <option value="90">Last 90 Days</option>
+                        <option value="365">Last Year</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="startDate" class="form-label">Start Date</label>
+                    <div class="input-group">
+                        <input type="date" class="form-control" id="startDate">
+                        <span class="input-group-text">to</span>
+                        <label for="endDate" class="form-label visually-hidden">End Date</label>
+                        <input type="date" class="form-control" id="endDate">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="searchInput" class="form-label">Search</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search by doctor name or reason...">
+                        <button class="btn btn-outline-secondary" type="button" onclick="clearFilters()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Empty State -->
-        <div th:if="${#lists.isEmpty(consultations)}" class="text-center py-5">
-            <div class="card p-5 bg-white d-inline-block">
-                <i class="fas fa-history fa-4x text-muted mb-3 opacity-25"></i>
-                <h4>No History Found</h4>
-                <p class="text-muted">You haven't had any consultations yet.</p>
-                <a th:href="@{/patient/appointments}" class="btn btn-primary">Book Your First Appointment</a>
+    <!-- History Table -->
+    <div class="card history-card">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Consultation Records</h5>
+            <span class="badge bg-primary" id="recordCount" th:text="${#lists.size(consultation)}">0</span>
+        </div>
+        <div class="card-body">
+            <div th:if="${not #lists.isEmpty(consultation)}">
+                <table class="table table-hover" id="historyTable">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Doctor</th>
+                        <th>Type</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Duration</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="consultation : ${consultation}"
+                        class="consultation-row"
+                        th:data-status="${consultation.status}"
+                        th:data-type="${consultation.consultationType}"
+                        th:data-date="${#dates.format(consultation.date, 'yyyy-MM-dd')}"
+                        th:data-id="${consultation.id}"
+                        th:data-notes="${consultation.notes}">
+                        <td>
+                            <strong th:text="${#dates.format(consultation.date, 'MMM dd, yyyy')}">
+                                Date
+                            </strong><br>
+                            <small class="text-muted" th:text="${#dates.format(consultation.date, 'HH:mm')}">
+                                Time
+                            </small>
+                        </td>
+                        <td th:text="'Dr. ' + ${consultation.rendezVous.medecin.name}">
+                            Dr. Name
+                        </td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${consultation.consultationType} == 'VIDEO_CALL' ? 'bg-primary' :
+                                                  (${consultation.consultationType} == 'TEXT_CHAT' ? 'bg-info' :
+                                                  (${consultation.consultationType} == 'VOICE_CALL' ? 'bg-warning' : 'bg-secondary'))">
+                                <span th:text="${consultation.consultationType}">
+                                    Type
+                                </span>
+                            </span>
+                        </td>
+                        <td>
+                            <small th:text="${consultation.reason}" class="text-truncate d-block" style="max-width: 200px;">
+                                Reason for consultation
+                            </small>
+                        </td>
+                        <td>
+                            <span class="status-badge"
+                                  th:classappend="${consultation.status} == 'COMPLETED' ? 'bg-success' :
+                                                  (${consultation.status} == 'CANCELLED' ? 'bg-danger' : 'bg-secondary')">
+                                <i th:classappend="${consultation.status} == 'COMPLETED' ? 'fas fa-check-circle' :
+                                                  (${consultation.status} == 'CANCELLED' ? 'fas fa-times-circle' : 'fas fa-ban')">
+                                </i>
+                                <span th:text="${consultation.status}">Status</span>
+                            </span>
+                            <div th:if="${consultation.rejectionReason}" class="mt-1">
+                                <small class="text-danger">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span th:text="${consultation.rejectionReason}"></span>
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            <span th:if="${consultation.durationMinutes}"
+                                  th:text="${consultation.durationMinutes} + ' min'">
+                                30 min
+                            </span>
+                            <span th:unless="${consultation.durationMinutes}" class="text-muted">
+                                N/A
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a th:href="@{/patient/consultation/summary/{id}(id=${consultation.id})}"
+                                   class="btn btn-outline-primary">
+                                    <i class="fas fa-file-medical-alt"></i>
+                                </a>
+                                <a th:href="@{/patient/consultation/{id}(id=${consultation.id})}"
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-outline-info" th:data-id="${consultation.id}" th:data-notes="${consultation.notes}" onclick="showNotesModal(this)">
+                                    <i class="fas fa-sticky-note"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${#lists.isEmpty(consultation)}" class="empty-state">
+                <i class="fas fa-history fa-4x mb-3"></i>
+                <h4>No Consultation History</h4>
+                <p class="text-muted">You haven't had any consultation yet</p>
+                <a th:href="@{/patient/consultation/request}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Schedule Your First Consultation
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="card history-card mt-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-download"></i> Export History</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <button class="btn btn-outline-primary w-100 mb-2" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf"></i> Export as PDF
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-outline-success w-100 mb-2" onclick="exportToCSV()">
+                        <i class="fas fa-file-csv"></i> Export as CSV
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-outline-secondary w-100 mb-2" onclick="generateReport()">
+                        <i class="fas fa-chart-bar"></i> Generate Report
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-sticky-note"></i> Consultation Notes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="notesContent">
+                    Loading notes...
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="mt-5 py-3 bg-light">
+    <div class="container text-center">
+        <p class="text-muted mb-0">
+            <i class="fas fa-heartbeat text-primary"></i> TéléMédecine Platform
+            © <span th:text="${#dates.year(#dates.createNow())}">2025</span>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    let dataTable;
+    let notesModal;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable
+        dataTable = $('#historyTable').DataTable({
+            pageLength: 10,
+            lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+            order: [[0, 'desc']],
+            language: {
+                search: "Search records:",
+                lengthMenu: "Show _MENU_ records per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ records",
+                infoEmpty: "No records available",
+                infoFiltered: "(filtered from _MAX_ total records)"
+            }
+        });
+
+        // Initialize modal
+        notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+
+        // Set up filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Update active state
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                applyFilters();
+            });
+        });
+
+        // Set up other filter events
+        document.getElementById('timePeriod').addEventListener('change', applyFilters);
+        document.getElementById('startDate').addEventListener('change', applyFilters);
+        document.getElementById('endDate').addEventListener('change', applyFilters);
+        document.getElementById('searchInput').addEventListener('keyup', applyFilters);
+
+        // Set default active filter
+        document.querySelector('[data-filter="all"]').classList.add('active');
+        document.querySelector('[data-type="all"]').classList.add('active');
+
+        // Update record count on filter
+        dataTable.on('draw', function() {
+            document.getElementById('recordCount').textContent = dataTable.rows({filter: 'applied'}).count();
+        });
+    });
+
+    function applyFilters() {
+        const statusFilter = document.querySelector('.filter-btn.active[data-filter]')?.dataset.filter;
+        const typeFilter = document.querySelector('.filter-btn.active[data-type]')?.dataset.type;
+        const timePeriod = document.getElementById('timePeriod').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+        // Combine filters
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                const row = dataTable.row(dataIndex).node();
+                const rowStatus = row.dataset.status;
+                const rowType = row.dataset.type;
+                const rowDate = row.dataset.date;
+
+                // Status filter
+                if (statusFilter && statusFilter !== 'all' && rowStatus !== statusFilter.toUpperCase()) {
+                    return false;
+                }
+
+                // Type filter
+                if (typeFilter && typeFilter !== 'all' && rowType !== typeFilter) {
+                    return false;
+                }
+
+                // Time period filter
+                if (timePeriod !== 'all') {
+                    const cutoffDate = new Date();
+                    cutoffDate.setDate(cutoffDate.getDate() - parseInt(timePeriod));
+                    const rowDateObj = new Date(rowDate);
+
+                    if (rowDateObj < cutoffDate) {
+                        return false;
+                    }
+                }
+
+                // Date range filter
+                if (startDate && endDate) {
+                    const rowDateObj = new Date(rowDate);
+                    const startDateObj = new Date(startDate);
+                    const endDateObj = new Date(endDate);
+
+                    if (rowDateObj < startDateObj || rowDateObj > endDateObj) {
+                        return false;
+                    }
+                }
+
+                // Search filter
+                if (searchTerm) {
+                    const rowData = dataTable.row(dataIndex).data();
+                    const searchableText = rowData.join(' ').toLowerCase();
+                    return searchableText.includes(searchTerm);
+                }
+
+                return true;
+            }
+        );
+
+        dataTable.draw();
+        $.fn.dataTable.ext.search.pop(); // Remove filter function after applying
+    }
+
+    function clearFilters() {
+        // Reset all filters
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('[data-filter="all"]').classList.add('active');
+        document.querySelector('[data-type="all"]').classList.add('active');
+
+        document.getElementById('timePeriod').value = 'all';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        document.getElementById('searchInput').value = '';
+
+        // Clear DataTable search
+        dataTable.search('').columns().search('').draw();
+    }
+
+    function showNotesModal(button) {
+        const consultationId = button.getAttribute('data-id');
+        const notes = button.getAttribute('data-notes') || '';
+        const notesContent = document.getElementById('notesContent');
+
+        if (notes && notes.trim() !== '') {
+            notesContent.innerHTML = `
+                    <div class="bg-light p-3 rounded">
+                        <h6>Consultation Notes (ID: ${consultationId}):</h6>
+                        <p>${notes.replace(/\n/g, '<br>').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}</p>
+                    </div>
+                `;
+        } else {
+            notesContent.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No notes available for this consultation.
+                    </div>
+                `;
+        }
+
+        notesModal.show();
+    }
+
+    function printHistory() {
+        window.print();
+    }
+
+    function exportToPDF() {
+        alert('PDF export functionality would be implemented here');
+    }
+
+    function exportToCSV() {
+        const rows = dataTable.rows({filter: 'applied'}).data();
+        let csvContent = "Date,Doctor,Type,Reason,Status,Duration\n";
+
+        rows.each(function(value, index) {
+            const row = value;
+            csvContent += `"${row[0]}","${row[1]}","${row[2]}","${row[3]}","${row[4]}","${row[5]}"\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `consultation-history-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+    }
+
+    function generateReport() {
+        alert('Report generation functionality would be implemented here');
+    }
+</script>
 </body>
 </html>

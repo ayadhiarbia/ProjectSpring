@@ -19,13 +19,13 @@ public class HomeController {
         return "index";
     }
 
-    @GetMapping("/auth/register/patient")
+    @GetMapping("/register/patient")
     public String registerPatient() {
         System.out.println("Patient registration page accessed");
         return "auth/register-patient";
     }
 
-    @GetMapping("/auth/register/medecin")
+    @GetMapping("/register/medecin")
     public String registerMedecin() {
         System.out.println("Doctor registration page accessed");
         return "auth/register-medecin";

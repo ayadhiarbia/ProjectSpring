@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reschedule Consultation</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .reschedule-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .calendar-day {
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .calendar-day:hover {
+            background-color: #f0f0f0;
+        }
+        .calendar-day.selected {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .calendar-day.disabled {
+            color: #ccc;
+            cursor: not-allowed;
+        }
+        .calendar-day.disabled:hover {
+            background-color: transparent;
+        }
+        .time-slot {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .time-slot:hover {
+            background-color: #f8f9fa;
+        }
+        .time-slot.selected {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+        .time-slot.unavailable {
+            background-color: #f8d7da;
+            color: #721c24;
+            cursor: not-allowed;
+        }
+        .doctor-availability {
+            border-left: 4px solid #198754;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+        }
+        .consultation-info {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/patient/dashboard}">
+            <i class="fas fa-heartbeat text-primary"></i> TéléMédecine
+        </a>
+        <div class="d-flex align-items-center">
+            <a th:href="@{/patient/consultation/{id}(id=${consultation.id})}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i> Back to Details
+            </a>
+            <span class="me-3" th:text="${patient.name}">Patient Name</span>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Error Messages -->
+    <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle"></i>
+        <span th:switch="${param.error}">
+                <span th:case="'cannotReschedule'">This consultation cannot be rescheduled.</span>
+                <span th:case="'rescheduleFailed'">Failed to submit reschedule request. Please try again.</span>
+                <span th:case="'invalidDate'">Please select a valid date and time.</span>
+            </span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-calendar-alt text-warning"></i> Reschedule Consultation</h2>
+            <p class="text-muted">Select a new date and time for your consultation</p>
+        </div>
+        <div class="col-md-4 text-end">
+                <span class="badge bg-warning">
+                    <i class="fas fa-clock"></i> Reschedule Request
+                </span>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Reschedule Form -->
+        <div class="col-md-8">
+            <div class="card reschedule-card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-calendar-plus"></i> Select New Date & Time</h5>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/patient/consultation/{id}/reschedule(id=${consultation.id})}" method="post">
+                        <!-- Current Consultation Info -->
+                        <div class="alert alert-info mb-4">
+                            <h6><i class="fas fa-info-circle"></i> Current Appointment</h6>
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <strong>Doctor:</strong>
+                                    <span th:text="'Dr. ' + ${doctor.name}">Dr. Name</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Current Date:</strong>
+                                    <span th:if="${consultation.scheduledDate}"
+                                          th:text="${#dates.format(consultation.scheduledDate, 'MMM dd, yyyy HH:mm')}">
+                                            Date
+                                        </span>
+                                    <span th:unless="${consultation.scheduledDate}">Not scheduled yet</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date Selection -->
+                        <div class="mb-4">
+                            <h6><i class="fas fa-calendar-day"></i> Select Date</h6>
+                            <div class="row g-2" id="dateSelection">
+                                <!-- Dates will be populated by JavaScript -->
+                            </div>
+                            <div class="form-text">Click on a date to select it</div>
+                        </div>
+
+                        <!-- Time Selection -->
+                        <div class="mb-4" id="timeSelectionSection" style="display: none;">
+                            <h6><i class="fas fa-clock"></i> Select Time</h6>
+                            <div class="row g-2" id="timeSelection">
+                                <!-- Time slots will be populated by JavaScript -->
+                            </div>
+                            <div class="form-text">Click on a time slot to select it</div>
+                        </div>
+
+                        <!-- Reason -->
+                        <div class="mb-4">
+                            <label for="reason" class="form-label">
+                                <i class="fas fa-comment-medical"></i> Reason for Rescheduling
+                            </label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3"
+                                      placeholder="Please explain why you need to reschedule this consultation..."
+                                      required></textarea>
+                            <div class="form-text">This reason will be shared with the doctor.</div>
+                        </div>
+
+                        <!-- Hidden Date Field -->
+                        <input type="hidden" id="newDate" name="newDate">
+
+                        <!-- Submit Button -->
+                        <div class="d-flex justify-content-between">
+                            <a th:href="@{/patient/consultation/{id}(id=${consultation.id})}"
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning" id="submitBtn" disabled>
+                                <i class="fas fa-calendar-check"></i> Submit Reschedule Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Doctor Info & Availability -->
+        <div class="col-md-4">
+            <!-- Doctor Info -->
+            <div class="card reschedule-card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-user-md"></i> Doctor Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto"
+                             style="width: 70px; height: 70px; font-size: 28px;">
+                            DR
+                        </div>
+                        <h5 class="mt-2" th:text="'Dr. ' + ${doctor.name}">Dr. Name</h5>
+                        <p class="text-muted" th:text="${doctor.specialte}">Specialization</p>
+                    </div>
+
+                    <div class="doctor-availability mt-3">
+                        <h6><i class="fas fa-clock text-success"></i> Typical Availability</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Monday - Friday: 9:00 AM - 5:00 PM</li>
+                            <li><i class="fas fa-check text-success"></i> Saturday: 10:00 AM - 2:00 PM</li>
+                            <li><i class="fas fa-times text-danger"></i> Sunday: Closed</li>
+                        </ul>
+                        <div class="alert alert-info small">
+                            <i class="fas fa-info-circle"></i> The doctor will confirm the exact time.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Consultation Info -->
+            <div class="card reschedule-card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-file-medical-alt"></i> Consultation Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="consultation-info">
+                        <h6>Consultation Type:</h6>
+                        <p>
+                                <span class="badge bg-primary" th:text="${consultation.consultationType}">
+                                    Type
+                                </span>
+                        </p>
+
+                        <h6>Original Reason:</h6>
+                        <p class="text-muted" th:text="${consultation.reason}">
+                            Consultation reason
+                        </p>
+
+                        <h6>Current Status:</h6>
+                        <span class="badge" th:classappend="${consultation.status == 'PENDING'} ? 'bg-warning' :
+                                                              ${consultation.status == 'APPROVED'} ? 'bg-info' :
+                                                              ${consultation.status == 'SCHEDULED'} ? 'bg-success' : 'bg-secondary'">
+                                <span th:text="${consultation.status}">Status</span>
+                            </span>
+
+                        <hr>
+
+                        <div class="alert alert-warning small">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Note:</strong> The doctor must approve the new date and time.
+                            You'll receive a notification once it's confirmed.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" id="scheduledDate" th:value="${consultation.scheduledDate}" />
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Initialize variables
+    let selectedDate = null;
+    let selectedTime = null;
+
+    // Generate dates for the next 14 days
+    function generateDates() {
+        const container = document.getElementById('dateSelection');
+        container.innerHTML = '';
+
+        const today = new Date();
+
+        for (let i = 0; i < 14; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() + i);
+
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'col-3 col-md-2';
+
+            const dayCard = document.createElement('div');
+            dayCard.className = 'calendar-day';
+            dayCard.dataset.date = date.toISOString().split('T')[0];
+
+            // Mark weekends as unavailable
+            const dayOfWeek = date.getDay();
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                dayCard.classList.add('disabled');
+                dayCard.innerHTML = `
+                        <div class="small text-muted">${date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                        <div class="fw-bold">${date.getDate()}</div>
+                        <div class="small text-danger">Unavailable</div>
+                    `;
+            } else {
+                dayCard.innerHTML = `
+                        <div class="small text-muted">${date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                        <div class="fw-bold">${date.getDate()}</div>
+                        <div class="small text-success">Available</div>
+                    `;
+
+                dayCard.addEventListener('click', function() {
+                    selectDate(this);
+                });
+            }
+
+            dayDiv.appendChild(dayCard);
+            container.appendChild(dayDiv);
+        }
+    }
+
+    // Select a date
+    function selectDate(element) {
+        // Remove selection from all dates
+        document.querySelectorAll('.calendar-day').forEach(el => {
+            el.classList.remove('selected');
+        });
+
+        // Add selection to clicked date
+        element.classList.add('selected');
+        selectedDate = element.dataset.date;
+
+        // Show time selection
+        generateTimeSlots();
+        document.getElementById('timeSelectionSection').style.display = 'block';
+
+        updateSubmitButton();
+    }
+
+    // Generate time slots
+    function generateTimeSlots() {
+        const container = document.getElementById('timeSelection');
+        container.innerHTML = '';
+
+        const timeSlots = [
+            '09:00', '10:00', '11:00', '12:00',
+            '13:00', '14:00', '15:00', '16:00'
+        ];
+
+        timeSlots.forEach(time => {
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'col-4 col-md-3';
+
+            const timeSlot = document.createElement('div');
+            timeSlot.className = 'time-slot';
+            timeSlot.textContent = time;
+            timeSlot.dataset.time = time;
+
+            // Randomly mark some slots as unavailable (simulating busy schedule)
+            if (Math.random() < 0.3) {
+                timeSlot.classList.add('unavailable');
+                timeSlot.innerHTML += '<br><small class="text-danger">Busy</small>';
+            } else {
+                timeSlot.addEventListener('click', function() {
+                    selectTime(this);
+                });
+            }
+
+            timeDiv.appendChild(timeSlot);
+            container.appendChild(timeDiv);
+        });
+    }
+
+    // Select a time slot
+    function selectTime(element) {
+        // Remove selection from all time slots
+        document.querySelectorAll('.time-slot').forEach(el => {
+            el.classList.remove('selected');
+        });
+
+        // Add selection to clicked time slot
+        element.classList.add('selected');
+        selectedTime = element.dataset.time;
+
+        updateSubmitButton();
+    }
+
+    // Update submit button and hidden field
+    function updateSubmitButton() {
+        const submitBtn = document.getElementById('submitBtn');
+        const hiddenDateField = document.getElementById('newDate');
+
+        if (selectedDate && selectedTime) {
+            // Combine date and time
+            const dateTimeString = `${selectedDate}T${selectedTime}:00`;
+            hiddenDateField.value = dateTimeString;
+            submitBtn.disabled = false;
+        } else {
+            submitBtn.disabled = true;
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        generateDates();
+
+        // Get scheduled date from hidden input
+        const scheduledDateInput = document.getElementById('scheduledDate');
+        const scheduledDate = scheduledDateInput ? scheduledDateInput.value : null;
+
+        if (scheduledDate) {
+            // Parse the date
+            const dateObj = new Date(scheduledDate);
+            if (!isNaN(dateObj.getTime())) {
+                // Format date as YYYY-MM-DD for comparison
+                const dateString = dateObj.toISOString().split('T')[0];
+
+                // Find and select the corresponding date
+                const dateElement = document.querySelector(`.calendar-day[data-date="${dateString}"]`);
+                if (dateElement && !dateElement.classList.contains('disabled')) {
+                    selectDate(dateElement);
+
+                    // You could also try to select the corresponding time
+                    const timeString = dateObj.toTimeString().substring(0, 5); // HH:MM format
+                    const timeElement = document.querySelector(`.time-slot[data-time="${timeString}"]`);
+                    if (timeElement && !timeElement.classList.contains('unavailable')) {
+                        selectTime(timeElement);
+                    }
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordonnances - Télémedecine</title>
+
+    <!-- Reuse the same CSS from medical-records.html -->
+    <style>
+        /* Copy all the CSS styles from your medical-records.html */
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            transition: all 0.3s;
+            z-index: 1000;
+            box-shadow: 3px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h4 {
+            color: white;
+            font-weight: 600;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+
+        .sidebar-menu a {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            display: block;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: white;
+        }
+
+        .sidebar-menu a i {
+            width: 25px;
+            margin-right: 10px;
+        }
+
+        .mobile-toggle {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1100;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+            min-height: 100vh;
+        }
+
+        /* Custom Navbar */
+        .navbar-custom {
+            background: white;
+            padding: 15px 0;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* Custom Cards */
+        .card-custom {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+
+        .card-header-custom {
+            background: white;
+            border-bottom: 1px solid #eee;
+            padding: 20px;
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: 600;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h5 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-create {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        .btn-create:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Table Styling */
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            border-bottom: 2px solid #eee;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .table .btn-group .btn {
+            margin: 0 2px;
+        }
+
+        /* Badges */
+        .badge {
+            padding: 5px 10px;
+            font-weight: 500;
+            border-radius: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                left: -250px;
+            }
+            .sidebar.active {
+                left: 0;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .mobile-toggle {
+                display: block;
+            }
+        }
+    </style>
+    <!-- Add Bootstrap and Font Awesome links -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<!-- Copy the sidebar structure from medical-records.html -->
+<button class="mobile-toggle" id="sidebarToggle">
+    <i class="fas fa-bars"></i>
+</button>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h4 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Télémedecine</h4>
+        <p class="text-muted mb-0" th:text="'Dr. ' + ${user.name}">Dr. Medecin</p>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li><a href="/medecin/dashboard" class="d-flex align-items-center">
+            <i class="fas fa-home"></i> <span>Tableau de Bord</span>
+        </a></li>
+        <li><a href="/medecin/medical-records" class="d-flex align-items-center">
+            <i class="fas fa-folder-medical"></i> <span>Dossier Médical</span>
+        </a></li>
+        <li><a href="/medecin/rendezvous" class="d-flex align-items-center">
+            <i class="fas fa-calendar-alt"></i> <span>Rendez-vous</span>
+        </a></li>
+        <li><a href="/medecin/consultations" class="d-flex align-items-center">
+            <i class="fas fa-stethoscope"></i> <span>Consultations</span>
+        </a></li>
+        <li><a href="/medecin/medical-records/prescriptions" class="d-flex align-items-center active">
+            <i class="fas fa-prescription-bottle-alt"></i> <span>Ordonnances</span>
+        </a></li>
+        <li><a href="/medecin/chat" class="d-flex align-items-center">
+            <i class="fas fa-comments"></i> <span>Messagerie</span>
+        </a></li>
+        <li><hr class="bg-white mx-3"></li>
+        <li><a href="/medecin/profile" class="d-flex align-items-center">
+            <i class="fas fa-user-md"></i> <span>Mon Profil</span>
+        </a></li>
+        <li><a href="/logout" class="d-flex align-items-center">
+            <i class="fas fa-sign-out-alt"></i> <span>Déconnexion</span>
+        </a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content" id="mainContent">
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center w-100">
+                <h4 class="mb-0"><i class="fas fa-prescription-bottle-alt text-primary me-2"></i> Mes Ordonnances</h4>
+
+                <div class="ms-auto d-flex align-items-center">
+                    <!-- Create Prescription Button -->
+                    <div class="dropdown me-3">
+                        <button class="btn btn-create" type="button" id="createPrescriptionDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-plus me-2"></i> Créer Ordonnance
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="createPrescriptionDropdown">
+                            <h6 class="dropdown-header">Sélectionner un patient</h6>
+                            <div th:if="${patients != null && !patients.isEmpty()}">
+                                <a th:each="patient : ${patients}"
+                                   th:href="@{/medecin/medical-records/patient/{patientId}/prescription/create(patientId=${patient.id})}"
+                                   class="dropdown-item">
+                                    <i class="fas fa-user me-2"></i>
+                                    <span th:text="${patient.name}">Patient</span>
+                                </a>
+                            </div>
+                            <div th:if="${patients == null || patients.isEmpty()}">
+                                <span class="dropdown-item text-muted">Aucun patient disponible</span>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="/medecin/medical-records">
+                                <i class="fas fa-folder-medical me-2"></i> Voir tous les patients
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- User Menu -->
+                    <div class="dropdown">
+                        <button class="btn btn-light d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                <i class="fas fa-user-md text-white"></i>
+                            </div>
+                            <span th:text="'Dr. ' + ${user.name}">Dr. Medecin</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="/medecin/profile"><i class="fas fa-user-md me-2"></i> Mon Profil</a>
+                            <a class="dropdown-item" href="/medecin/settings"><i class="fas fa-cog me-2"></i> Paramètres</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <i class="fas fa-prescription-bottle-alt"></i>
+                <div class="stat-number" th:text="${totalPrescriptions}">0</div>
+                <div>Total Ordonnances</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <i class="fas fa-check-circle"></i>
+                <div class="stat-number" th:text="${activePrescriptions}">0</div>
+                <div>Actives</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <i class="fas fa-times-circle"></i>
+                <div class="stat-number" th:text="${expiredPrescriptions}">0</div>
+                <div>Expirées</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <i class="fas fa-clock"></i>
+                <div class="stat-number" th:text="${expiringSoon != null ? expiringSoon.size() : 0}">0</div>
+                <div>Expirent Bientôt</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prescriptions List -->
+    <div class="card card-custom">
+        <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i> Toutes les Ordonnances</h5>
+            <div>
+                <div class="badge bg-light text-dark me-2" th:text="${totalPrescriptions} + ' ordonnances'">0 ordonnances</div>
+                <button class="btn btn-outline-primary btn-sm" onclick="refreshPrescriptions()">
+                    <i class="fas fa-sync-alt"></i> Actualiser
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div th:if="${prescriptions == null || prescriptions.isEmpty()}" class="empty-state">
+                <i class="fas fa-prescription-bottle-alt"></i>
+                <h5>Aucune ordonnance</h5>
+                <p class="text-muted">Vous n'avez pas encore créé d'ordonnances</p>
+                <a href="/medecin/medical-records" class="btn btn-primary">
+                    <i class="fas fa-folder-medical me-2"></i> Accéder aux Dossiers Médicaux
+                </a>
+            </div>
+
+            <div th:unless="${prescriptions == null || prescriptions.isEmpty()}">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient</th>
+                            <th>Médicaments</th>
+                            <th>Date Création</th>
+                            <th>Date Expiration</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="prescription : ${prescriptions}">
+                            <td th:text="${prescription.id}">#</td>
+                            <td>
+                                <div th:if="${prescription.consultation != null && prescription.consultation.rendezVous != null && prescription.consultation.rendezVous.patient != null}">
+                                    <strong th:text="${prescription.consultation.rendezVous.patient.name}">Patient</strong>
+                                    <br>
+                                    <small class="text-muted" th:text="'Né le: ' + ${#dates.format(prescription.consultation.rendezVous.patient.dateNaissance, 'dd/MM/yyyy')}">Date naissance</small>
+                                </div>
+                                <div th:unless="${prescription.consultation != null && prescription.consultation.rendezVous != null && prescription.consultation.rendezVous.patient != null}">
+                                    <em class="text-muted">Patient inconnu</em>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="medicaments-list">
+                                    <span th:if="${prescription.medicaments != null && !prescription.medicaments.isEmpty()}">
+                                        <span th:each="medicament, stat : ${prescription.medicaments}">
+                                            <span class="badge bg-info me-1 mb-1" th:text="${medicament}"></span>
+                                        </span>
+                                    </span>
+                                    <span th:unless="${prescription.medicaments != null && !prescription.medicaments.isEmpty()}">
+                                        <em class="text-muted">Aucun</em>
+                                    </span>
+                                </div>
+                            </td>
+                            <td th:text="${#dates.format(prescription.dateCreation, 'dd/MM/yyyy')}">Date</td>
+                            <td>
+                                <span th:if="${prescription.dateExpiration}"
+                                      th:text="${#dates.format(prescription.dateExpiration, 'dd/MM/yyyy')}">Date</span>
+                                <span th:unless="${prescription.dateExpiration}" class="text-muted">-</span>
+                            </td>
+                            <td>
+                                <span th:if="${prescription.dateExpiration != null && prescription.dateExpiration.before(T(java.util.Date).new())}"
+                                      class="badge bg-danger">Expirée</span>
+                                <span th:if="${prescription.dateExpiration != null && prescription.dateExpiration.after(T(java.util.Date).new())}"
+                                      class="badge bg-success">Active</span>
+                                <span th:if="${prescription.dateExpiration == null}"
+                                      class="badge bg-info">Sans expiration</span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a th:href="@{/medecin/medical-records/prescription/{prescriptionId}/edit(prescriptionId=${prescription.id})}"
+                                       class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a th:href="@{/medecin/medical-records/prescription/{prescriptionId}/view(prescriptionId=${prescription.id})}"
+                                       class="btn btn-outline-info" data-bs-toggle="tooltip" title="Voir détails">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form th:action="@{/medecin/medical-records/prescription/{prescriptionId}/delete(prescriptionId=${prescription.id})}"
+                                          method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Supprimer"
+                                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette ordonnance?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Copy the JavaScript from medical-records.html -->
+<script>
+    // Mobile sidebar toggle
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.getElementById('mainContent').addEventListener('click', function() {
+        if (window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.remove('active');
+        }
+    });
+
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+
+    // Refresh prescriptions function
+    function refreshPrescriptions() {
+        window.location.reload();
+    }
+
+    // Add patients list to page for dropdown (if not already in model)
+    document.addEventListener('DOMContentLoaded', function() {
+        // This would typically come from the controller, but we're adding it as an example
+        const createBtn = document.getElementById('createPrescriptionDropdown');
+        if (createBtn && createBtn.nextElementSibling.children.length === 0) {
+            // If no patients in dropdown, add a message
+            const dropdown = createBtn.nextElementSibling;
+            const message = document.createElement('div');
+            message.innerHTML = '<span class="dropdown-item text-muted"><i class="fas fa-info-circle me-2"></i>Veuillez d\'abord sélectionner un patient</span>';
+            dropdown.appendChild(message);
+        }
+    });
+</script>
+</body>
+</html>

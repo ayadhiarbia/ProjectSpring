@@ -46,31 +46,47 @@
                 </div>
             </div>
 
+            <!-- In the doctor list section of patient/chat.html -->
             <div id="doctorList">
-                <!-- SIMPLIFIED DOCTOR LIST - No complex conditions -->
-                <div th:each="doctor : ${doctors}" class="doctor-list-item">
-                    <a th:href="@{'/patient/chat/' + ${doctor.id}}" class="doctor-item">
+                <div th:each="doctorInfo : ${doctorsWithInfo}" class="doctor-list-item">
+                    <a th:href="@{'/patient/chat/' + ${doctorInfo.doctor.id}}" class="doctor-item">
                         <div class="doctor-avatar">
-                            <span th:text="${#strings.substring(doctor.name, 0, 1)}">D</span>
-                            <div class="status-indicator" th:classappend="${onlineUsers != null and onlineUsers.containsKey(doctor.id)
- ? 'status-online' : 'status-offline'}">
+                            <span th:text="${#strings.substring(doctorInfo.doctor.name, 0, 1)}">D</span>
+                            <div class="status-indicator"
+                                 th:classappend="${doctorInfo.isOnline ? 'status-online' : 'status-offline'}">
                             </div>
                         </div>
                         <div class="doctor-info">
-                            <div class="doctor-name" th:text="'Dr. ' + ${doctor.name} + ' ' + ${doctor.prenom}">
+                            <div class="doctor-name"
+                                 th:text="'Dr. ' + ${doctorInfo.doctor.name} + ' ' + ${doctorInfo.doctor.prenom}">
                                 Dr. Name
                             </div>
-                            <div class="text-muted debug-info">
-                                ID: <span th:text="${doctor.id}">0</span> |
-                                Status: <span th:text="${doctor.status}">N/A</span>
+
+                            <!-- LAST MESSAGE PREVIEW -->
+                            <div class="last-msg" th:if="${doctorInfo.lastMessage != null}">
+                    <span th:if="${doctorInfo.lastMessage.senderRole == 'PATIENT'}"
+                          class="text-muted">You: </span>
+                                <span th:text="${#strings.abbreviate(doctorInfo.lastMessage.content, 25)}">
+                        Last message preview
+                    </span>
+                                <small class="text-muted ms-2">
+                        <span th:text="${#temporals.format(doctorInfo.lastMessage.timestamp, 'HH:mm')}">
+                            10:00
+                        </span>
+                                </small>
                             </div>
-                            <!-- SIMPLIFIED LAST MESSAGE - Always show something -->
-                            <div class="last-msg">
-                                <small class="text-muted">Click to start chatting</small>
+                            <div class="last-msg" th:if="${doctorInfo.lastMessage == null}">
+                                <small class="text-muted">No messages yet</small>
                             </div>
+                        </div>
+
+                        <!-- UNREAD BADGE -->
+                        <div th:if="${doctorInfo.unreadCount > 0}" class="unread-badge ms-auto">
+                            <span th:text="${doctorInfo.unreadCount}">1</span>
                         </div>
                     </a>
                 </div>
+            </div>
 
                 <!-- EMPTY STATE - Only show if doctors list is truly empty -->
                 <div th:if="${doctors == null or doctors.isEmpty()}" class="text-center p-5">

@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+// ❌ REMOVE: Don't implement UserDetails here anymore
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.TABLE)
@@ -26,7 +27,6 @@ public class User {
     @Column(name = "password", nullable = false)
     private String password;
 
-    // NEW FIELDS FOR APPROVAL SYSTEM
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private UserStatus status = UserStatus.PENDING;
@@ -40,7 +40,7 @@ public class User {
     @Column(name = "rejection_reason", length = 500)
     private String rejectionReason;
 
-    // Constructors
+    // --- Constructors ---
     public User() {
         this.status = UserStatus.PENDING;
         this.createdAt = LocalDateTime.now();
@@ -55,37 +55,34 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // ❌ REMOVE all UserDetails methods:
+    // - getAuthorities()
+    // - getUsername()
+    // - isAccountNonExpired()
+    // - isAccountNonLocked()
+    // - isCredentialsNonExpired()
+    // - isEnabled()
+    // These are now handled by CustomUserDetails
+
+    // --- Regular Getters and Setters ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-
     public String getPrenom() { return prenom; }
     public void setPrenom(String prenom) { this.prenom = prenom; }
-
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
-
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }
-
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
-
     public UserStatus getStatus() { return status; }
-    public String getStatusString() {
-        return status != null ? status.toString() : null;
-    }
     public void setStatus(UserStatus status) { this.status = status; }
-
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
     public LocalDateTime getApprovedAt() { return approvedAt; }
     public void setApprovedAt(LocalDateTime approvedAt) { this.approvedAt = approvedAt; }
-
     public String getRejectionReason() { return rejectionReason; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
 

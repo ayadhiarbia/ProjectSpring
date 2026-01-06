@@ -503,7 +503,7 @@
             <ul class="features-list">
                 <li><i class="fas fa-check-circle"></i> Connect with patients globally</li>
                 <li><i class="fas fa-check-circle"></i> Flexible working hours</li>
-                <li><i class="fas fa-check-circle"></i> Secure video consultations</li>
+                <li><i class="fas fa-check-circle"></i> Secure video consultation</li>
                 <li><i class="fas fa-check-circle"></i> Digital prescription system</li>
                 <li><i class="fas fa-check-circle"></i> 24/7 technical support</li>
             </ul>
@@ -533,8 +533,10 @@
             </div>
 
             <!-- Registration Form -->
-            <form id="registerForm">
-                <!-- Step 1: Personal Information -->
+            <form id="registerForm" th:action="@{/auth/register/medecin}" method="post">
+                <input type="hidden" name="_csrf" th:value="${_csrf != null ? _csrf.token : ''}" />
+                <input type="hidden" name="userType" value="doctor">
+
                 <div class="form-step active" id="step1">
                     <h3 class="mb-4" style="color: var(--primary-color);">
                         <i class="fas fa-user-circle me-2"></i>Personal Information
@@ -754,15 +756,24 @@
                 input.style.borderColor = '#f56565';
                 input.focus();
 
-                // Reset border color after 2 seconds
+                // Create a small alert message
+                const alertEl = document.createElement('div');
+                alertEl.textContent = 'This field is required.';
+                alertEl.style.color = '#f56565';
+                alertEl.style.fontSize = '12px';
+                alertEl.style.marginTop = '4px';
+                input.parentElement.appendChild(alertEl);
+
+                // Remove the alert and border color after 3 seconds
                 setTimeout(() => {
                     input.style.borderColor = '#e2e8f0';
-                }, 2000);
+                    alertEl.remove();
+                }, 3000);
             }
         });
 
         if (!isValid) {
-            alert('Please fill in all required fields before continuing.');
+            // The individual field alerts are now shown instead of a generic one.
         }
 
         return isValid;
@@ -808,58 +819,26 @@
         }
     });
 
-    // Form submission
-    document.getElementById('registerForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
+    // --- UPDATED FORM SUBMISSION LOGIC ---
+    // This function now allows the form to submit normally to Spring MVC.
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        // First, validate the final step's required fields (the terms checkbox)
+        if (!document.getElementById('terms').checked) {
+            e.preventDefault(); // Stop submission if terms are not agreed to
+            alert('You must agree to the Terms & Conditions to register.');
+            return;
+        }
 
-        // Show loading state
+        // If validation passes, show a loading state and let the form submit.
         const submitBtn = this.querySelector('.submit-btn');
         const originalText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
         submitBtn.disabled = true;
 
-        const formData = {
-            name: document.getElementById('name').value,
-            prenom: document.getElementById('prenom').value,
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value,
-            specialte: document.getElementById('specialte').value,
-            license: document.getElementById('license').value,
-            experience: parseInt(document.getElementById('experience').value) || 0,
-            disponibilite: document.getElementById('disponibilite').value,
-            role: 'MEDECIN'
-        };
-
-        try {
-            const response = await fetch('/api/medecins/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (response.ok) {
-                // Show success animation
-                document.querySelectorAll('.form-step').forEach(el => el.style.display = 'none');
-                document.getElementById('successMessage').style.display = 'block';
-
-                // Auto-redirect after 5 seconds
-                setTimeout(() => {
-                    window.location.href = '/login';
-                }, 5000);
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Registration failed');
-            }
-        } catch (error) {
-            alert(`Registration failed: ${error.message}`);
-
-            // Reset button state
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }
+        // The form will now submit naturally to the URL in th:action.
+        // We do NOT call e.preventDefault() here if validation is successful.
     });
+
 
     // Form input animations
     document.querySelectorAll('.form-control').forEach(input => {

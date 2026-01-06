@@ -1,10 +1,432 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${patient.name} + ' - Dossier Médical'">Dossier Patient</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #1abc9c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .patient-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+
+        .patient-avatar-lg {
+            width: 80px;
+            height: 80px;
+            background: white;
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: white;
+            border-bottom: 2px solid #f0f0f0;
+            padding: 15px 20px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .nav-tabs .nav-link {
+            color: #666;
+            border: none;
+            padding: 10px 20px;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--secondary);
+            border-bottom: 2px solid var(--secondary);
+            background: transparent;
+        }
+
+        .info-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .badge-custom {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+
+        .btn-primary {
+            background: var(--secondary);
+            border: none;
+        }
+
+        .action-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 3px;
+        }
+    </style>
 </head>
 <body>
+<!-- Patient Header -->
+<div class="patient-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center">
+                <div class="patient-avatar-lg" th:text="${#strings.substring(patient.name, 0, 1)}">P</div>
+            </div>
+            <div class="col-md-6">
+                <h1 class="h2 mb-2" th:text="${patient.name}">Patient Name</h1>
+                <p class="mb-0" th:text="${patient.email}">patient@email.com</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/medecin/patients" class="btn btn-light me-2">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+                <button class="btn btn-light" onclick="startConsultation()">
+                    <i class="fas fa-video"></i> Consulter
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<div class="container">
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-primary" th:text="${consultation != null ? consultation.size() : 0}">0</h3>
+                    <p class="text-muted mb-0">Consultations</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-warning" th:text="${prescriptions != null ? prescriptions.size() : 0}">0</h3>
+                    <p class="text-muted mb-0">Ordonnances</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-success" th:text="${documents != null ? documents.size() : 0}">0</h3>
+                    <p class="text-muted mb-0">Documents</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-info" th:text="${appointments != null ? appointments.size() : 0}">0</h3>
+                    <p class="text-muted mb-0">Rendez-vous</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="patientTabs">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-target="#info" data-bs-toggle="tab">
+                <i class="fas fa-info-circle"></i> Informations
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-target="#consultation" data-bs-toggle="tab">
+                <i class="fas fa-stethoscope"></i> Consultations
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-target="#documents" data-bs-toggle="tab">
+                <i class="fas fa-file-medical"></i> Documents
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Information Tab -->
+        <div class="tab-pane fade show active" id="info">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-user"></i> Informations Personnelles
+                        </div>
+                        <div class="card-body">
+                            <div class="info-item">
+                                <div class="info-label">Date de naissance</div>
+                                <div th:text="${patient.dataNaissance != null ? #dates.format(patient.dataNaissance, 'dd/MM/yyyy') : 'Non renseignée'}">
+                                    01/01/1980
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Âge</div>
+                                <div th:text="${summary != null ? summary.age + ' ans' : 'N/A'}">42 ans</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Adresse</div>
+                                <div th:text="${patient.adresse ?: 'Non renseignée'}">Non renseignée</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Email</div>
+                                <div th:text="${patient.email}">patient@email.com</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-heartbeat"></i> Informations Médicales
+                        </div>
+                        <div class="card-body">
+                            <div class="info-item">
+                                <div class="info-label">Antécédents médicaux</div>
+                                <div th:text="${patient.antecedentsMedicaux ?: 'Aucun antécédent renseigné'}">
+                                    Aucun antécédent renseigné
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Allergies</div>
+                                <div th:if="${summary != null and summary.allergies != null and not summary.allergies.isEmpty()}">
+                                        <span th:each="allergy : ${summary.allergies}"
+                                              class="badge badge-danger me-1 mb-1">
+                                            <span th:text="${allergy}">Allergie</span>
+                                        </span>
+                                </div>
+                                <div th:if="${summary == null or summary.allergies == null or summary.allergies.isEmpty()}">
+                                    Aucune allergie connue
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Dernière consultation</div>
+                                <div th:if="${summary != null and summary.lastConsultation != null}"
+                                     th:text="${#dates.format(summary.lastConsultation, 'dd/MM/yyyy')}">
+                                    15/03/2024
+                                </div>
+                                <div th:if="${summary == null or summary.lastConsultation == null}">
+                                    Aucune consultation
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consultations Tab -->
+        <div class="tab-pane fade" id="consultation">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-stethoscope"></i> Consultations
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="addConsultation()">
+                        <i class="fas fa-plus"></i> Ajouter
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div th:if="${consultation != null and not consultation.isEmpty()}">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="consultation : ${consultation}">
+                                    <td th:text="${#dates.format(consultation.date, 'dd/MM/yyyy HH:mm')}">
+                                        01/01/2023 10:30
+                                    </td>
+                                    <td>
+                                                <span class="badge bg-primary"
+                                                      th:text="${consultation.consultationType}">
+                                                    Consultation
+                                                </span>
+                                    </td>
+                                    <td>
+                                        <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;"
+                                             th:text="${consultation.notes ?: 'Aucune note'}">
+                                            Notes...
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary action-btn"
+                                                th:onclick="'viewConsultation(' + ${consultation.id} + ')'">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div th:if="${consultation == null or consultation.isEmpty()}" class="text-center py-4">
+                        <i class="fas fa-stethoscope fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">Aucune consultation enregistrée</p>
+                        <button class="btn btn-primary" onclick="addConsultation()">
+                            <i class="fas fa-plus"></i> Ajouter une consultation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents Tab -->
+        <div class="tab-pane fade" id="documents">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-file-medical"></i> Documents Médicaux
+                    </div>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#uploadDocumentModal">
+                        <i class="fas fa-upload"></i> Uploader
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div th:if="${documents != null and not documents.isEmpty()}">
+                        <div class="row">
+                            <div th:each="document : ${documents}" class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 th:text="${document.title}" class="card-title">Titre</h6>
+                                        <p class="card-text small text-muted"
+                                           th:text="${document.description}">
+                                            Description
+                                        </p>
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted"
+                                                   th:text="${#dates.format(document.uploadDate, 'dd/MM/yyyy')}">
+                                                01/01/2023
+                                            </small>
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                    th:onclick="'viewDocument(' + ${document.id} + ')'">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${documents == null or documents.isEmpty()}" class="text-center py-4">
+                        <i class="fas fa-folder-open fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">Aucun document médical</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Document Modal -->
+<div class="modal fade" id="uploadDocumentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Uploader un document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" action="/medecin/medical-records/patient/[[${patient.id}]]/upload-document"
+                      method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Titre</label>
+                        <input type="text" class="form-control" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Catégorie</label>
+                        <select class="form-select" name="category">
+                            <option value="Lab Results">Résultats de laboratoire</option>
+                            <option value="Prescriptions">Ordonnances</option>
+                            <option value="Medical Reports">Rapports médicaux</option>
+                            <option value="Other">Autre</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fichier</label>
+                        <input type="file" class="form-control" name="file" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" form="uploadForm" class="btn btn-primary">Uploader</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function startConsultation() {
+        alert('Démarrer une consultation - À implémenter');
+    }
+
+    function addConsultation() {
+        const patientId = document.getElementById('patient-data').dataset.patientId;
+        window.location.href = `/medecin/medical-records/patient/${patientId}?action=add-consultation`;
+    }
+    function viewDocument(documentId) {
+        // View document details
+        alert('Voir document ' + documentId);
+    }
+</script>
 </body>
 </html>

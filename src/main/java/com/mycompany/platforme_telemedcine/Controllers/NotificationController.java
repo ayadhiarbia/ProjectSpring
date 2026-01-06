@@ -598,7 +598,7 @@ public class NotificationController {
 
         long todayCount = allNotifications.stream()
                 .filter(n -> n.getCreatedAt() != null &&
-                        n.getCreatedAt().toLocalDate().equals(LocalDate.now()))
+                        n.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().equals(LocalDate.now()))
                 .count();
 
         stats.put("totalNotifications", allNotifications.size());
@@ -611,36 +611,63 @@ public class NotificationController {
 
     // ==================== HELPER METHODS ====================
 
-    /**
-     * Schedule appointment reminders (to be called by a scheduled task)
-     */
-    public void scheduleDailyReminders() {
-        // This method should be called by @Scheduled annotation
-        sendAppointmentReminders();
+    public void sendNotificationToMedecin(Long medecinId, String message) {
+        // Simple wrapper method if needed
     }
 
-    /**
-     * Check for upcoming consultations (to be called by a scheduled task)
-     */
-    public void checkUpcomingConsultations() {
-        // Check for consultations starting in next 15 minutes
-        List<Consultation> upcomingConsultations = consultationService.getAllConsultations().stream()
-                .filter(c -> c.getDate() != null && !c.getActive())
-                .filter(c -> {
-                    LocalDateTime consultationTime = c.getDate().toInstant()
-                            .atZone(ZoneId.systemDefault()).toLocalDateTime();
-                    LocalDateTime now = LocalDateTime.now();
-                    return consultationTime.isAfter(now) &&
-                            consultationTime.isBefore(now.plusMinutes(16));
-                })
-                .collect(Collectors.toList());
+    // ==================== SCHEDULED TASK METHODS ====================
 
-        for (Consultation consultation : upcomingConsultations) {
-            notifyVideoConsultation(consultation.getId());
+    /**
+     * Simple wrapper for appointment reminders (called by scheduler)
+     * This is called by ScheduleConfig
+     */
+    public void scheduleDailyReminders() {
+        System.out.println("[Scheduler] Sending daily appointment reminders");
+        try {
+            ResponseEntity<Map<String, Object>> response = sendAppointmentReminders();
+            if (response.getStatusCode() == HttpStatus.OK) {
+                Map<String, Object> body = response.getBody();
+                if (body != null && Boolean.TRUE.equals(body.get("success"))) {
+                    System.out.println("Successfully sent " + body.get("remindersSent") + " appointment reminders");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error in scheduleDailyReminders: " + e.getMessage());
         }
     }
 
-    public void sendNotificationToMedecin(Long medecinId, String message) {
+    /**
+     * Check for upcoming consultations (called by scheduler)
+     * This is called by ScheduleConfig
+     */
+    public void checkUpcomingConsultations() {
+        System.out.println("[Scheduler] Checking upcoming consultations");
 
+        try {
+            // Get all consultations
+            List<Consultation> consultations = consultationService.getAllConsultations();
+
+            for (Consultation consultation : consultations) {
+                if (consultation != null &&
+                        consultation.getDate() != null &&
+                        consultation.getRendezVous() != null &&
+                        !consultation.getIsActive()) {
+
+                    // Check if consultation is within next 15 minutes
+                    Date now = new Date();
+                    Date consultationTime = consultation.getDate();
+                    long timeDiff = consultationTime.getTime() - now.getTime();
+                    long minutesDiff = timeDiff / (60 * 1000);
+
+                    if (minutesDiff > 0 && minutesDiff <= 15) {
+                        // Send reminder
+                        System.out.println("Sending reminder for consultation #" + consultation.getId());
+                        notifyVideoConsultation(consultation.getId());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error in checkUpcomingConsultations: " + e.getMessage());
+        }
     }
 }

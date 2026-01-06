@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'Chat with ' + ${patient.prenom} + ' ' + ${patient.name}">Chat Room</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <!-- WebSocket Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f9; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .chat-container { width: 100%; max-width: 800px; height: 90vh; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1 ); display: flex; flex-direction: column; overflow: hidden; }
+        .chat-header { padding: 20px; border-bottom: 1px solid #e9ecef; background: #fff; display: flex; align-items: center; justify-content: space-between; }
+        .chat-header h2 { margin: 0; font-family: 'Poppins', sans-serif; font-size: 20px; color: #333; }
+        .chat-header a { color: #667eea; text-decoration: none; font-weight: 500; }
+        .messages-area { flex: 1; padding: 20px; overflow-y: auto; background-color: #f8f9fa; }
+        .message { display: flex; margin-bottom: 15px; max-width: 75%; }
+        .message-content { padding: 12px 18px; border-radius: 20px; line-height: 1.5; }
+        .message-time { font-size: 11px; color: #999; margin-top: 4px; }
+        .message.sent { margin-left: auto; flex-direction: column; align-items: flex-end; }
+        .message.sent .message-content { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom-right-radius: 4px; }
+        .message.received { flex-direction: column; align-items: flex-start; }
+        .message.received .message-content { background-color: #e9ecef; color: #333; border-bottom-left-radius: 4px; }
+        .chat-input-area { padding: 20px; border-top: 1px solid #e9ecef; background: #fff; display: flex; gap: 10px; }
+        #messageInput { flex: 1; padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 50px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        #messageInput:focus { border-color: #667eea; }
+        #sendButton { padding: 12px 25px; border: none; background: #667eea; color: white; border-radius: 50px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
+        #sendButton:hover { background-color: #5a6fcf; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <a href="/medecin/chat">← Back to Dashboard</a>
+        <h2 th:text="${patient.prenom} + ' ' + ${patient.name}">Patient Name</h2>
+        <div></div> <!-- Spacer -->
+    </div>
+
+    <div class="messages-area" id="messagesArea">
+        <!-- Display existing messages loaded by Thymeleaf -->
+        <div th:each="msg : ${messages}" class="message" th:classappend="${msg.senderRole == 'MEDECIN'} ? 'sent' : 'received'">
+            <div class="message-content" th:text="${msg.content}"></div>
+            <div class="message-time" th:text="${#temporals.format(msg.timestamp, 'HH:mm')}"></div>
+        </div>
+    </div>
+
+    <div class="chat-input-area">
+        <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off">
+        <button id="sendButton">Send</button>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const doctorId = /*[[${medecin.id}]]*/ null;
+    const patientId = /*[[${patient.id}]]*/ null;
+    let stompClient = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        connectWebSocket();
+        const sendButton = document.getElementById('sendButton');
+        const messageInput = document.getElementById('messageInput');
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', e => e.key === 'Enter' && sendMessage());
+        scrollToBottom();
+    });
+
+    function connectWebSocket() {
+        if (!doctorId || !patientId) {
+            console.error("Authentication details are missing.");
+            return;
+        }
+        // The endpoint '/ws' must be configured in your WebSocketConfig in Spring Boot
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, frame => {
+            console.log('STOMP Connected: ' + frame);
+
+            // Subscribe to receive messages addressed to the doctor
+            // This destination is handled by Spring's `convertAndSendToUser`
+            stompClient.subscribe(`/user/${doctorId}/queue/messages`, message => {
+                const msg = JSON.parse(message.body);
+                // Only display the message if it's part of this specific conversation
+                if (msg.senderId === patientId || msg.receiverId === patientId) {
+                    displayMessage(msg);
+                }
+            });
+
+            // Mark messages from this patient as read
+            stompClient.send(`/app/medecin/chat.read/${patientId}`, {}, JSON.stringify({ userId: doctorId }));
+
+        }, error => {
+            console.error('STOMP connection error: ' + error);
+            alert('Could not connect to chat server. Please refresh the page.');
+        });
+    }
+
+    function sendMessage() {
+        const messageInput = document.getElementById('messageInput');
+        const content = messageInput.value.trim();
+
+        if (content && stompClient) {
+            const chatMessage = {
+                senderId: doctorId,
+                content: content
+            };
+            // This destination matches the @MessageMapping in your controller
+            stompClient.send(`/app/medecin/chat.send/${patientId}`, {}, JSON.stringify(chatMessage));
+            messageInput.value = '';
+        }
+    }
+
+    function displayMessage(message) {
+        const messagesArea = document.getElementById('messagesArea');
+        const messageElement = document.createElement('div');
+        const messageType = message.senderId === doctorId ? 'sent' : 'received';
+        messageElement.classList.add('message', messageType);
+
+        const contentElement = document.createElement('div');
+        contentElement.classList.add('message-content');
+        contentElement.textContent = message.content;
+
+        const timeElement = document.createElement('div');
+        timeElement.classList.add('message-time');
+        timeElement.textContent = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        messageElement.appendChild(contentElement);
+        messageElement.appendChild(timeElement);
+        messagesArea.appendChild(messageElement);
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
+        const messagesArea = document.getElementById('messagesArea');
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
+    /*]]>*/
+</script>
+
+</body>
+</html>

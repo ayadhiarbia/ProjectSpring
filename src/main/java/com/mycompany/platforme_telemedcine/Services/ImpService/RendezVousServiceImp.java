@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Service
@@ -87,7 +88,6 @@ public class RendezVousServiceImp implements RendezVousService {
                 System.out.println("Expected medecin id at row[7], got: " + medecinObj);
             }
 
-
             appointments.add(rdv);
         }
 
@@ -97,5 +97,13 @@ public class RendezVousServiceImp implements RendezVousService {
     @Override
     public List<RendezVous> getRendezVousByMedecinId(Long medecinId) {
         return rendezVousRepository.findByMedecinId(medecinId);
+    }
+
+    // ADD THIS MISSING METHOD
+    @Override
+    public Collection<Object> getRendezVousByMedecin(Long doctorId) {
+        // Assuming you want to return the same data but as Collection<Object>
+        // You might need to convert List<RendezVous> to Collection<Object>
+        return new ArrayList<>(rendezVousRepository.findByMedecinId(doctorId));
     }
 }

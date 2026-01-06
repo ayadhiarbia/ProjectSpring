@@ -3,10 +3,10 @@ package com.mycompany.platforme_telemedcine.Controllers;
 import com.mycompany.platforme_telemedcine.Models.*;
 import com.mycompany.platforme_telemedcine.Repository.*;
 import com.mycompany.platforme_telemedcine.Services.EmailService;
-
 import jakarta.servlet.http.HttpSession;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +28,7 @@ public class AdminViewController {
     private final PaiementRepository paiementRepository;
     private final EmailService emailService;
 
+    @Autowired
     public AdminViewController(
             UserRepository userRepository,
             MedecinRepository medecinRepository,
@@ -46,20 +47,49 @@ public class AdminViewController {
 
     /* ================= AUTH CHECK ================= */
 
-    private boolean isAdminLoggedIn(HttpSession session) {
-        Object user = session.getAttribute("user");
-        Object role = session.getAttribute("role");
-        return user != null && role != null && role.equals(UserRole.ADMIN);
+    private User getAuthenticatedAdmin(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return null;
+        }
+
+        // Get user from database
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
+        if (user == null) {
+            return null;
+        }
+
+        // Check if user has ADMIN role
+        if (!user.getRole().name().equals("ADMIN")) {
+            return null;
+        }
+
+        return user;
+    }
+
+    private void setupSessionAndModel(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                      HttpSession session, Model model) {
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser != null) {
+            session.setAttribute("user", adminUser);
+            session.setAttribute("role", adminUser.getRole());
+            model.addAttribute("user", adminUser);
+        }
     }
 
     /* ================= DASHBOARD WITH CHART DATA ================= */
 
     @GetMapping("/dashboard")
-    public String dashboard(HttpSession session, Model model) {
-        // FIXED: Removed unnecessary inversion comment
-        if (!isAdminLoggedIn(session)) {
+    public String dashboard(@AuthenticationPrincipal CustomUserDetails userDetails,
+                            HttpSession session, Model model) {
+
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser == null) {
             return "redirect:/login";
         }
+
+        // Store user in session for backward compatibility
+        session.setAttribute("user", adminUser);
+        session.setAttribute("role", adminUser.getRole());
 
         // Existing stats
         long totalUsers = userRepository.count();
@@ -102,7 +132,7 @@ public class AdminViewController {
         model.addAttribute("pendingPatients", pendingPatients);
         model.addAttribute("pendingDoctors", pendingDoctors);
         model.addAttribute("totalPending", pendingPatients + pendingDoctors);
-        model.addAttribute("user", session.getAttribute("user"));
+        model.addAttribute("user", adminUser);
 
         return "admin/dashboard";
     }
@@ -111,9 +141,6 @@ public class AdminViewController {
 
     private Map<String, Object> getUserRegistrationTrendData() {
         Map<String, Object> chartData = new LinkedHashMap<>();
-
-        // For demo purposes - you should implement this with actual database queries
-        // when you add a 'createdAt' field to your User entity
 
         // Sample data for the last 7 days
         List<String> labels = Arrays.asList("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun");
@@ -139,32 +166,28 @@ public class AdminViewController {
         List<Long> data = new ArrayList<>();
         List<String> colors = new ArrayList<>();
 
-        // FIXED: Use string keys instead of enum constants to avoid compilation errors
         Map<String, String> colorMap = new HashMap<>();
         colorMap.put("CONFIRMED", "#4cc9f0");
-        colorMap.put("CONFIRME", "#4cc9f0"); // French version
+        colorMap.put("CONFIRME", "#4cc9f0");
         colorMap.put("PENDING", "#f72585");
-        colorMap.put("EN_ATTENTE", "#f72585"); // French version
+        colorMap.put("EN_ATTENTE", "#f72585");
         colorMap.put("CANCELLED", "#ff9e00");
-        colorMap.put("ANNULE", "#ff9e00"); // French version
+        colorMap.put("ANNULE", "#ff9e00");
         colorMap.put("COMPLETED", "#06d6a0");
-        colorMap.put("TERMINE", "#06d6a0"); // French version
+        colorMap.put("TERMINE", "#06d6a0");
 
         for (Object[] row : statusCounts) {
             StatusRendezVous status = (StatusRendezVous) row[0];
             Long count = (Long) row[1];
 
-            // Convert enum to string for the color map
             String statusName = status.toString();
             labels.add(statusName);
             data.add(count);
             colors.add(colorMap.getOrDefault(statusName.toUpperCase(), "#4361ee"));
         }
 
-        // If no data, provide sample data
         if (labels.isEmpty()) {
             try {
-                // Try to get enum values dynamically
                 StatusRendezVous[] enumValues = StatusRendezVous.values();
                 for (StatusRendezVous status : enumValues) {
                     String statusName = status.toString();
@@ -173,7 +196,6 @@ public class AdminViewController {
                     colors.add(colorMap.getOrDefault(statusName.toUpperCase(), "#4361ee"));
                 }
             } catch (Exception e) {
-                // Fallback to English defaults
                 labels = Arrays.asList("CONFIRMED", "PENDING", "CANCELLED", "COMPLETED");
                 data = Arrays.asList(45L, 15L, 10L, 30L);
                 colors = Arrays.asList("#4cc9f0", "#f72585", "#ff9e00", "#06d6a0");
@@ -190,8 +212,16 @@ public class AdminViewController {
     /* ================= PENDING APPROVALS ================= */
 
     @GetMapping("/pending-approvals")
-    public String pendingApprovals(HttpSession session, Model model) {
-        if (!isAdminLoggedIn(session)) return "redirect:/login";
+    public String pendingApprovals(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                   HttpSession session, Model model) {
+
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser == null) {
+            return "redirect:/login";
+        }
+
+        session.setAttribute("user", adminUser);
+        session.setAttribute("role", adminUser.getRole());
 
         model.addAttribute("pendingPatients",
                 patientRepository.findAll().stream()
@@ -205,7 +235,7 @@ public class AdminViewController {
                         .toList()
         );
 
-        model.addAttribute("user", session.getAttribute("user"));
+        model.addAttribute("user", adminUser);
         return "admin/pending-approvals";
     }
 
@@ -213,10 +243,14 @@ public class AdminViewController {
     public String approveUser(
             @PathVariable Long id,
             @RequestParam String userType,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             HttpSession session,
             RedirectAttributes ra
     ) {
-        if (!isAdminLoggedIn(session)) return "redirect:/login";
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser == null) {
+            return "redirect:/login";
+        }
 
         if ("patient".equalsIgnoreCase(userType)) {
             patientRepository.findById(id).ifPresent(p -> {
@@ -245,10 +279,14 @@ public class AdminViewController {
             @PathVariable Long id,
             @RequestParam String userType,
             @RequestParam(required = false) String reason,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             HttpSession session,
             RedirectAttributes ra
     ) {
-        if (!isAdminLoggedIn(session)) return "redirect:/login";
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser == null) {
+            return "redirect:/login";
+        }
 
         if ("patient".equalsIgnoreCase(userType)) {
             patientRepository.findById(id).ifPresent(p -> {
@@ -276,13 +314,20 @@ public class AdminViewController {
 
     @GetMapping("/appointments")
     public String appointments(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             HttpSession session,
             Model model,
             @RequestParam(required = false) String status,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        if (!isAdminLoggedIn(session)) return "redirect:/login";
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser == null) {
+            return "redirect:/login";
+        }
+
+        session.setAttribute("user", adminUser);
+        session.setAttribute("role", adminUser.getRole());
 
         List<RendezVous> list = (date != null)
                 ? rendezVousRepository.findByDate(date)
@@ -301,15 +346,23 @@ public class AdminViewController {
 
         model.addAttribute("appointments", list);
         model.addAttribute("allStatuses", StatusRendezVous.values());
-        model.addAttribute("user", session.getAttribute("user"));
+        model.addAttribute("user", adminUser);
         return "admin/appointments";
     }
 
     /* ================= PAYMENTS ================= */
 
     @GetMapping("/payments")
-    public String payments(HttpSession session, Model model) {
-        if (!isAdminLoggedIn(session)) return "redirect:/login";
+    public String payments(@AuthenticationPrincipal CustomUserDetails userDetails,
+                           HttpSession session, Model model) {
+
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser == null) {
+            return "redirect:/login";
+        }
+
+        session.setAttribute("user", adminUser);
+        session.setAttribute("role", adminUser.getRole());
 
         List<Paiement> payments = paiementRepository.findAll();
         double total = payments.stream()
@@ -339,7 +392,7 @@ public class AdminViewController {
         model.addAttribute("pendingCount", pendingCount);
         model.addAttribute("failedCount", failedCount);
         model.addAttribute("refundedCount", refundedCount);
-        model.addAttribute("user", session.getAttribute("user"));
+        model.addAttribute("user", adminUser);
 
         return "admin/payments";
     }
@@ -347,11 +400,19 @@ public class AdminViewController {
     /* ================= USERS MANAGEMENT ================= */
 
     @GetMapping("/users")
-    public String usersManagement(HttpSession session, Model model,
+    public String usersManagement(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                  HttpSession session, Model model,
                                   @RequestParam(required = false) String role,
                                   @RequestParam(required = false) String status,
                                   @RequestParam(required = false) String search) {
-        if (!isAdminLoggedIn(session)) return "redirect:/login";
+
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser == null) {
+            return "redirect:/login";
+        }
+
+        session.setAttribute("user", adminUser);
+        session.setAttribute("role", adminUser.getRole());
 
         // Get all users from different repositories
         List<User> adminUsers = userRepository.findAll().stream()
@@ -364,13 +425,72 @@ public class AdminViewController {
         // Prepare combined user list
         List<Map<String, Object>> combinedUsers = new ArrayList<>();
 
-        // Extract common user data extraction into a reusable method
-        addAdminUsersToCombinedList(adminUsers, combinedUsers);
-        addDoctorUsersToCombinedList(doctorUsers, combinedUsers);
-        addPatientUsersToCombinedList(patientUsers, combinedUsers);
+        // Add users to combined list
+        for (User user : adminUsers) {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", user.getId());
+            userData.put("name", user.getName() + " " + (user.getPrenom() != null ? user.getPrenom() : ""));
+            userData.put("email", user.getEmail());
+            userData.put("role", "ADMIN");
+            userData.put("roleDisplay", "Administrator");
+            userData.put("status", user.getStatus() != null ? user.getStatus().toString() : "PENDING");
+            userData.put("statusDisplay", getStatusDisplayName(user.getStatus()));
+            userData.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : "N/A");
+            userData.put("approvedAt", "Not applicable");
+            combinedUsers.add(userData);
+        }
+
+        for (Medecin doctor : doctorUsers) {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", doctor.getId());
+            userData.put("name", doctor.getName() + " " + (doctor.getPrenom() != null ? doctor.getPrenom() : ""));
+            userData.put("email", doctor.getEmail());
+            userData.put("role", "DOCTOR");
+            userData.put("roleDisplay", "Doctor");
+            userData.put("status", doctor.getStatus() != null ? doctor.getStatus().toString() : "PENDING");
+            userData.put("statusDisplay", getStatusDisplayName(doctor.getStatus()));
+            userData.put("createdAt", doctor.getCreatedAt() != null ? doctor.getCreatedAt().toString() : "N/A");
+            userData.put("approvedAt", doctor.getApprovedAt() != null ? doctor.getApprovedAt().toString() : "Not approved");
+            combinedUsers.add(userData);
+        }
+
+        for (Patient patient : patientUsers) {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", patient.getId());
+            userData.put("name", patient.getName() + " " + (patient.getPrenom() != null ? patient.getPrenom() : ""));
+            userData.put("email", patient.getEmail());
+            userData.put("role", "PATIENT");
+            userData.put("roleDisplay", "Patient");
+            userData.put("status", patient.getStatus() != null ? patient.getStatus().toString() : "PENDING");
+            userData.put("statusDisplay", getStatusDisplayName(patient.getStatus()));
+            userData.put("createdAt", patient.getCreatedAt() != null ? patient.getCreatedAt().toString() : "N/A");
+            userData.put("approvedAt", patient.getApprovedAt() != null ? patient.getApprovedAt().toString() : "Not approved");
+            combinedUsers.add(userData);
+        }
 
         // Apply filters
-        List<Map<String, Object>> filteredUsers = applyUsersFilters(combinedUsers, role, status, search);
+        List<Map<String, Object>> filteredUsers = new ArrayList<>(combinedUsers);
+
+        if (role != null && !role.isEmpty() && !role.equalsIgnoreCase("all")) {
+            filteredUsers = filteredUsers.stream()
+                    .filter(user -> user.get("role").toString().equalsIgnoreCase(role))
+                    .toList();
+        }
+
+        if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("all")) {
+            filteredUsers = filteredUsers.stream()
+                    .filter(user -> user.get("status").toString().equalsIgnoreCase(status))
+                    .toList();
+        }
+
+        if (search != null && !search.isEmpty()) {
+            String searchLower = search.toLowerCase();
+            filteredUsers = filteredUsers.stream()
+                    .filter(user -> user.get("name").toString().toLowerCase().contains(searchLower) ||
+                            user.get("email").toString().toLowerCase().contains(searchLower) ||
+                            user.get("roleDisplay").toString().toLowerCase().contains(searchLower))
+                    .toList();
+        }
 
         // Sort by name
         filteredUsers.sort(Comparator.comparing(user -> user.get("name").toString()));
@@ -395,7 +515,7 @@ public class AdminViewController {
         model.addAttribute("activeUsers", activeUsers);
         model.addAttribute("pendingUsers", pendingUsers);
         model.addAttribute("inactiveUsers", inactiveUsers);
-        model.addAttribute("user", session.getAttribute("user"));
+        model.addAttribute("user", adminUser);
         model.addAttribute("currentRole", role);
         model.addAttribute("currentStatus", status);
         model.addAttribute("currentSearch", search);
@@ -403,96 +523,8 @@ public class AdminViewController {
         return "admin/users";
     }
 
-    // Helper methods to extract duplicated code
-    private void addAdminUsersToCombinedList(List<User> adminUsers, List<Map<String, Object>> combinedUsers) {
-        for (User user : adminUsers) {
-            Map<String, Object> userData = createUserData(user.getId(),
-                    user.getName() + " " + (user.getPrenom() != null ? user.getPrenom() : ""),
-                    user.getEmail(),
-                    "ADMIN",
-                    "Administrator",
-                    user.getStatus(),
-                    user.getCreatedAt(),
-                    null);
-            combinedUsers.add(userData);
-        }
-    }
-
-    private void addDoctorUsersToCombinedList(List<Medecin> doctorUsers, List<Map<String, Object>> combinedUsers) {
-        for (Medecin doctor : doctorUsers) {
-            Map<String, Object> userData = createUserData(doctor.getId(),
-                    doctor.getName() + " " + (doctor.getPrenom() != null ? doctor.getPrenom() : ""),
-                    doctor.getEmail(),
-                    "DOCTOR",
-                    "Doctor",
-                    doctor.getStatus(),
-                    doctor.getCreatedAt(),
-                    doctor.getApprovedAt());
-            combinedUsers.add(userData);
-        }
-    }
-
-    private void addPatientUsersToCombinedList(List<Patient> patientUsers, List<Map<String, Object>> combinedUsers) {
-        for (Patient patient : patientUsers) {
-            Map<String, Object> userData = createUserData(patient.getId(),
-                    patient.getName() + " " + (patient.getPrenom() != null ? patient.getPrenom() : ""),
-                    patient.getEmail(),
-                    "PATIENT",
-                    "Patient",
-                    patient.getStatus(),
-                    patient.getCreatedAt(),
-                    patient.getApprovedAt());
-            combinedUsers.add(userData);
-        }
-    }
-
-    private Map<String, Object> createUserData(Long id, String name, String email, String role,
-                                               String roleDisplay, UserStatus status,
-                                               LocalDateTime createdAt, LocalDateTime approvedAt) {
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("id", id);
-        userData.put("name", name);
-        userData.put("email", email);
-        userData.put("role", role);
-        userData.put("roleDisplay", roleDisplay);
-        userData.put("status", status != null ? status.toString() : "PENDING");
-        userData.put("statusDisplay", getStatusDisplayName(status));
-        userData.put("createdAt", createdAt != null ? createdAt.toString() : "N/A");
-        userData.put("approvedAt", approvedAt != null ? approvedAt.toString() : "Not approved");
-        return userData;
-    }
-
-    private List<Map<String, Object>> applyUsersFilters(List<Map<String, Object>> users, String role, String status, String search) {
-        List<Map<String, Object>> filteredUsers = new ArrayList<>(users);
-
-        if (role != null && !role.isEmpty() && !role.equalsIgnoreCase("all")) {
-            filteredUsers = filteredUsers.stream()
-                    .filter(user -> user.get("role").toString().equalsIgnoreCase(role))
-                    .toList();
-        }
-
-        if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("all")) {
-            filteredUsers = filteredUsers.stream()
-                    .filter(user -> user.get("status").toString().equalsIgnoreCase(status))
-                    .toList();
-        }
-
-        if (search != null && !search.isEmpty()) {
-            String searchLower = search.toLowerCase();
-            filteredUsers = filteredUsers.stream()
-                    .filter(user -> user.get("name").toString().toLowerCase().contains(searchLower) ||
-                            user.get("email").toString().toLowerCase().contains(searchLower) ||
-                            user.get("roleDisplay").toString().toLowerCase().contains(searchLower))
-                    .toList();
-        }
-
-        return filteredUsers;
-    }
-
-    // Helper method for status display names
     private String getStatusDisplayName(UserStatus status) {
         if (status == null) return "Unknown";
-
         return switch (status) {
             case PENDING -> "Pending";
             case APPROVED -> "Approved";
@@ -504,48 +536,23 @@ public class AdminViewController {
     /* ================= DOCTORS MANAGEMENT ================= */
 
     @GetMapping("/doctors")
-    public String doctorsManagement(HttpSession session, Model model,
+    public String doctorsManagement(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                    HttpSession session, Model model,
                                     @RequestParam(required = false) String status,
                                     @RequestParam(required = false) String specialty,
                                     @RequestParam(required = false) String search) {
-        if (!isAdminLoggedIn(session)) return "redirect:/login";
+
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser == null) {
+            return "redirect:/login";
+        }
+
+        session.setAttribute("user", adminUser);
+        session.setAttribute("role", adminUser.getRole());
 
         List<Medecin> doctors = medecinRepository.findAll();
 
-        // Apply filters using helper methods
-        List<Medecin> filteredDoctors = filterDoctors(doctors, status, specialty, search);
-
-        // Calculate statistics
-        long totalDoctors = doctors.size();
-        long activeDoctors = doctors.stream()
-                .filter(d -> d.getStatus() == UserStatus.APPROVED)
-                .count();
-        long pendingDoctors = doctors.stream()
-                .filter(d -> d.getStatus() == UserStatus.PENDING)
-                .count();
-
-        // Get unique specialties
-        List<String> specialties = doctors.stream()
-                .map(Medecin::getSpecialte)
-                .filter(Objects::nonNull)
-                .distinct()
-                .sorted()
-                .toList();
-
-        model.addAttribute("doctors", filteredDoctors);
-        model.addAttribute("totalDoctors", totalDoctors);
-        model.addAttribute("activeDoctors", activeDoctors);
-        model.addAttribute("pendingDoctors", pendingDoctors);
-        model.addAttribute("specialties", specialties);
-        model.addAttribute("user", session.getAttribute("user"));
-        model.addAttribute("currentStatus", status);
-        model.addAttribute("currentSpecialty", specialty);
-        model.addAttribute("currentSearch", search);
-
-        return "admin/doctors";
-    }
-
-    private List<Medecin> filterDoctors(List<Medecin> doctors, String status, String specialty, String search) {
+        // Apply filters
         List<Medecin> filteredDoctors = new ArrayList<>(doctors);
 
         if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("all")) {
@@ -576,43 +583,55 @@ public class AdminViewController {
                     .toList();
         }
 
-        return filteredDoctors;
+        // Calculate statistics
+        long totalDoctors = doctors.size();
+        long activeDoctors = doctors.stream()
+                .filter(d -> d.getStatus() == UserStatus.APPROVED)
+                .count();
+        long pendingDoctors = doctors.stream()
+                .filter(d -> d.getStatus() == UserStatus.PENDING)
+                .count();
+
+        // Get unique specialties
+        List<String> specialties = doctors.stream()
+                .map(Medecin::getSpecialte)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+
+        model.addAttribute("doctors", filteredDoctors);
+        model.addAttribute("totalDoctors", totalDoctors);
+        model.addAttribute("activeDoctors", activeDoctors);
+        model.addAttribute("pendingDoctors", pendingDoctors);
+        model.addAttribute("specialties", specialties);
+        model.addAttribute("user", adminUser);
+        model.addAttribute("currentStatus", status);
+        model.addAttribute("currentSpecialty", specialty);
+        model.addAttribute("currentSearch", search);
+
+        return "admin/doctors";
     }
 
     /* ================= PATIENTS MANAGEMENT ================= */
 
     @GetMapping("/patients")
-    public String patientsManagement(HttpSession session, Model model,
+    public String patientsManagement(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                     HttpSession session, Model model,
                                      @RequestParam(required = false) String status,
                                      @RequestParam(required = false) String search) {
-        if (!isAdminLoggedIn(session)) return "redirect:/login";
+
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser == null) {
+            return "redirect:/login";
+        }
+
+        session.setAttribute("user", adminUser);
+        session.setAttribute("role", adminUser.getRole());
 
         List<Patient> patients = patientRepository.findAll();
 
-        // Apply filters using helper method
-        List<Patient> filteredPatients = filterPatients(patients, status, search);
-
-        // Calculate statistics
-        long totalPatients = patients.size();
-        long activePatients = patients.stream()
-                .filter(p -> p.getStatus() == UserStatus.APPROVED)
-                .count();
-        long pendingPatients = patients.stream()
-                .filter(p -> p.getStatus() == UserStatus.PENDING)
-                .count();
-
-        model.addAttribute("patients", filteredPatients);
-        model.addAttribute("totalPatients", totalPatients);
-        model.addAttribute("activePatients", activePatients);
-        model.addAttribute("pendingPatients", pendingPatients);
-        model.addAttribute("user", session.getAttribute("user"));
-        model.addAttribute("currentStatus", status);
-        model.addAttribute("currentSearch", search);
-
-        return "admin/patients";
-    }
-
-    private List<Patient> filterPatients(List<Patient> patients, String status, String search) {
+        // Apply filters
         List<Patient> filteredPatients = new ArrayList<>(patients);
 
         if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("all")) {
@@ -635,16 +654,41 @@ public class AdminViewController {
                     .toList();
         }
 
-        return filteredPatients;
+        // Calculate statistics
+        long totalPatients = patients.size();
+        long activePatients = patients.stream()
+                .filter(p -> p.getStatus() == UserStatus.APPROVED)
+                .count();
+        long pendingPatients = patients.stream()
+                .filter(p -> p.getStatus() == UserStatus.PENDING)
+                .count();
+
+        model.addAttribute("patients", filteredPatients);
+        model.addAttribute("totalPatients", totalPatients);
+        model.addAttribute("activePatients", activePatients);
+        model.addAttribute("pendingPatients", pendingPatients);
+        model.addAttribute("user", adminUser);
+        model.addAttribute("currentStatus", status);
+        model.addAttribute("currentSearch", search);
+
+        return "admin/patients";
     }
 
     /* ================= REPORTS ================= */
 
     @GetMapping("/reports")
-    public String reports(HttpSession session, Model model,
+    public String reports(@AuthenticationPrincipal CustomUserDetails userDetails,
+                          HttpSession session, Model model,
                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        if (!isAdminLoggedIn(session)) return "redirect:/login";
+
+        User adminUser = getAuthenticatedAdmin(userDetails);
+        if (adminUser == null) {
+            return "redirect:/login";
+        }
+
+        session.setAttribute("user", adminUser);
+        session.setAttribute("role", adminUser.getRole());
 
         // Set default date range (last 30 days)
         LocalDate finalEndDate = endDate != null ? endDate : LocalDate.now();
@@ -663,14 +707,13 @@ public class AdminViewController {
                         p.getCreatedAt().toLocalDate().isBefore(finalEndDate.plusDays(1)))
                 .count();
 
-        // Get appointment statistics - FIXED: Check if COMPLETED and CANCELLED exist in StatusRendezVous
+        // Get appointment statistics
         List<RendezVous> appointmentsInRange = rendezVousRepository.findByDateRange(finalStartDate, finalEndDate);
         long totalAppointments = appointmentsInRange.size();
         long completedAppointments = 0;
         long cancelledAppointments = 0;
 
         try {
-            // Check if COMPLETED exists in StatusRendezVous
             StatusRendezVous completedStatus = StatusRendezVous.valueOf("COMPLETED");
             completedAppointments = appointmentsInRange.stream()
                     .filter(r -> r.getStatus() == completedStatus)
@@ -680,7 +723,6 @@ public class AdminViewController {
         }
 
         try {
-            // Check if CANCELLED exists in StatusRendezVous
             StatusRendezVous cancelledStatus = StatusRendezVous.valueOf("CANCELLED");
             cancelledAppointments = appointmentsInRange.stream()
                     .filter(r -> r.getStatus() == cancelledStatus)
@@ -723,7 +765,7 @@ public class AdminViewController {
         model.addAttribute("cancelledAppointments", cancelledAppointments);
         model.addAttribute("totalRevenue", totalRevenue != null ? totalRevenue : 0.0);
         model.addAttribute("revenueTrend", revenueTrend);
-        model.addAttribute("user", session.getAttribute("user"));
+        model.addAttribute("user", adminUser);
 
         return "admin/reports";
     }

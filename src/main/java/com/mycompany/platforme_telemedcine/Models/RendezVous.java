@@ -2,7 +2,6 @@ package com.mycompany.platforme_telemedcine.Models;
 
 import jakarta.persistence.*;
 
-import java.sql.Date;
 import java.time.LocalDate;
 
 @Entity
@@ -10,7 +9,10 @@ public class RendezVous {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
     private LocalDate date;
+
     private String description;
     private String time;
 

@@ -2,27 +2,26 @@ package com.mycompany.platforme_telemedcine.Controllers;
 
 import com.mycompany.platforme_telemedcine.Models.*;
 import com.mycompany.platforme_telemedcine.Services.*;
+import com.mycompany.platforme_telemedcine.dto.*;
+import com.mycompany.platforme_telemedcine.Controllers.helpers.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
+
 import java.util.*;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
+import java.sql.Date;
+
 
 @Controller
-@RequestMapping("/consultation")
+@RequestMapping("/patient/consultation")
 public class ConsultationController {
 
     private final ConsultationService consultationService;
@@ -40,13 +39,13 @@ public class ConsultationController {
 
     @Autowired
     public ConsultationController(ConsultationService consultationService,
-                                  RendezVousService rendezVousService,
-                                  OrdonanceService ordonanceService,
-                                  DossierMedicalService dossierMedicalService,
-                                  NotificationService notificationService,
-                                  PatientService patientService,
-                                  MedecinService medecinService,
-                                  SimpMessagingTemplate messagingTemplate) {
+                                         RendezVousService rendezVousService,
+                                         OrdonanceService ordonanceService,
+                                         DossierMedicalService dossierMedicalService,
+                                         NotificationService notificationService,
+                                         PatientService patientService,
+                                         MedecinService medecinService,
+                                         SimpMessagingTemplate messagingTemplate) {
         this.consultationService = consultationService;
         this.rendezVousService = rendezVousService;
         this.ordonanceService = ordonanceService;
@@ -57,11 +56,121 @@ public class ConsultationController {
         this.messagingTemplate = messagingTemplate;
     }
 
-    // GET: Consultation room
+    // ============ CONSULTATION REQUEST WORKFLOW ============
+
+    // GET: Request new consultation form
+   // @GetMapping("/request")
+    //public String requestConsultationForm(@RequestParam(required = false) Long doctorId,
+                                    //      HttpSession session, Model model) {
+        //Patient patient = (Patient) session.getAttribute("user");
+     //   if (patient == null) {
+           // return "redirect:/login";
+       // }
+
+      //  List<Medecin> doctors = medecinService.getAllMedecins();
+
+      //  model.addAttribute("patient", patient);
+        //model.addAttribute("doctors", doctors);
+        //model.addAttribute("consultationTypes", ConsultationType.values());
+
+       // if (doctorId != null) {
+         //   Medecin selectedDoctor = medecinService.getMedecinById(doctorId);
+           // model.addAttribute("selectedDoctor", selectedDoctor);
+       // }
+
+        //return "patient/request-consultation";
+  //  }
+
+    // POST: Submit consultation request
+   // @PostMapping("/request")
+   // public String submitConsultationRequest(
+          //  @RequestParam Long doctorId,
+           // @RequestParam ConsultationType consultationType,
+          //  @RequestParam String reason,
+          //  @RequestParam(required = false) String symptoms,
+           // @DateTimeFormat(pattern = "yyyy-MM-dd")
+            //@RequestParam(required = false) LocalDate preferredDate,
+            //HttpSession session) {
+
+       // Object user = session.getAttribute("user");
+      //  if (!(user instanceof Patient patient)) {
+         //   return "redirect:/login";
+//        }
+
+        //Date sqlDate = preferredDate != null ? Date.valueOf(preferredDate) : null;
+
+      //  Consultation consultation = consultationService.createPatientConsultationRequest(
+             //   patient.getId(),
+             //   doctorId,
+             //   consultationType,
+              //  reason,
+              //  symptoms != null ? symptoms : "",
+              //  sqlDate
+       // );
+
+       // if (consultation != null) {
+
+         //   if (notificationService != null) {
+            //    notificationService.createNotification(
+                     //   doctorId,
+                      //  "Nouvelle demande de consultation",
+                      //  patient.getName() + " a demandé une consultation " + consultationType,
+                     //   "/doctor/consultation/pending"
+               // );
+           // }
+
+           // return "redirect:/patient/consultation?success=requestSubmitted";
+      //  }
+
+      //  return "redirect:/patient/consultation/request?error=requestFailed";
+   // }
+
+
+    // GET: View all consultations for patient
+    @GetMapping
+    public String consultationDashboard(HttpSession session, Model model) {
+        Patient patient = (Patient) session.getAttribute("user");
+        if (patient == null) {
+            return "redirect:/login";
+        }
+
+        // Get consultations for this patient
+        List<Consultation> consultations = consultationService.getConsultationsByPatientAndMedecin(
+                patient.getId(), null); // Get all consultations for patient
+
+        // Group by status
+        List<Consultation> pendingConsultations = new ArrayList<>();
+        List<Consultation> upcomingConsultations = new ArrayList<>();
+        List<Consultation> completedConsultations = new ArrayList<>();
+        List<Consultation> cancelledConsultations = new ArrayList<>();
+
+        for (Consultation c : consultations) {
+            if (c.getStatus() == ConsultationStatus.PENDING) {
+                pendingConsultations.add(c);
+            } else if (c.getStatus() == ConsultationStatus.SCHEDULED ||
+                    c.getStatus() == ConsultationStatus.APPROVED) {
+                upcomingConsultations.add(c);
+            } else if (c.getStatus() == ConsultationStatus.COMPLETED) {
+                completedConsultations.add(c);
+            } else if (c.getStatus() == ConsultationStatus.CANCELLED ||
+                    c.getStatus() == ConsultationStatus.REJECTED) {
+                cancelledConsultations.add(c);
+            }
+        }
+
+        model.addAttribute("patient", patient);
+        model.addAttribute("pendingConsultations", pendingConsultations);
+        model.addAttribute("upcomingConsultations", upcomingConsultations);
+        model.addAttribute("completedConsultations", completedConsultations);
+        model.addAttribute("cancelledConsultations", cancelledConsultations);
+
+        return "patient/consultation-dashboard";
+    }
+
+    // GET: View consultation details
     @GetMapping("/{consultationId}")
-    public String consultationRoom(@PathVariable Long consultationId,
-                                   HttpSession session,
-                                   Model model) {
+    public String viewConsultation(@PathVariable Long consultationId,
+                                   HttpSession session, Model model) {
         Patient patient = (Patient) session.getAttribute("user");
         if (patient == null) {
             return "redirect:/login";
@@ -70,13 +179,164 @@ public class ConsultationController {
         Consultation consultation = consultationService.getConsultationById(consultationId);
         if (consultation == null ||
                 !consultation.getRendezVous().getPatient().getId().equals(patient.getId())) {
-            return "redirect:/patient/appointments?error=invalidConsultation";
+            return "redirect:/patient/consultation?error=accessDenied";
+        }
+
+        boolean canCancel = consultationService.canCancelConsultation(consultationId);
+        boolean canReschedule = consultationService.canRescheduleConsultation(consultationId);
+        boolean canStart = consultationService.canStartConsultation(consultationId);
+
+        model.addAttribute("patient", patient);
+        model.addAttribute("consultation", consultation);
+        model.addAttribute("doctor", consultation.getRendezVous().getMedecin());
+        model.addAttribute("canCancel", canCancel);
+        model.addAttribute("canReschedule", canReschedule);
+        model.addAttribute("canStart", canStart);
+
+        return "patient/consultation-details";
+    }
+
+    // POST: Cancel consultation
+    @PostMapping("/{consultationId}/cancel")
+    public String cancelConsultation(@PathVariable Long consultationId,
+                                     @RequestParam String reason,
+                                     HttpSession session) {
+        Patient patient = (Patient) session.getAttribute("user");
+        if (patient == null) {
+            return "redirect:/login";
+        }
+
+        Consultation consultation = consultationService.getConsultationById(consultationId);
+        if (consultation == null ||
+                !consultation.getRendezVous().getPatient().getId().equals(patient.getId())) {
+            return "redirect:/patient/consultation?error=accessDenied";
+        }
+
+        if (!consultationService.canCancelConsultation(consultationId)) {
+            return "redirect:/patient/consultation/" + consultationId + "?error=cannotCancel";
+        }
+
+        Consultation cancelled = consultationService.cancelConsultation(consultationId, reason);
+        if (cancelled != null) {
+            // Notify doctor
+            if (notificationService != null) {
+                notificationService.createNotification(
+                        consultation.getRendezVous().getMedecin().getId(),
+                        "Consultation annulée",
+                        patient.getName() + " a annulé la consultation",
+                        "/doctor/consultation"
+                );
+            }
+            return "redirect:/patient/consultation?success=cancelled";
+        }
+
+        return "redirect:/patient/consultation/" + consultationId + "?error=cancelFailed";
+    }
+
+    // GET: Reschedule consultation form
+    @GetMapping("/{consultationId}/reschedule")
+    public String rescheduleForm(@PathVariable Long consultationId,
+                                 HttpSession session, Model model) {
+        Patient patient = (Patient) session.getAttribute("user");
+        if (patient == null) {
+            return "redirect:/login";
+        }
+
+        Consultation consultation = consultationService.getConsultationById(consultationId);
+        if (consultation == null ||
+                !consultation.getRendezVous().getPatient().getId().equals(patient.getId())) {
+            return "redirect:/patient/consultation?error=accessDenied";
+        }
+
+        if (!consultationService.canRescheduleConsultation(consultationId)) {
+            return "redirect:/patient/consultation/" + consultationId + "?error=cannotReschedule";
+        }
+
+        model.addAttribute("patient", patient);
+        model.addAttribute("consultation", consultation);
+        model.addAttribute("doctor", consultation.getRendezVous().getMedecin());
+
+        return "patient/reschedule-consultation";
+    }
+
+    // POST: Reschedule consultation
+    @PostMapping("/{consultationId}/reschedule")
+    public String rescheduleConsultation(
+            @PathVariable Long consultationId,
+            @DateTimeFormat(pattern = "yyyy-MM-dd")
+            @RequestParam LocalDate newDate,
+            @RequestParam String reason,
+            HttpSession session) {
+
+        Object user = session.getAttribute("user");
+        if (!(user instanceof Patient patient)) {
+            return "redirect:/login";
+        }
+
+        Consultation consultation = consultationService.getConsultationById(consultationId);
+
+        if (consultation == null ||
+                consultation.getRendezVous() == null ||
+                !consultation.getRendezVous().getPatient().getId().equals(patient.getId())) {
+            return "redirect:/patient/consultation?error=accessDenied";
+        }
+
+        if (!consultationService.canRescheduleConsultation(consultationId)) {
+            return "redirect:/patient/consultation/" + consultationId + "?error=cannotReschedule";
+        }
+
+        Date sqlDate = Date.valueOf(newDate);
+        Consultation rescheduled = consultationService.rescheduleConsultation(consultationId, sqlDate);
+
+        if (rescheduled != null) {
+
+            String notes = rescheduled.getNotes() != null ? rescheduled.getNotes() : "";
+            notes += "\n\nRescheduling reason: " + reason;
+            rescheduled.setNotes(notes);
+            consultationService.updateConsultation(rescheduled);
+
+            if (notificationService != null) {
+                notificationService.createNotification(
+                        consultation.getRendezVous().getMedecin().getId(),
+                        "Consultation reprogrammée",
+                        patient.getName() + " a demandé à reprogrammer la consultation",
+                        "/doctor/consultation/pending"
+                );
+            }
+
+            return "redirect:/patient/consultation?success=rescheduled";
+        }
+
+        return "redirect:/patient/consultation/" + consultationId + "/reschedule?error=rescheduleFailed";
+    }
+
+    // ============ CONSULTATION ROOM FUNCTIONALITY ============
+
+    // GET: Join consultation room
+    @GetMapping("/room/{consultationId}")
+    public String consultationRoom(@PathVariable Long consultationId,
+                                   HttpSession session, Model model) {
+        Patient patient = (Patient) session.getAttribute("user");
+        if (patient == null) {
+            return "redirect:/login";
+        }
+
+        Consultation consultation = consultationService.getConsultationById(consultationId);
+        if (consultation == null ||
+                !consultation.getRendezVous().getPatient().getId().equals(patient.getId())) {
+            return "redirect:/patient/consultation?error=invalidConsultation";
+        }
+
+        // Check if consultation can be started
+        if (!consultationService.canStartConsultation(consultationId)) {
+            return "redirect:/patient/consultation/" + consultationId + "?error=cannotStart";
         }
 
         Medecin doctor = consultation.getRendezVous().getMedecin();
 
         // Check if consultation is active
-        boolean isActive = consultation.getActive() != null && consultation.getActive();
+        boolean isActive = consultation.getIsActive() != null && consultation.getIsActive();
+        boolean isInProgress = consultation.getStatus() == ConsultationStatus.IN_PROGRESS;
 
         // Get or create session
         String roomId = consultation.getCallRoomId();
@@ -91,18 +351,21 @@ public class ConsultationController {
             waitingRooms.put(roomId, new WaitingRoom(roomId, consultationId));
         }
 
-        // Add patient to waiting room
-        waitingRooms.get(roomId).addParticipant(patient.getId(), patient.getName(), "PATIENT");
+        // Add patient to waiting room if not already active
+        if (!isActive && !isInProgress) {
+            waitingRooms.get(roomId).addParticipant(patient.getId(), patient.getName(), "PATIENT");
+        }
 
         model.addAttribute("consultation", consultation);
         model.addAttribute("patient", patient);
         model.addAttribute("doctor", doctor);
         model.addAttribute("roomId", roomId);
         model.addAttribute("isActive", isActive);
+        model.addAttribute("isInProgress", isInProgress);
         model.addAttribute("consultationType", consultation.getConsultationType());
-        model.addAttribute("isInWaitingRoom", !isActive);
+        model.addAttribute("isInWaitingRoom", !isActive && !isInProgress);
 
-        // Add SimpleWebRTC configuration
+        // Add WebRTC configuration
         model.addAttribute("stunServers", getStunServers());
         model.addAttribute("turnServers", getTurnServers());
 
@@ -138,9 +401,15 @@ public class ConsultationController {
             waitingRooms.get(roomId).removeParticipant(patient.getId());
 
             // Notify doctor that patient has joined waiting room
+            TimelineEventDTO event = new TimelineEventDTO();
+            event.setEventType("PATIENT_WAITING");
+            event.setConsultationId(consultationId);
+            event.setUserId(patient.getId());
+            event.setDescription("Patient en salle d'attente");
+
             messagingTemplate.convertAndSend(
                     "/user/" + consultation.getRendezVous().getMedecin().getId() + "/queue/consultation",
-                    new ConsultationEvent("PATIENT_WAITING", consultationId, patient.getId())
+                    event
             );
         }
 
@@ -150,110 +419,178 @@ public class ConsultationController {
         return response;
     }
 
-    // WebSocket: Start consultation (doctor initiates)
+    // ============ CONSULTATION HISTORY & SUMMARY ============
+
+    // GET: Consultation history
+    @GetMapping("/history")
+    public String consultationHistory(HttpSession session, Model model) {
+        Patient patient = (Patient) session.getAttribute("user");
+        if (patient == null) {
+            return "redirect:/login";
+        }
+
+        List<Consultation> consultations = consultationService.getConsultationHistoryForPatient(patient.getId());
+
+        model.addAttribute("patient", patient);
+        model.addAttribute("consultations", consultations);
+
+        return "patient/consultation-history";
+    }
+
+    // GET: Consultation summary
+    @GetMapping("/summary/{consultationId}")
+    public String consultationSummary(@PathVariable Long consultationId,
+                                      HttpSession session, Model model) {
+        Patient patient = (Patient) session.getAttribute("user");
+        if (patient == null) {
+            return "redirect:/login";
+        }
+
+        Consultation consultation = consultationService.getConsultationById(consultationId);
+        if (consultation == null ||
+                !consultation.getRendezVous().getPatient().getId().equals(patient.getId())) {
+            return "redirect:/patient/consultation?error=invalidConsultation";
+        }
+
+        model.addAttribute("patient", patient);
+        model.addAttribute("consultation", consultation);
+        model.addAttribute("doctor", consultation.getRendezVous().getMedecin());
+
+        if (consultation.getOrdonance() != null) {
+            model.addAttribute("prescription", consultation.getOrdonance());
+        }
+
+        return "patient/consultation-summary";
+    }
+
+    // ============ HELPER METHODS ============
+
+    private List<String> getStunServers() {
+        return Arrays.asList(
+                "stun:stun.l.google.com:19302",
+                "stun:stun1.l.google.com:19302",
+                "stun:stun2.l.google.com:19302",
+                "stun:stun3.l.google.com:19302",
+                "stun:stun4.l.google.com:19302"
+        );
+    }
+
+    private List<TurnServer> getTurnServers() {
+        // In production, use real TURN servers with credentials
+        return Arrays.asList(
+                new TurnServer("turn:turn.example.com", "username", "password")
+        );
+    }
+
+    // ============ WEBSOCKET HANDLERS (Keep existing ones) ============
+
     @MessageMapping("/consultation.start")
-    public void startConsultation(@Payload ConsultationStartRequest request) {
+    public void startConsultation(@Payload ConsultationStartRequestDTO request) {
         Consultation consultation = consultationService.getConsultationById(request.getConsultationId());
         if (consultation != null) {
-            consultation.setActive(true);
-            consultation.setDate(new Date());
-            consultationService.updateConsultation(consultation);
+            // Start consultation using service method
+            consultation = consultationService.startConsultation(consultation.getId());
 
-            String roomId = consultation.getCallRoomId();
+            if (consultation != null) {
+                String roomId = consultation.getCallRoomId();
 
-            // Create active session
-            ConsultationSession session = new ConsultationSession(
-                    roomId,
-                    consultation.getId(),
-                    consultation.getRendezVous().getPatient().getId(),
-                    consultation.getRendezVous().getMedecin().getId(),
-                    consultation.getConsultationType()
-            );
+                // Create active session
+                ConsultationSession session = new ConsultationSession(
+                        roomId,
+                        consultation.getId(),
+                        consultation.getRendezVous().getPatient().getId(),
+                        consultation.getRendezVous().getMedecin().getId(),
+                        consultation.getConsultationType()
+                );
 
-            activeSessions.put(roomId, session);
+                activeSessions.put(roomId, session);
 
-            // Clear waiting room
-            waitingRooms.remove(roomId);
+                // Clear waiting room
+                waitingRooms.remove(roomId);
 
-            // Notify patient
-            messagingTemplate.convertAndSend(
-                    "/user/" + consultation.getRendezVous().getPatient().getId() + "/queue/consultation",
-                    new ConsultationEvent("CONSULTATION_STARTED", consultation.getId(), null)
-            );
+                // Notify patient
+                TimelineEventDTO event = new TimelineEventDTO();
+                event.setEventType("CONSULTATION_STARTED");
+                event.setConsultationId(consultation.getId());
+                event.setUserId(request.getDoctorId());
+                event.setDescription("Consultation démarrée");
 
-            // Notify doctor
-            messagingTemplate.convertAndSend(
-                    "/user/" + consultation.getRendezVous().getMedecin().getId() + "/queue/consultation",
-                    new ConsultationEvent("CONSULTATION_STARTED", consultation.getId(), null)
-            );
+                messagingTemplate.convertAndSend(
+                        "/user/" + consultation.getRendezVous().getPatient().getId() + "/queue/consultation",
+                        event
+                );
+
+                // Notify doctor
+                messagingTemplate.convertAndSend(
+                        "/user/" + consultation.getRendezVous().getMedecin().getId() + "/queue/consultation",
+                        event
+                );
+            }
         }
     }
 
-    // WebSocket: End consultation
     @MessageMapping("/consultation.end")
-    public void endConsultation(@Payload ConsultationEndRequest request) {
+    public void endConsultation(@Payload ConsultationEndRequestDTO request) {
         String roomId = request.getRoomId();
         ConsultationSession session = activeSessions.get(roomId);
 
         if (session != null) {
             Consultation consultation = consultationService.getConsultationById(session.getConsultationId());
             if (consultation != null) {
-                consultation.setActive(false);
-                consultation.setNotes(request.getNotes());
-                consultationService.updateConsultation(consultation);
+                // End consultation using service method
+                consultation = consultationService.endConsultation(consultation.getId(), request.getNotes());
 
-                // Update appointment status
-                RendezVous appointment = consultation.getRendezVous();
-                appointment.setStatus(StatusRendezVous.COMPLETED);
-                rendezVousService.updateRendezVous(appointment);
+                if (consultation != null) {
+                    // Update appointment status
+                    RendezVous appointment = consultation.getRendezVous();
+                    appointment.setStatus(StatusRendezVous.COMPLETED);
+                    rendezVousService.updateRendezVous(appointment);
 
-                // Save consultation as medical record if requested
-                if (request.isSaveAsMedicalRecord()) {
-                    saveConsultationAsMedicalRecord(consultation, request.getSummary());
+                    // Save consultation as medical record if requested
+                    if (request.isSaveAsMedicalRecord()) {
+                        saveConsultationAsMedicalRecord(consultation, request.getSummary());
+                    }
+
+                    // Generate prescription if requested
+                    if (request.getPrescription() != null && !request.getPrescription().isEmpty()) {
+                        generatePrescription(consultation, request.getPrescription());
+                    }
+
+                    // Remove active session
+                    activeSessions.remove(roomId);
+
+                    // Send end notification to both parties
+                    TimelineEventDTO endEvent = new TimelineEventDTO();
+                    endEvent.setEventType("CONSULTATION_ENDED");
+                    endEvent.setConsultationId(consultation.getId());
+                    endEvent.setUserId(request.getEndedBy());
+                    endEvent.setDescription("Consultation terminée");
+
+                    messagingTemplate.convertAndSend(
+                            "/user/" + consultation.getRendezVous().getPatient().getId() + "/queue/consultation",
+                            endEvent
+                    );
+
+                    messagingTemplate.convertAndSend(
+                            "/user/" + consultation.getRendezVous().getMedecin().getId() + "/queue/consultation",
+                            endEvent
+                    );
                 }
-
-                // Generate prescription if requested
-                if (request.getPrescription() != null && !request.getPrescription().isEmpty()) {
-                    generatePrescription(consultation, request.getPrescription());
-                }
-
-                // Remove active session
-                activeSessions.remove(roomId);
-
-                // Send end notification to both parties
-                ConsultationEvent endEvent = new ConsultationEvent(
-                        "CONSULTATION_ENDED",
-                        consultation.getId(),
-                        request.getEndedBy()
-                );
-                endEvent.setDuration(session.getDuration());
-                endEvent.setNotes(request.getNotes());
-
-                messagingTemplate.convertAndSend(
-                        "/user/" + consultation.getRendezVous().getPatient().getId() + "/queue/consultation",
-                        endEvent
-                );
-
-                messagingTemplate.convertAndSend(
-                        "/user/" + consultation.getRendezVous().getMedecin().getId() + "/queue/consultation",
-                        endEvent
-                );
             }
         }
     }
 
-    // WebSocket: Send signal (WebRTC signaling)
+    // Keep other WebSocket handlers as they are...
     @MessageMapping("/consultation.signal")
-    public void handleSignal(@Payload SignalMessage signal) {
+    public void handleSignal(@Payload SignalMessageDTO signal) {
         messagingTemplate.convertAndSend(
                 "/user/" + signal.getTargetUserId() + "/queue/signal",
                 signal
         );
     }
 
-    // WebSocket: Send chat message during consultation
     @MessageMapping("/consultation.chat")
-    public void sendConsultationChat(@Payload ConsultationChatMessage message) {
+    public void sendConsultationChat(@Payload ChatMessageDTO message) {
         ConsultationSession session = activeSessions.get(message.getRoomId());
         if (session != null) {
             messagingTemplate.convertAndSend(
@@ -269,176 +606,6 @@ public class ConsultationController {
         }
     }
 
-    // WebSocket: Share file during consultation
-    @MessageMapping("/consultation.share")
-    public void shareFile(@Payload FileShareMessage message) {
-        messagingTemplate.convertAndSend(
-                "/topic/consultation/" + message.getRoomId() + "/files",
-                message
-        );
-    }
-
-    // WebSocket: Update consultation notes
-    @MessageMapping("/consultation.notes")
-    public void updateNotes(@Payload ConsultationNotes notes) {
-        ConsultationSession session = activeSessions.get(notes.getRoomId());
-        if (session != null) {
-            session.setMedicalNotes(notes.getNotes());
-
-            // Broadcast notes update to doctor
-            messagingTemplate.convertAndSend(
-                    "/user/" + session.getDoctorId() + "/queue/notes",
-                    notes
-            );
-        }
-    }
-
-    // REST API: Upload file during consultation
-    @PostMapping("/upload/{consultationId}")
-    @ResponseBody
-    public Map<String, Object> uploadConsultationFile(@PathVariable Long consultationId,
-                                                      @RequestParam("file") MultipartFile file,
-                                                      @RequestParam("description") String description,
-                                                      HttpSession session) throws IOException {
-        Patient patient = (Patient) session.getAttribute("user");
-        Map<String, Object> response = new HashMap<>();
-
-        if (patient == null) {
-            response.put("success", false);
-            response.put("error", "Not authenticated");
-            return response;
-        }
-
-        Consultation consultation = consultationService.getConsultationById(consultationId);
-        if (consultation == null ||
-                !consultation.getRendezVous().getPatient().getId().equals(patient.getId())) {
-            response.put("success", false);
-            response.put("error", "Invalid consultation");
-            return response;
-        }
-
-        // Save file to dossier medical
-        DossierMedical dossier = dossierMedicalService.uploadDocumentMedical(
-                patient,
-                file,
-                "Document de consultation: " + description,
-                "Partagé pendant la consultation #" + consultationId
-        );
-
-        // Notify doctor about file upload
-        FileShareMessage fileMessage = new FileShareMessage();
-        fileMessage.setRoomId(consultation.getCallRoomId());
-        fileMessage.setFileName(file.getOriginalFilename());
-        fileMessage.setFileUrl(dossier.getFileUrl());
-        fileMessage.setDescription(description);
-        fileMessage.setSenderId(patient.getId());
-        fileMessage.setSenderName(patient.getName());
-
-        messagingTemplate.convertAndSend(
-                "/user/" + consultation.getRendezVous().getMedecin().getId() + "/queue/files",
-                fileMessage
-        );
-
-        response.put("success", true);
-        response.put("fileUrl", dossier.getFileUrl());
-        response.put("fileName", file.getOriginalFilename());
-        return response;
-    }
-
-    // REST API: Get consultation summary
-    @GetMapping("/summary/{consultationId}")
-    @ResponseBody
-    public ConsultationSummary getConsultationSummary(@PathVariable Long consultationId,
-                                                      HttpSession session) {
-        Patient patient = (Patient) session.getAttribute("user");
-        if (patient == null) {
-            return null;
-        }
-
-        Consultation consultation = consultationService.getConsultationById(consultationId);
-        if (consultation == null ||
-                !consultation.getRendezVous().getPatient().getId().equals(patient.getId())) {
-            return null;
-        }
-
-        ConsultationSession sessionData = activeSessions.get(consultation.getCallRoomId());
-
-        ConsultationSummary summary = new ConsultationSummary();
-        summary.setConsultationId(consultationId);
-        summary.setDate(consultation.getDate());
-        summary.setDoctorName(consultation.getRendezVous().getMedecin().getName());
-        summary.setConsultationType(consultation.getConsultationType());
-        summary.setNotes(consultation.getNotes());
-
-        if (sessionData != null) {
-            summary.setDuration(sessionData.getDuration());
-            summary.setChatHistory(sessionData.getChatHistory());
-            summary.setMedicalNotes(sessionData.getMedicalNotes());
-        }
-
-        // Get prescription if exists
-        if (consultation.getOrdonance() != null) {
-            summary.setPrescription(consultation.getOrdonance().getMedicaments());
-        }
-
-        return summary;
-    }
-
-    // REST API: Generate prescription
-    @PostMapping("/prescription/{consultationId}")
-    @ResponseBody
-    public Map<String, Object> generatePrescription(@PathVariable Long consultationId,
-                                                    @RequestBody List<String> medicaments,
-                                                    HttpSession session) {
-        Patient patient = (Patient) session.getAttribute("user");
-        Map<String, Object> response = new HashMap<>();
-
-        if (patient == null) {
-            response.put("success", false);
-            response.put("error", "Not authenticated");
-            return response;
-        }
-
-        Consultation consultation = consultationService.getConsultationById(consultationId);
-        if (consultation == null ||
-                !consultation.getRendezVous().getPatient().getId().equals(patient.getId())) {
-            response.put("success", false);
-            response.put("error", "Invalid consultation");
-            return response;
-        }
-
-        // Create prescription
-        Ordonance prescription = new Ordonance();
-        prescription.setMedicaments(medicaments);
-        prescription.setDateCreation(new Date());
-        prescription.setValideeParIA(false); // Mark as not AI-validated
-        prescription.setConsultation(consultation);
-
-        Ordonance savedPrescription = ordonanceService.createOrdonance(prescription);
-
-        // Update consultation with prescription
-        consultation.setOrdonance(savedPrescription);
-        consultationService.updateConsultation(consultation);
-
-        response.put("success", true);
-        response.put("prescriptionId", savedPrescription.getId());
-        return response;
-    }
-
-    // REST API: Get waiting room status
-    @GetMapping("/waiting-room/{roomId}")
-    @ResponseBody
-    public WaitingRoom getWaitingRoomStatus(@PathVariable String roomId,
-                                            HttpSession session) {
-        Patient patient = (Patient) session.getAttribute("user");
-        if (patient == null) {
-            return null;
-        }
-
-        return waitingRooms.get(roomId);
-    }
-
-    // Helper methods
     private void saveConsultationAsMedicalRecord(Consultation consultation, String summary) {
         try {
             Patient patient = consultation.getRendezVous().getPatient();
@@ -461,7 +628,7 @@ public class ConsultationController {
     private void generatePrescription(Consultation consultation, List<String> medicaments) {
         Ordonance prescription = new Ordonance();
         prescription.setMedicaments(medicaments);
-        prescription.setDateCreation(new Date());
+        prescription.setDateCreation(new java.util.Date());
         prescription.setValideeParIA(false);
         prescription.setConsultation(consultation);
 
@@ -477,11 +644,11 @@ public class ConsultationController {
         sb.append("Médecin: ").append(consultation.getRendezVous().getMedecin().getName()).append("\n");
         sb.append("Patient: ").append(consultation.getRendezVous().getPatient().getName()).append("\n\n");
         sb.append("=== NOTES ===\n");
-        sb.append(consultation.getNotes()).append("\n\n");
+        sb.append(consultation.getNotes() != null ? consultation.getNotes() : "").append("\n\n");
         sb.append("=== RÉSUMÉ ===\n");
         sb.append(summary).append("\n");
 
-        if (consultation.getOrdonance() != null) {
+        if (consultation.getOrdonance() != null && consultation.getOrdonance().getMedicaments() != null) {
             sb.append("\n=== ORDONNANCE ===\n");
             for (String medicament : consultation.getOrdonance().getMedicaments()) {
                 sb.append("- ").append(medicament).append("\n");
@@ -490,390 +657,4 @@ public class ConsultationController {
 
         return sb.toString();
     }
-
-    private List<String> getStunServers() {
-        return Arrays.asList(
-                "stun:stun.l.google.com:19302",
-                "stun:stun1.l.google.com:19302",
-                "stun:stun2.l.google.com:19302",
-                "stun:stun3.l.google.com:19302",
-                "stun:stun4.l.google.com:19302"
-        );
-    }
-
-    private List<TurnServer> getTurnServers() {
-        // In production, use real TURN servers with credentials
-        return Arrays.asList(
-                new TurnServer("turn:turn.example.com", "username", "password")
-        );
-    }
-}
-
-// Helper Classes
-
-class ConsultationSession {
-    private String roomId;
-    private Long consultationId;
-    private Long patientId;
-    private Long doctorId;
-    private ConsultationType consultationType;
-    private Date startTime;
-    private List<ConsultationChatMessage> chatHistory;
-    private String medicalNotes;
-
-    public ConsultationSession(String roomId, Long consultationId, Long patientId,
-                               Long doctorId, ConsultationType consultationType) {
-        this.roomId = roomId;
-        this.consultationId = consultationId;
-        this.patientId = patientId;
-        this.doctorId = doctorId;
-        this.consultationType = consultationType;
-        this.startTime = new Date();
-        this.chatHistory = new ArrayList<>();
-    }
-
-    public long getDuration() {
-        if (startTime == null) return 0;
-        return (System.currentTimeMillis() - startTime.getTime()) / 1000; // in seconds
-    }
-
-    // Getters and setters
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public Long getConsultationId() { return consultationId; }
-    public void setConsultationId(Long consultationId) { this.consultationId = consultationId; }
-
-    public Long getPatientId() { return patientId; }
-    public void setPatientId(Long patientId) { this.patientId = patientId; }
-
-    public Long getDoctorId() { return doctorId; }
-    public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
-
-    public ConsultationType getConsultationType() { return consultationType; }
-    public void setConsultationType(ConsultationType consultationType) { this.consultationType = consultationType; }
-
-    public Date getStartTime() { return startTime; }
-    public void setStartTime(Date startTime) { this.startTime = startTime; }
-
-    public List<ConsultationChatMessage> getChatHistory() { return chatHistory; }
-    public void setChatHistory(List<ConsultationChatMessage> chatHistory) { this.chatHistory = chatHistory; }
-
-    public String getMedicalNotes() { return medicalNotes; }
-    public void setMedicalNotes(String medicalNotes) { this.medicalNotes = medicalNotes; }
-}
-
-class WaitingRoom {
-    private String roomId;
-    private Long consultationId;
-    private Map<Long, WaitingParticipant> participants;
-
-    public WaitingRoom(String roomId, Long consultationId) {
-        this.roomId = roomId;
-        this.consultationId = consultationId;
-        this.participants = new HashMap<>();
-    }
-
-    public void addParticipant(Long userId, String name, String role) {
-        participants.put(userId, new WaitingParticipant(userId, name, role, new Date()));
-    }
-
-    public void removeParticipant(Long userId) {
-        participants.remove(userId);
-    }
-
-    public List<WaitingParticipant> getParticipants() {
-        return new ArrayList<>(participants.values());
-    }
-
-    public boolean isEmpty() {
-        return participants.isEmpty();
-    }
-
-    // Getters and setters
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public Long getConsultationId() { return consultationId; }
-    public void setConsultationId(Long consultationId) { this.consultationId = consultationId; }
-}
-
-class WaitingParticipant {
-    private Long userId;
-    private String name;
-    private String role;
-    private Date joinedAt;
-
-    public WaitingParticipant(Long userId, String name, String role, Date joinedAt) {
-        this.userId = userId;
-        this.name = name;
-        this.role = role;
-        this.joinedAt = joinedAt;
-    }
-
-    // Getters
-    public Long getUserId() { return userId; }
-    public String getName() { return name; }
-    public String getRole() { return role; }
-    public Date getJoinedAt() { return joinedAt; }
-}
-
-// DTO Classes
-
-class ConsultationStartRequest {
-    private Long consultationId;
-    private Long doctorId;
-
-    // Getters and setters
-    public Long getConsultationId() { return consultationId; }
-    public void setConsultationId(Long consultationId) { this.consultationId = consultationId; }
-
-    public Long getDoctorId() { return doctorId; }
-    public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
-}
-
-class ConsultationEndRequest {
-    private String roomId;
-    private Long endedBy;
-    private String notes;
-    private String summary;
-    private List<String> prescription;
-    private boolean saveAsMedicalRecord;
-
-    // Getters and setters
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public Long getEndedBy() { return endedBy; }
-    public void setEndedBy(Long endedBy) { this.endedBy = endedBy; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-
-    public String getSummary() { return summary; }
-    public void setSummary(String summary) { this.summary = summary; }
-
-    public List<String> getPrescription() { return prescription; }
-    public void setPrescription(List<String> prescription) { this.prescription = prescription; }
-
-    public boolean isSaveAsMedicalRecord() { return saveAsMedicalRecord; }
-    public void setSaveAsMedicalRecord(boolean saveAsMedicalRecord) { this.saveAsMedicalRecord = saveAsMedicalRecord; }
-}
-
-class SignalMessage {
-    private Long senderId;
-    private Long targetUserId;
-    private String roomId;
-    private String type; // offer, answer, candidate
-    private Object data;
-
-    // Getters and setters
-    public Long getSenderId() { return senderId; }
-    public void setSenderId(Long senderId) { this.senderId = senderId; }
-
-    public Long getTargetUserId() { return targetUserId; }
-    public void setTargetUserId(Long targetUserId) { this.targetUserId = targetUserId; }
-
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-
-    public Object getData() { return data; }
-    public void setData(Object data) { this.data = data; }
-}
-
-class ConsultationChatMessage {
-    private String roomId;
-    private Long senderId;
-    private String senderName;
-    private String content;
-    private Date timestamp;
-    private String messageType; // TEXT, FILE
-
-    public ConsultationChatMessage() {
-        this.timestamp = new Date();
-        this.messageType = "TEXT";
-    }
-
-    // Getters and setters
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public Long getSenderId() { return senderId; }
-    public void setSenderId(Long senderId) { this.senderId = senderId; }
-
-    public String getSenderName() { return senderName; }
-    public void setSenderName(String senderName) { this.senderName = senderName; }
-
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
-
-    public Date getTimestamp() { return timestamp; }
-    public void setTimestamp(Date timestamp) { this.timestamp = timestamp; }
-
-    public String getMessageType() { return messageType; }
-    public void setMessageType(String messageType) { this.messageType = messageType; }
-}
-
-class FileShareMessage {
-    private String roomId;
-    private Long senderId;
-    private String senderName;
-    private String fileName;
-    private String fileUrl;
-    private String description;
-    private long fileSize;
-
-    // Getters and setters
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public Long getSenderId() { return senderId; }
-    public void setSenderId(Long senderId) { this.senderId = senderId; }
-
-    public String getSenderName() { return senderName; }
-    public void setSenderName(String senderName) { this.senderName = senderName; }
-
-    public String getFileName() { return fileName; }
-    public void setFileName(String fileName) { this.fileName = fileName; }
-
-    public String getFileUrl() { return fileUrl; }
-    public void setFileUrl(String fileUrl) { this.fileUrl = fileUrl; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public long getFileSize() { return fileSize; }
-    public void setFileSize(long fileSize) { this.fileSize = fileSize; }
-}
-
-class ConsultationNotes {
-    private String roomId;
-    private Long updatedBy;
-    private String notes;
-    private Date updatedAt;
-
-    public ConsultationNotes() {
-        this.updatedAt = new Date();
-    }
-
-    // Getters and setters
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public Long getUpdatedBy() { return updatedBy; }
-    public void setUpdatedBy(Long updatedBy) { this.updatedBy = updatedBy; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-
-    public Date getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
-}
-
-class ConsultationEvent {
-    private String eventType;
-    private Long consultationId;
-    private Long initiatedBy;
-    private String message;
-    private Long duration; // in seconds
-    private String notes;
-
-    public ConsultationEvent(String eventType, Long consultationId, Long initiatedBy) {
-        this.eventType = eventType;
-        this.consultationId = consultationId;
-        this.initiatedBy = initiatedBy;
-        this.message = getEventMessage(eventType);
-    }
-
-    private String getEventMessage(String eventType) {
-        switch (eventType) {
-            case "PATIENT_WAITING":
-                return "Patient en salle d'attente";
-            case "CONSULTATION_STARTED":
-                return "Consultation démarrée";
-            case "CONSULTATION_ENDED":
-                return "Consultation terminée";
-            default:
-                return "Événement de consultation";
-        }
-    }
-
-    // Getters and setters
-    public String getEventType() { return eventType; }
-    public void setEventType(String eventType) { this.eventType = eventType; }
-
-    public Long getConsultationId() { return consultationId; }
-    public void setConsultationId(Long consultationId) { this.consultationId = consultationId; }
-
-    public Long getInitiatedBy() { return initiatedBy; }
-    public void setInitiatedBy(Long initiatedBy) { this.initiatedBy = initiatedBy; }
-
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
-
-    public Long getDuration() { return duration; }
-    public void setDuration(Long duration) { this.duration = duration; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-}
-
-class ConsultationSummary {
-    private Long consultationId;
-    private Date date;
-    private String doctorName;
-    private ConsultationType consultationType;
-    private String notes;
-    private Long duration; // in seconds
-    private List<ConsultationChatMessage> chatHistory;
-    private String medicalNotes;
-    private List<String> prescription;
-
-    // Getters and setters
-    public Long getConsultationId() { return consultationId; }
-    public void setConsultationId(Long consultationId) { this.consultationId = consultationId; }
-
-    public Date getDate() { return date; }
-    public void setDate(Date date) { this.date = date; }
-
-    public String getDoctorName() { return doctorName; }
-    public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
-
-    public ConsultationType getConsultationType() { return consultationType; }
-    public void setConsultationType(ConsultationType consultationType) { this.consultationType = consultationType; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-
-    public Long getDuration() { return duration; }
-    public void setDuration(Long duration) { this.duration = duration; }
-
-    public List<ConsultationChatMessage> getChatHistory() { return chatHistory; }
-    public void setChatHistory(List<ConsultationChatMessage> chatHistory) { this.chatHistory = chatHistory; }
-
-    public String getMedicalNotes() { return medicalNotes; }
-    public void setMedicalNotes(String medicalNotes) { this.medicalNotes = medicalNotes; }
-
-    public List<String> getPrescription() { return prescription; }
-    public void setPrescription(List<String> prescription) { this.prescription = prescription; }
-}
-
-class TurnServer {
-    private String url;
-    private String username;
-    private String credential;
-
-    public TurnServer(String url, String username, String credential) {
-        this.url = url;
-        this.username = username;
-        this.credential = credential;
-    }
-
-    // Getters
-    public String getUrl() { return url; }
-    public String getUsername() { return username; }
-    public String getCredential() { return credential; }
 }

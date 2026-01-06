@@ -7,11 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class OrdonanceServiceImp implements OrdonanceService {
+
     @Autowired
-    OrdonanceRepository ordonanceRepository;
+    private OrdonanceRepository ordonanceRepository;
 
     @Override
     public Ordonance createOrdonance(Ordonance ord) {
@@ -20,17 +22,27 @@ public class OrdonanceServiceImp implements OrdonanceService {
 
     @Override
     public Ordonance findOrdonanceById(Long id) {
-        return ordonanceRepository.findOrdonanceById(id);
+        Optional<Ordonance> ordonance = ordonanceRepository.findById(id);
+        return ordonance.orElse(null);
+    }
+
+    @Override
+    public Ordonance getOrdonanceById(Long id) {
+        // This can just call findOrdonanceById since they do the same thing
+        return findOrdonanceById(id);
     }
 
     @Override
     public Ordonance updateOrdonance(Ordonance ord) {
-        return ordonanceRepository.save(ord);
+        if (ord.getId() != null && ordonanceRepository.existsById(ord.getId())) {
+            return ordonanceRepository.save(ord);
+        }
+        return null;
     }
 
     @Override
     public void deleteOrdonance(Long id) {
-        this.ordonanceRepository.findOrdonanceById(id);
+        ordonanceRepository.deleteById(id);
     }
 
     @Override

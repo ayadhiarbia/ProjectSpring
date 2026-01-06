@@ -155,13 +155,32 @@
     function sendMessage(event) {
         event.preventDefault();
         const content = messageInput.value.trim();
+
+        // ADD VALIDATION HERE
+        if (!content) {
+            console.log("Cannot send empty message");
+            return;
+        }
+
         if (content && stompClient) {
             const chatMessage = {
                 senderId: patientId,
                 content: content,
                 messageType: 'TEXT'
             };
+
+            console.log("Sending message:", chatMessage);
+
             stompClient.send("/app/chat.send/" + doctorId, {}, JSON.stringify(chatMessage));
+
+            // Show message immediately for better UX
+            showMessage({
+                senderId: patientId,
+                content: content,
+                timestamp: new Date().toISOString(),
+                senderRole: 'PATIENT'
+            });
+
             messageInput.value = '';
             sendTypingStatus(false);
         }

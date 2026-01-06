@@ -1,0 +1,79 @@
+
+""" 
+# install opencv with Colab
+
+!pip install opencv-python
+!pip install opencv-contrib-python
+
+"""
+
+""" 
+# with install opencv Spyder
+
+pip install opencv-python
+pip install opencv-contrib-python
+
+"""
+
+
+# --> Mounted drive to Colab
+import os
+from google.colab import drive
+drive.mount('/content/drive')
+#os.chdir('/content/drive/MyDrive/Colab Notebooks/TP_TI_googleColab24Ysf/images2021')
+#cwd=os.getcwd()
+#print(cwd)
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import cv2 as cv
+from skimage import data, img_as_float
+from skimage.util import random_noise
+from skimage.metrics import peak_signal_noise_ratio
+from skimage import exposure
+
+
+# --> aff-1-tp3
+
+plt.figure()
+plt.subplot(211)
+plt.imshow(img,cmap='gray')
+plt.xticks([]), plt.yticks([])
+plt.subplot(212)
+plt.hist(img.ravel(), bins=256, range=(0.0, 255), fc='b', ec='k')
+plt.title('hist org')
+plt.show()
+
+
+# --> aff-2-tp3
+plt.subplot(211)
+plt.imshow(img_rescale,cmap='gray')
+plt.xticks([]), plt.yticks([])
+plt.subplot(212)
+plt.hist(img_rescale.ravel(), bins=256, range=(0.0, 255), fc='b', ec='k')
+plt.xticks([]), plt.yticks([])
+plt.title('Contrast stretching')
+plt.show()
+
+
+# --> aff-3-tp3
+plt.subplot(211)
+plt.imshow(img_eq,cmap='gray')
+plt.xticks([]), plt.yticks([])
+plt.subplot(212)
+plt.hist(img_eq.ravel(), bins=256, range=(0.0, 255), fc='b', ec='k')
+plt.xticks([]), plt.yticks([])
+plt.title('Equalization')
+plt.show()
+
+
+# --> aff-4-tp3
+plt.figure()
+plt.subplot(121)
+plt.imshow(img,cmap='gray'), plt.title('retine'), plt.xticks([]), plt.yticks([])
+plt.subplot(122)
+plt.imshow(imgm,cmap='gray'), plt.title('retine mask'), plt.xticks([]), plt.yticks([])
+plt.show()
+

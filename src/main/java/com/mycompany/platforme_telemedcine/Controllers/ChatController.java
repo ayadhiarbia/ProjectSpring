@@ -3,6 +3,7 @@ package com.mycompany.platforme_telemedcine.Controllers;
 import com.mycompany.platforme_telemedcine.Models.*;
 import com.mycompany.platforme_telemedcine.Repository.MedecinRepository;
 import com.mycompany.platforme_telemedcine.Services.*;
+import com.mycompany.platforme_telemedcine.dto.*; // Import DTOs
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -31,7 +32,7 @@ public class ChatController {
     @Autowired
     private final NotificationService notificationService;
     @Autowired
-    private final MedecinRepository medecinRepository; // Added this
+    private final MedecinRepository medecinRepository;
 
     // Track online users
     private final Map<Long, String> onlineUsers = new HashMap<>();
@@ -42,21 +43,34 @@ public class ChatController {
                           MedecinService medecinService,
                           SimpMessagingTemplate messagingTemplate,
                           NotificationService notificationService,
-                          MedecinRepository medecinRepository) { // Added this parameter
+                          MedecinRepository medecinRepository) {
         this.messagerieService = messagerieService;
         this.patientService = patientService;
         this.medecinService = medecinService;
         this.messagingTemplate = messagingTemplate;
         this.notificationService = notificationService;
-        this.medecinRepository = medecinRepository; // Initialize it
+        this.medecinRepository = medecinRepository;
     }
 
     // GET: Chat interface with doctor
+// GET: Chat interface with doctor
     @GetMapping("/{doctorId}")
     public String chatWithDoctor(@PathVariable Long doctorId,
                                  HttpSession session,
                                  Model model) {
-        Patient patient = (Patient) session.getAttribute("user");
+
+        // FIX: Check user type before casting
+        Object user = session.getAttribute("user");
+
+        // If it's a doctor, redirect to doctor chat
+        if (user instanceof Medecin) {
+            Medecin medecin = (Medecin) user;
+            System.out.println("DEBUG: Doctor " + medecin.getName() + " trying to access patient chat. Redirecting...");
+            return "redirect:/medecin/chat"; // Redirect to doctor chat
+        }
+
+        // Now it's safe to cast to Patient
+        Patient patient = (Patient) user;
         if (patient == null) {
             return "redirect:/login";
         }
@@ -81,63 +95,127 @@ public class ChatController {
         return "patient/chat-room";
     }
 
-       // Use the service, not the repository directly
-
-        @GetMapping
-        public String chatDashboard(HttpSession session, Model model) {
-            // 1. Get current patient from session
-            Patient patient = (Patient) session.getAttribute("user");
-            if (patient == null) {
-                return "redirect:/login";
-            }
-
-            // 2. Fetch approved doctors using your fixed service method
-            List<Medecin> doctors = medecinService.getApprovedDoctors();
-
-            // 3. Safety check: Ensure the list is never null
-            if (doctors == null) {
-                doctors = new ArrayList<>();
-            }
-
-            // 4. Add to model - MUST MATCH THE NAME IN YOUR HTML
-            model.addAttribute("patient", patient);
-            model.addAttribute("doctors", doctors); // This is what ${doctors} looks for
-
-            return "patient/chat"; // Points to chat.html
+    // In ChatController.java, update chatDashboard method:
+    @GetMapping
+    public String chatDashboard(HttpSession session, Model model) {
+        Patient patient = (Patient) session.getAttribute("user");
+        if (patient == null) {
+            return "redirect:/login";
         }
 
+        List<Medecin> doctors = medecinService.getApprovedDoctors();
 
+        // Create a list with doctor info and last message
+        List<Map<String, Object>> doctorWithLastMessage = new ArrayList<>();
+
+        for (Medecin doctor : doctors) {
+            Map<String, Object> doctorInfo = new HashMap<>();
+            doctorInfo.put("doctor", doctor);
+
+            // Get last message
+            List<Messagerie> messages = messagerieService.getMessagesBetween(patient.getId(), doctor.getId());
+            Messagerie lastMessage = null;
+            if (!messages.isEmpty()) {
+                // Sort by timestamp descending to get most recent
+                messages.sort((m1, m2) -> m2.getTimestamp().compareTo(m1.getTimestamp()));
+                lastMessage = messages.get(0);
+            }
+
+            doctorInfo.put("lastMessage", lastMessage);
+            doctorInfo.put("unreadCount", getUnreadCountForDoctor(patient.getId(), doctor.getId()));
+            doctorInfo.put("isOnline", onlineUsers.containsKey(doctor.getId()));
+
+            doctorWithLastMessage.add(doctorInfo);
+        }
+
+        // Sort doctors by last message timestamp (most recent first)
+        doctorWithLastMessage.sort((d1, d2) -> {
+            Messagerie msg1 = (Messagerie) d1.get("lastMessage");
+            Messagerie msg2 = (Messagerie) d2.get("lastMessage");
+
+            if (msg1 == null && msg2 == null) return 0;
+            if (msg1 == null) return 1; // No message goes to bottom
+            if (msg2 == null) return -1; // Has message goes to top
+
+            return msg2.getTimestamp().compareTo(msg1.getTimestamp()); // Recent first
+        });
+
+        model.addAttribute("patient", patient);
+        model.addAttribute("doctorsWithInfo", doctorWithLastMessage);
+        model.addAttribute("doctors", doctors); // Keep original for compatibility
+
+        return "patient/chat";
+    }
+    // Helper method
+    private int getUnreadCountForDoctor(Long patientId, Long doctorId) {
+        List<Messagerie> messages = messagerieService.getMessagesBetween(patientId, doctorId);
+        return (int) messages.stream()
+                .filter(m -> !m.isRead() && m.getReceiverId().equals(patientId))
+                .count();
+    }
+
+    // WebSocket: Send message to doctor
+    // WebSocket: Send message to doctor
     // WebSocket: Send message to doctor
     @MessageMapping("/chat.send/{doctorId}")
     public void sendMessageToDoctor(@DestinationVariable Long doctorId,
-                                    @Payload ChatMessage chatMessage) {
+                                    @Payload ChatMessageDTO chatMessageDTO) {
 
-        Patient patient = patientService.getPatientById(chatMessage.getSenderId());
+        Patient patient = patientService.getPatientById(chatMessageDTO.getSenderId());
         Medecin doctor = medecinService.getMedecinById(doctorId);
 
-        // Save message to database
+        if (patient == null || doctor == null) {
+            System.err.println("ERROR: Patient or Doctor not found!");
+            return;
+        }
+
+        if (chatMessageDTO.getContent() == null || chatMessageDTO.getContent().trim().isEmpty()) {
+            System.out.println("ERROR: Attempted to send NULL or empty message!");
+            return;
+        }
+
+        // FIX: Use correct constructor with timestamp
         Messagerie message = new Messagerie(
                 patient.getId(),
                 doctorId,
                 patient.getName(),
                 doctor.getName(),
                 "PATIENT",
-                chatMessage.getContent(),
-                LocalDateTime.now()
+                chatMessageDTO.getContent().trim(),
+                LocalDateTime.now(),  // THIS MUST BE SET!
+                false
         );
 
         Messagerie savedMessage = messagerieService.saveMessage(message);
 
+        // FIX: Check for null timestamp
+        String timestampStr = savedMessage.getTimestamp() != null
+                ? savedMessage.getTimestamp().toString()
+                : LocalDateTime.now().toString();
+
+        // Create a proper response DTO
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", savedMessage.getId());
+        response.put("senderId", savedMessage.getSenderId());
+        response.put("receiverId", savedMessage.getReceiverId());
+        response.put("senderName", savedMessage.getSenderName());
+        response.put("senderType", savedMessage.getSenderRole());
+        response.put("content", savedMessage.getContent());
+        response.put("timestamp", timestampStr);  // Use safe timestamp
+        response.put("isRead", savedMessage.isRead());
+
         // Send to receiver (doctor)
-        messagingTemplate.convertAndSend(
-                "/user/" + doctorId + "/queue/messages",
-                savedMessage
+        messagingTemplate.convertAndSendToUser(
+                doctorId.toString(),
+                "/queue/messages",
+                response
         );
 
         // Send to sender (patient) for confirmation
-        messagingTemplate.convertAndSend(
-                "/user/" + patient.getId() + "/queue/messages",
-                savedMessage
+        messagingTemplate.convertAndSendToUser(
+                patient.getId().toString(),
+                "/queue/messages",
+                response
         );
 
         // Send notification to doctor if offline
@@ -152,43 +230,43 @@ public class ChatController {
     // WebSocket: Typing indicator
     @MessageMapping("/chat.typing/{doctorId}")
     public void sendTypingStatus(@DestinationVariable Long doctorId,
-                                 @Payload TypingStatus typingStatus) {
+                                 @Payload TypingStatusDTO typingStatusDTO) {
 
         messagingTemplate.convertAndSend(
                 "/user/" + doctorId + "/queue/typing",
-                typingStatus
+                typingStatusDTO
         );
     }
 
     // WebSocket: User connected
     @MessageMapping("/chat.connect")
-    public void userConnected(@Payload UserConnection userConnection) {
-        onlineUsers.put(userConnection.getUserId(), userConnection.getSessionId());
+    public void userConnected(@Payload UserConnectionDTO userConnectionDTO) {
+        onlineUsers.put(userConnectionDTO.getUserId(), userConnectionDTO.getSessionId());
 
         // Broadcast online status to all connected users
-        broadcastUserStatus(userConnection.getUserId(), true);
+        broadcastUserStatus(userConnectionDTO.getUserId(), true);
     }
 
     // WebSocket: User disconnected
     @MessageMapping("/chat.disconnect")
-    public void userDisconnected(@Payload UserConnection userConnection) {
-        onlineUsers.remove(userConnection.getUserId());
+    public void userDisconnected(@Payload UserConnectionDTO userConnectionDTO) {
+        onlineUsers.remove(userConnectionDTO.getUserId());
 
         // Broadcast offline status
-        broadcastUserStatus(userConnection.getUserId(), false);
+        broadcastUserStatus(userConnectionDTO.getUserId(), false);
     }
 
     // WebSocket: Mark messages as read
     @MessageMapping("/chat.read/{doctorId}")
     public void markMessagesAsRead(@DestinationVariable Long doctorId,
-                                   @Payload ReadStatus readStatus) {
+                                   @Payload ReadStatusDTO readStatusDTO) {
 
-        messagerieService.markMessagesAsRead(doctorId, readStatus.getUserId());
+        messagerieService.markMessagesAsRead(doctorId, readStatusDTO.getUserId());
 
         // Notify sender that messages were read
         messagingTemplate.convertAndSend(
                 "/user/" + doctorId + "/queue/read",
-                readStatus
+                readStatusDTO
         );
     }
 
@@ -204,7 +282,6 @@ public class ChatController {
             return response;
         }
 
-        // Get unread messages count
         List<Messagerie> unreadMessages = messagerieService.getUnreadMessages(patient.getId());
         response.put("count", unreadMessages.size());
         response.put("patientId", patient.getId());
@@ -257,7 +334,7 @@ public class ChatController {
         messagingTemplate.convertAndSend("/topic/user.status", statusUpdate);
     }
 
-    // TEST ENDPOINTS
+    // TEST ENDPOINTS (keep as is)
     @GetMapping("/test")
     @ResponseBody
     public String testDoctors() {
@@ -265,7 +342,6 @@ public class ChatController {
         sb.append("<h2>Doctor Repository Test</h2>");
 
         try {
-            // Test 1: Repository query
             sb.append("<h3>1. medecinRepository.findApprovedDoctors()</h3>");
             List<Medecin> repoDoctors = medecinRepository.findApprovedDoctors();
             sb.append("Count: ").append(repoDoctors.size()).append("<br>");
@@ -282,7 +358,6 @@ public class ChatController {
                 }
             }
 
-            // Test 2: All doctors
             sb.append("<h3>2. medecinRepository.findAll()</h3>");
             List<Medecin> allDoctors = medecinRepository.findAll();
             sb.append("Count: ").append(allDoctors.size()).append("<br>");
@@ -300,7 +375,6 @@ public class ChatController {
                 }
             }
 
-            // Test 3: Service method
             sb.append("<h3>3. medecinService.getApprovedDoctors()</h3>");
             List<Medecin> serviceDoctors = medecinService.getApprovedDoctors();
             sb.append("Count: ").append(serviceDoctors.size()).append("<br>");
@@ -312,12 +386,12 @@ public class ChatController {
 
         return sb.toString();
     }
+
     @GetMapping("/verify-data")
     @ResponseBody
     public String verifyData() {
         StringBuilder sb = new StringBuilder();
 
-        // Test all doctors
         List<Medecin> all = medecinRepository.findAll();
         sb.append("All doctors in DB: ").append(all.size()).append("<br>");
         for (Medecin d : all) {
@@ -329,7 +403,6 @@ public class ChatController {
                     .append("<br>");
         }
 
-        // Test approved doctors query
         List<Medecin> approved = medecinRepository.findApprovedDoctors();
         sb.append("<br>Approved doctors query: ").append(approved.size()).append("<br>");
 
@@ -370,74 +443,4 @@ public class ChatController {
 
         return sb.toString();
     }
-}
-
-// DTO Classes for WebSocket communication
-
-class ChatMessage {
-    private Long senderId;
-    private String content;
-    private String messageType; // TEXT, IMAGE, FILE
-    private String fileUrl; // Optional for file sharing
-
-    // Getters and Setters
-    public Long getSenderId() { return senderId; }
-    public void setSenderId(Long senderId) { this.senderId = senderId; }
-
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
-
-    public String getMessageType() { return messageType; }
-    public void setMessageType(String messageType) { this.messageType = messageType; }
-
-    public String getFileUrl() { return fileUrl; }
-    public void setFileUrl(String fileUrl) { this.fileUrl = fileUrl; }
-}
-
-class TypingStatus {
-    private Long userId;
-    private Long receiverId;
-    private boolean isTyping;
-
-    // Getters and Setters
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
-
-    public Long getReceiverId() { return receiverId; }
-    public void setReceiverId(Long receiverId) { this.receiverId = receiverId; }
-
-    public boolean isTyping() { return isTyping; }
-    public void setTyping(boolean typing) { isTyping = typing; }
-}
-
-class UserConnection {
-    private Long userId;
-    private String sessionId;
-    private String userRole; // PATIENT or MEDECIN
-
-    // Getters and Setters
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
-
-    public String getSessionId() { return sessionId; }
-    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
-
-    public String getUserRole() { return userRole; }
-    public void setUserRole(String userRole) { this.userRole = userRole; }
-}
-
-class ReadStatus {
-    private Long userId;
-    private Long otherUserId;
-    private LocalDateTime readAt;
-
-    // Getters and Setters
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
-
-    public Long getOtherUserId() { return otherUserId; }
-    public void setOtherUserId(Long otherUserId) { this.otherUserId = otherUserId; }
-
-    public LocalDateTime getReadAt() { return readAt; }
-    public void setReadAt(LocalDateTime readAt) { this.readAt = readAt; }
 }

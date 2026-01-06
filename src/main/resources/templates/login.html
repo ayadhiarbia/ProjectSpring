@@ -748,10 +748,10 @@
                 </div>
 
                 <div class="remember-forgot">
-                    <div class="remember-me">
-                        <input type="checkbox" id="remember" class="remember-checkbox" name="remember">
-                        <label for="remember" class="remember-label">Remember me</label>
-                    </div>
+                    <<div class="remember-me">
+                    <input type="checkbox" id="remember" class="remember-checkbox" name="remember-me">
+                    <label for="remember" class="remember-label">Remember me</label>
+                </div>
                     <a href="#" class="forgot-link" id="forgotPassword">Forgot password?</a>
                 </div>
 
@@ -808,79 +808,70 @@
     const registerLink = document.getElementById('registerLink');
     const userTypeInput = document.getElementById('userTypeInput');
 
-    // Current user type (default: patient)
+    // Default user type
     let currentUserType = 'patient';
 
-    // Initialize event listeners
     function init() {
-        // Password toggle
-        togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+
+        // Password visibility toggle
+        if (togglePasswordBtn) {
+            togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+        }
 
         // User type selection
         userTypeBtns.forEach(btn => {
             btn.addEventListener('click', () => selectUserType(btn));
         });
 
-        // Form submission
-        loginForm.addEventListener('submit', handleLogin);
-
-        // Social login buttons
+        // Social login (UI only)
         document.querySelectorAll('.social-btn').forEach(btn => {
             btn.addEventListener('click', handleSocialLogin);
         });
 
-        // Forgot password
-        document.getElementById('forgotPassword').addEventListener('click', handleForgotPassword);
+        // Forgot password (UI only)
+        const forgotBtn = document.getElementById('forgotPassword');
+        if (forgotBtn) {
+            forgotBtn.addEventListener('click', handleForgotPassword);
+        }
 
-        // Input focus effects
+        // Input focus animation
         document.querySelectorAll('.form-control').forEach(input => {
             input.addEventListener('focus', () => {
                 input.parentElement.style.transform = 'scale(1.02)';
             });
-
             input.addEventListener('blur', () => {
                 input.parentElement.style.transform = 'scale(1)';
             });
         });
 
-        // Animate welcome icon on hover
-        const healthIcon = document.querySelector('.health-icon');
-        healthIcon.addEventListener('mouseenter', () => {
-            healthIcon.style.animation = 'pulse 0.5s infinite';
-        });
-
-        healthIcon.addEventListener('mouseleave', () => {
-            healthIcon.style.animation = 'pulse 2s infinite';
-        });
+        // Remember me (email only)
+        const savedEmail = localStorage.getItem('rememberedEmail');
+        if (savedEmail) {
+            emailInput.value = savedEmail;
+            const rememberCheckbox = document.getElementById('remember');
+            if (rememberCheckbox) rememberCheckbox.checked = true;
+        }
     }
 
     // Toggle password visibility
     function togglePasswordVisibility() {
         const icon = this.querySelector('i');
-
         if (passwordInput.type === 'password') {
             passwordInput.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-            this.title = 'Hide password';
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
         } else {
             passwordInput.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-            this.title = 'Show password';
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
         }
     }
 
-    // Select user type
+    // User type selection
     function selectUserType(selectedBtn) {
         userTypeBtns.forEach(btn => btn.classList.remove('active'));
         selectedBtn.classList.add('active');
         currentUserType = selectedBtn.dataset.type;
-
-        // Update hidden field
         userTypeInput.value = currentUserType;
 
-        // Update register link based on user type
         if (currentUserType === 'patient') {
             registerLink.href = '/register-patient';
             registerLink.textContent = 'Sign up as Patient';
@@ -891,123 +882,52 @@
             registerLink.href = '#';
             registerLink.textContent = 'Contact Admin';
         }
-
-        // Animate the selection
-        selectedBtn.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            selectedBtn.style.transform = 'scale(1)';
-        }, 150);
     }
 
-    // Handle login
-    function handleLogin(e) {
-        e.preventDefault();
-
-        // Validate inputs
-        if (!emailInput.value || !passwordInput.value) {
-            showError('Please fill in all fields');
-            return;
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(emailInput.value)) {
-            showError('Please enter a valid email address');
-            return;
-        }
-
-        // Show loading state
-        setLoadingState(true);
-
-        // Update hidden field with current user type
-        userTypeInput.value = currentUserType;
-
-        // Submit the form (traditional way - server will handle redirect)
-        loginForm.submit();
-    }
-
-    // Handle social login
+    // Social login (demo only)
     function handleSocialLogin(e) {
-        const socialType = e.currentTarget.classList.contains('google') ? 'Google' :
-            e.currentTarget.classList.contains('facebook') ? 'Facebook' : 'Twitter';
-
-        // Animate button
-        e.currentTarget.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            e.currentTarget.style.transform = 'scale(1)';
-        }, 150);
-
-        // Show message (in real app, this would redirect to OAuth)
-        showError(`${socialType} login is not implemented in this demo. Please use email/password.`);
+        e.preventDefault();
+        showError('Social login is not implemented. Please use email and password.');
     }
 
-    // Handle forgot password
+    // Forgot password (demo only)
     function handleForgotPassword(e) {
         e.preventDefault();
-
         if (!emailInput.value) {
-            showError('Please enter your email address to reset password');
+            showError('Please enter your email address.');
             emailInput.focus();
             return;
         }
-
-        // Show success message
-        showSuccess(`Password reset link has been sent to ${emailInput.value}`);
-
-        // In real app, this would call an API
-        console.log('Password reset requested for:', emailInput.value);
+        showSuccess('If this email exists, a reset link will be sent.');
     }
 
-    // Show error message
+    // UI messages
     function showError(message) {
         errorText.textContent = message;
         errorMessage.style.display = 'flex';
         successMessage.style.display = 'none';
-
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            errorMessage.style.display = 'none';
-        }, 5000);
+        setTimeout(() => errorMessage.style.display = 'none', 5000);
     }
 
-    // Show success message
     function showSuccess(message) {
         successText.textContent = message;
         successMessage.style.display = 'flex';
         errorMessage.style.display = 'none';
     }
 
-    // Set loading state
-    function setLoadingState(isLoading) {
-        if (isLoading) {
-            loginButton.disabled = true;
-            loginText.innerHTML = '<div class="loading-spinner"></div> Signing In...';
-        } else {
-            loginButton.disabled = false;
-            loginText.textContent = 'Sign In';
-        }
-    }
-
-    // Initialize the page
-    window.addEventListener('DOMContentLoaded', () => {
-        init();
-
-        // Check for saved email if "remember me" was checked previously
-        const savedEmail = localStorage.getItem('rememberedEmail');
-        if (savedEmail) {
-            emailInput.value = savedEmail;
-            document.getElementById('remember').checked = true;
-        }
-    });
-
-    // Save email if remember me is checked
+    // Save email on submit (DO NOT block submit)
     loginForm.addEventListener('submit', () => {
-        if (document.getElementById('remember').checked) {
+        const remember = document.getElementById('remember');
+        if (remember && remember.checked) {
             localStorage.setItem('rememberedEmail', emailInput.value);
         } else {
             localStorage.removeItem('rememberedEmail');
         }
+        // ⚠️ No preventDefault → Spring Security handles login
     });
+
+    window.addEventListener('DOMContentLoaded', init);
 </script>
+
 </body>
 </html>

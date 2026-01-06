@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Consultation | TeleMed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+<div class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6 mt-8">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">Start Consultation</h1>
+    <p class="text-gray-600 mb-6">
+        Patient: <span th:text="${appointment.patient.name}" class="font-semibold"></span>
+    </p>
+
+    <form th:action="@{'/medecin/rendezvous/start-consultation/' + ${appointment.id}}"
+          method="POST" class="space-y-4">
+
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">
+                Consultation Type
+            </label>
+            <select name="consultationType" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Select a type</option>
+                <option value="VIDEO">Video Consultation</option>
+                <option value="AUDIO">Audio Consultation</option>
+                <option value="CHAT">Chat Consultation</option>
+            </select>
+        </div>
+
+        <div class="flex gap-3">
+            <a th:href="@{'/medecin/rendezvous/details/' + ${appointment.id}}"
+               class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-lg text-center hover:bg-gray-300 transition">
+                Cancel
+            </a>
+            <button type="submit"
+                    class="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                Start Consultation
+            </button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

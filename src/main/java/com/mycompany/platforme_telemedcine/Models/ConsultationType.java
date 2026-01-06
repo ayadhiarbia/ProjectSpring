@@ -1,7 +1,8 @@
 package com.mycompany.platforme_telemedcine.Models;
 
 public enum ConsultationType {
-    AUDIO_CALL,
     VIDEO_CALL,
-    TEXT_CHAT
+    TEXT_CHAT,
+    VOICE_CALL,
+    IN_PERSON
 }

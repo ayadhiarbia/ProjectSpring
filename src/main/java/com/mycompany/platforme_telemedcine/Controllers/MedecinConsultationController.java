@@ -2,6 +2,7 @@ package com.mycompany.platforme_telemedcine.Controllers;
 
 import com.mycompany.platforme_telemedcine.Models.*;
 import com.mycompany.platforme_telemedcine.Services.*;
+import com.mycompany.platforme_telemedcine.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -12,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpSession;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Controller
@@ -69,7 +71,7 @@ public class MedecinConsultationController {
         model.addAttribute("waitingConsultations", waitingConsultations);
         model.addAttribute("activeConsultations", activeConsultations);
 
-        return "medecin/consultation-dashboard";
+        return "medecin/consultations";
     }
 
     // GET: Doctor consultation room
@@ -100,7 +102,7 @@ public class MedecinConsultationController {
         model.addAttribute("medicalRecords", medicalRecords);
         model.addAttribute("previousConsultations", previousConsultations);
         model.addAttribute("roomId", consultation.getCallRoomId());
-        model.addAttribute("isActive", consultation.getActive() != null && consultation.getActive());
+        model.addAttribute("isActive", consultation.getIsActive() != null && consultation.getIsActive());
 
         return "medecin/consultation-room";
     }
@@ -127,14 +129,20 @@ public class MedecinConsultationController {
 
         try {
             // Update consultation status to active
-            consultation.setActive(true);
+            consultation.setIsActive(Boolean.TRUE);
             consultation.setDate(new Date());
             consultationService.updateConsultation(consultation);
 
-            // Send notification to patient
+            // Send notification to patient - Use TimelineEventDTO
+            TimelineEventDTO event = new TimelineEventDTO();
+            event.setEventType("DOCTOR_JOINED");
+            event.setConsultationId(consultationId);
+            event.setUserId(medecin.getId());
+            event.setDescription("Le médecin a rejoint la consultation");
+
             messagingTemplate.convertAndSend(
                     "/user/" + consultation.getRendezVous().getPatient().getId() + "/queue/consultation",
-                    new ConsultationEvent("DOCTOR_JOINED", consultationId, medecin.getId())
+                    event
             );
 
             response.put("success", true);
@@ -150,12 +158,12 @@ public class MedecinConsultationController {
         return response;
     }
 
-    // POST: Doctor ends consultation
+    // POST: Doctor ends consultation - Use DTO
     @PostMapping("/end/{consultationId}")
     @ResponseBody
     public Map<String, Object> endConsultation(
             @PathVariable Long consultationId,
-            @RequestBody ConsultationEndRequest endRequest,
+            @RequestBody ConsultationEndRequestDTO endRequest, // Use DTO
             HttpSession session) {
         Medecin medecin = (Medecin) session.getAttribute("user");
         Map<String, Object> response = new HashMap<>();
@@ -175,7 +183,7 @@ public class MedecinConsultationController {
 
         try {
             // Update consultation
-            consultation.setActive(false);
+            consultation.setIsActive(Boolean.FALSE);
             consultation.setNotes(endRequest.getNotes());
             consultationService.updateConsultation(consultation);
 
@@ -199,10 +207,16 @@ public class MedecinConsultationController {
                 saveConsultationSummary(consultation, endRequest.getSummary());
             }
 
-            // Send end notification to patient
+            // Send end notification to patient - Use TimelineEventDTO
+            TimelineEventDTO event = new TimelineEventDTO();
+            event.setEventType("CONSULTATION_ENDED");
+            event.setConsultationId(consultationId);
+            event.setUserId(medecin.getId());
+            event.setDescription("La consultation est terminée");
+
             messagingTemplate.convertAndSend(
                     "/user/" + consultation.getRendezVous().getPatient().getId() + "/queue/consultation",
-                    new ConsultationEvent("CONSULTATION_ENDED", consultationId, medecin.getId())
+                    event
             );
 
             response.put("success", true);
@@ -216,10 +230,10 @@ public class MedecinConsultationController {
         return response;
     }
 
-    // WebSocket: Doctor sends chat message
+    // WebSocket: Doctor sends chat message - Use ChatMessageDTO
     @MessageMapping("/medecin/consultation/{consultationId}/chat")
     public void sendDoctorChatMessage(
-            @Payload MedecinChatMessage message,
+            @Payload ChatMessageDTO message, // Use existing ChatMessageDTO
             @DestinationVariable Long consultationId) {
 
         Consultation consultation = consultationService.getConsultationById(consultationId);
@@ -238,10 +252,10 @@ public class MedecinConsultationController {
         }
     }
 
-    // WebSocket: Doctor sends medical note
+    // WebSocket: Doctor sends medical note - Create this DTO if missing
     @MessageMapping("/medecin/consultation/{consultationId}/notes")
     public void updateMedicalNotes(
-            @Payload MedicalNotesUpdate notesUpdate,
+            @Payload ConsultationNotesDTO notesUpdate, // Use ConsultationNotesDTO
             @DestinationVariable Long consultationId) {
 
         Consultation consultation = consultationService.getConsultationById(consultationId);
@@ -262,10 +276,10 @@ public class MedecinConsultationController {
         }
     }
 
-    // WebSocket: Doctor sends file/document
+    // WebSocket: Doctor sends file/document - Use FileShareMessageDTO
     @MessageMapping("/medecin/consultation/{consultationId}/share")
     public void shareFileWithPatient(
-            @Payload FileShareMessage fileMessage,
+            @Payload FileShareMessageDTO fileMessage, // Use DTO
             @DestinationVariable Long consultationId) {
 
         Consultation consultation = consultationService.getConsultationById(consultationId);
@@ -316,12 +330,12 @@ public class MedecinConsultationController {
         return response;
     }
 
-    // POST: Create prescription
+    // POST: Create prescription - Use PrescriptionRequestDTO
     @PostMapping("/prescription/{consultationId}")
     @ResponseBody
     public Map<String, Object> createPrescription(
             @PathVariable Long consultationId,
-            @RequestBody PrescriptionRequest prescriptionRequest,
+            @RequestBody PrescriptionRequestDTO prescriptionRequest, // Use DTO
             HttpSession session) {
         Medecin medecin = (Medecin) session.getAttribute("user");
         Map<String, Object> response = new HashMap<>();
@@ -342,10 +356,10 @@ public class MedecinConsultationController {
         try {
             Ordonance ordonance = new Ordonance();
             ordonance.setMedicaments(prescriptionRequest.getMedicaments());
-            ordonance.setInstructions(prescriptionRequest.getInstructions());
+            // Note: Your Ordonance model doesn't have 'instructions' field
+            // If you need it, add it to the model
             ordonance.setDateCreation(new Date());
             ordonance.setConsultation(consultation);
-            ordonance.setMedecin(medecin);
             ordonance.setValideeParIA(prescriptionRequest.isAiValidated());
 
             Ordonance savedOrdonance = ordonanceService.createOrdonance(ordonance);
@@ -354,10 +368,15 @@ public class MedecinConsultationController {
             consultation.setOrdonance(savedOrdonance);
             consultationService.updateConsultation(consultation);
 
-            // Notify patient
+            // Notify patient - Create simple notification DTO
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("prescriptionId", savedOrdonance.getId());
+            notification.put("doctorName", medecin.getName());
+            notification.put("createdAt", new Date());
+
             messagingTemplate.convertAndSend(
                     "/user/" + consultation.getRendezVous().getPatient().getId() + "/queue/prescription",
-                    new PrescriptionNotification(savedOrdonance.getId(), medecin.getName())
+                    notification
             );
 
             response.put("success", true);
@@ -391,7 +410,15 @@ public class MedecinConsultationController {
             patientInfo.put("consultationId", consultation.getId());
             patientInfo.put("patientId", consultation.getRendezVous().getPatient().getId());
             patientInfo.put("patientName", consultation.getRendezVous().getPatient().getName());
-            patientInfo.put("appointmentTime", consultation.getRendezVous().getDateHeure());
+
+            // Note: Your RendezVous has LocalDate date and String time separately
+            RendezVous rdv = consultation.getRendezVous();
+            if (rdv.getDate() != null && rdv.getTime() != null) {
+                patientInfo.put("appointmentTime", rdv.getDate() + " " + rdv.getTime());
+            } else {
+                patientInfo.put("appointmentTime", "Non spécifié");
+            }
+
             patientInfo.put("consultationType", consultation.getConsultationType());
 
             waitingPatients.add(patientInfo);
@@ -424,10 +451,16 @@ public class MedecinConsultationController {
         }
 
         try {
-            // Send ready notification to patient
+            // Send ready notification to patient - Create simple notification DTO
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("doctorId", medecin.getId());
+            notification.put("doctorName", medecin.getName());
+            notification.put("consultationId", consultationId);
+            notification.put("notifiedAt", new Date());
+
             messagingTemplate.convertAndSend(
                     "/user/" + consultation.getRendezVous().getPatient().getId() + "/queue/notification",
-                    new DoctorReadyNotification(medecin.getId(), medecin.getName(), consultationId)
+                    notification
             );
 
             response.put("success", true);
@@ -447,49 +480,52 @@ public class MedecinConsultationController {
             Patient patient = consultation.getRendezVous().getPatient();
             Medecin medecin = consultation.getRendezVous().getMedecin();
 
-            String recordContent = buildConsultationRecord(consultation, summary, medecin.getName());
-
-            // Create medical record entry
+            // Create medical record entry using your DossierMedical model
             DossierMedical dossier = new DossierMedical();
             dossier.setPatient(patient);
-            dossier.setTitre("Consultation du " + new Date());
-            dossier.setDescription(recordContent);
-            dossier.setTypeDocument("CONSULTATION_SUMMARY");
-            dossier.setDateCreation(new Date());
+            dossier.setTitle("Consultation du " + new Date());
 
-            dossierMedicalService.saveDossierMedical(dossier);
+            // Build description from consultation
+            String description = buildConsultationDescription(consultation, summary, medecin.getName());
+            dossier.setDescription(description);
+
+            // Set file info if available
+            if (consultation.getVideoURL() != null) {
+                dossier.setFileName("consultation_video.mp4");
+                dossier.setFileUrl(consultation.getVideoURL());
+            }
+
+            dossier.setUploadDate(LocalDateTime.now());
+
+            dossierMedicalService.save(dossier);
 
         } catch (Exception e) {
             System.err.println("Error saving consultation summary: " + e.getMessage());
         }
     }
 
-    private String buildConsultationRecord(Consultation consultation, String summary, String doctorName) {
+    private String buildConsultationDescription(Consultation consultation, String summary, String doctorName) {
         StringBuilder sb = new StringBuilder();
         sb.append("=== COMPTE RENDU DE CONSULTATION ===\n\n");
         sb.append("Médecin: ").append(doctorName).append("\n");
-        sb.append("Date: ").append(new Date()).append("\n");
-        sb.append("Type: ").append(consultation.getConsultationType()).append("\n");
-        sb.append("Durée: ").append(consultation.getDuree() != null ? consultation.getDuree() + " minutes" : "N/A").append("\n\n");
-        sb.append("=== MOTIF DE CONSULTATION ===\n");
-        sb.append(consultation.getRendezVous().getMotif()).append("\n\n");
+        sb.append("Date: ").append(consultation.getDate()).append("\n");
+        sb.append("Type: ").append(consultation.getConsultationType()).append("\n\n");
+
         sb.append("=== OBSERVATIONS ===\n");
         sb.append(consultation.getNotes() != null ? consultation.getNotes() : "Aucune observation").append("\n\n");
+
         sb.append("=== CONCLUSION ===\n");
         sb.append(summary).append("\n\n");
 
         if (consultation.getOrdonance() != null) {
             sb.append("=== ORDONNANCE ===\n");
-            for (String medicament : consultation.getOrdonance().getMedicaments()) {
-                sb.append("- ").append(medicament).append("\n");
-            }
-            if (consultation.getOrdonance().getInstructions() != null) {
-                sb.append("\nInstructions: ").append(consultation.getOrdonance().getInstructions()).append("\n");
+            Ordonance ord = consultation.getOrdonance();
+            if (ord.getMedicaments() != null) {
+                for (String medicament : ord.getMedicaments()) {
+                    sb.append("- ").append(medicament).append("\n");
+                }
             }
         }
-
-        sb.append("\n=== RECOMMANDATIONS ===\n");
-        sb.append("Suivi recommandé dans ").append(consultation.getProchainRdv() != null ? consultation.getProchainRdv() : "à convenir");
 
         return sb.toString();
     }
@@ -511,378 +547,4 @@ public class MedecinConsultationController {
     }
 }
 
-// DTO Classes for Doctor Consultation
-
-class MedecinChatMessage {
-    private Long consultationId;
-    private Long doctorId;
-    private String doctorName;
-    private String message;
-    private Date timestamp;
-    private String messageType; // TEXT, SYSTEM, WARNING
-
-    public MedecinChatMessage() {
-        this.timestamp = new Date();
-        this.messageType = "TEXT";
-    }
-
-    // Getters and setters
-    public Long getConsultationId() { return consultationId; }
-    public void setConsultationId(Long consultationId) { this.consultationId = consultationId; }
-
-    public Long getDoctorId() { return doctorId; }
-    public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
-
-    public String getDoctorName() { return doctorName; }
-    public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
-
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
-
-    public Date getTimestamp() { return timestamp; }
-    public void setTimestamp(Date timestamp) { this.timestamp = timestamp; }
-
-    public String getMessageType() { return messageType; }
-    public void setMessageType(String messageType) { this.messageType = messageType; }
-}
-
-class MedicalNotesUpdate {
-    private Long consultationId;
-    private Long doctorId;
-    private String notes;
-    private Date updatedAt;
-
-    public MedicalNotesUpdate() {
-        this.updatedAt = new Date();
-    }
-
-    // Getters and setters
-    public Long getConsultationId() { return consultationId; }
-    public void setConsultationId(Long consultationId) { this.consultationId = consultationId; }
-
-    public Long getDoctorId() { return doctorId; }
-    public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-
-    public Date getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
-}
-
-class PrescriptionRequest {
-    private List<String> medicaments;
-    private String instructions;
-    private boolean aiValidated;
-
-    // Getters and setters
-    public List<String> getMedicaments() { return medicaments; }
-    public void setMedicaments(List<String> medicaments) { this.medicaments = medicaments; }
-
-    public String getInstructions() { return instructions; }
-    public void setInstructions(String instructions) { this.instructions = instructions; }
-
-    public boolean isAiValidated() { return aiValidated; }
-    public void setAiValidated(boolean aiValidated) { this.aiValidated = aiValidated; }
-}
-
-class PrescriptionNotification {
-    private Long prescriptionId;
-    private String doctorName;
-    private Date createdAt;
-
-    public PrescriptionNotification(Long prescriptionId, String doctorName) {
-        this.prescriptionId = prescriptionId;
-        this.doctorName = doctorName;
-        this.createdAt = new Date();
-    }
-
-    // Getters
-    public Long getPrescriptionId() { return prescriptionId; }
-    public String getDoctorName() { return doctorName; }
-    public Date getCreatedAt() { return createdAt; }
-}
-
-class DoctorReadyNotification {
-    private Long doctorId;
-    private String doctorName;
-    private Long consultationId;
-    private Date notifiedAt;
-
-    public DoctorReadyNotification(Long doctorId, String doctorName, Long consultationId) {
-        this.doctorId = doctorId;
-        this.doctorName = doctorName;
-        this.consultationId = consultationId;
-        this.notifiedAt = new Date();
-    }
-
-    // Getters
-    public Long getDoctorId() { return doctorId; }
-    public String getDoctorName() { return doctorName; }
-    public Long getConsultationId() { return consultationId; }
-    public Date getNotifiedAt() { return notifiedAt; }
-}
-
-// Reuse existing DTOs from ConsultationController
-// ConsultationEvent, ConsultationEndRequest, FileShareMessage
-
-
-// DTO Classes
-
-class ConsultationStartRequest {
-    private Long consultationId;
-    private Long doctorId;
-
-    // Getters and setters
-    public Long getConsultationId() { return consultationId; }
-    public void setConsultationId(Long consultationId) { this.consultationId = consultationId; }
-
-    public Long getDoctorId() { return doctorId; }
-    public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
-}
-
-class ConsultationEndRequest {
-    private String roomId;
-    private Long endedBy;
-    private String notes;
-    private String summary;
-    private List<String> prescription;
-    private boolean saveAsMedicalRecord;
-
-    // Getters and setters
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public Long getEndedBy() { return endedBy; }
-    public void setEndedBy(Long endedBy) { this.endedBy = endedBy; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-
-    public String getSummary() { return summary; }
-    public void setSummary(String summary) { this.summary = summary; }
-
-    public List<String> getPrescription() { return prescription; }
-    public void setPrescription(List<String> prescription) { this.prescription = prescription; }
-
-    public boolean isSaveAsMedicalRecord() { return saveAsMedicalRecord; }
-    public void setSaveAsMedicalRecord(boolean saveAsMedicalRecord) { this.saveAsMedicalRecord = saveAsMedicalRecord; }
-}
-
-class SignalMessage {
-    private Long senderId;
-    private Long targetUserId;
-    private String roomId;
-    private String type; // offer, answer, candidate
-    private Object data;
-
-    // Getters and setters
-    public Long getSenderId() { return senderId; }
-    public void setSenderId(Long senderId) { this.senderId = senderId; }
-
-    public Long getTargetUserId() { return targetUserId; }
-    public void setTargetUserId(Long targetUserId) { this.targetUserId = targetUserId; }
-
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-
-    public Object getData() { return data; }
-    public void setData(Object data) { this.data = data; }
-}
-
-class ConsultationChatMessage {
-    private String roomId;
-    private Long senderId;
-    private String senderName;
-    private String content;
-    private Date timestamp;
-    private String messageType; // TEXT, FILE
-
-    public ConsultationChatMessage() {
-        this.timestamp = new Date();
-        this.messageType = "TEXT";
-    }
-
-    // Getters and setters
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public Long getSenderId() { return senderId; }
-    public void setSenderId(Long senderId) { this.senderId = senderId; }
-
-    public String getSenderName() { return senderName; }
-    public void setSenderName(String senderName) { this.senderName = senderName; }
-
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
-
-    public Date getTimestamp() { return timestamp; }
-    public void setTimestamp(Date timestamp) { this.timestamp = timestamp; }
-
-    public String getMessageType() { return messageType; }
-    public void setMessageType(String messageType) { this.messageType = messageType; }
-}
-
-class FileShareMessage {
-    private String roomId;
-    private Long senderId;
-    private String senderName;
-    private String fileName;
-    private String fileUrl;
-    private String description;
-    private long fileSize;
-
-    // Getters and setters
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public Long getSenderId() { return senderId; }
-    public void setSenderId(Long senderId) { this.senderId = senderId; }
-
-    public String getSenderName() { return senderName; }
-    public void setSenderName(String senderName) { this.senderName = senderName; }
-
-    public String getFileName() { return fileName; }
-    public void setFileName(String fileName) { this.fileName = fileName; }
-
-    public String getFileUrl() { return fileUrl; }
-    public void setFileUrl(String fileUrl) { this.fileUrl = fileUrl; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public long getFileSize() { return fileSize; }
-    public void setFileSize(long fileSize) { this.fileSize = fileSize; }
-}
-
-class ConsultationNotes {
-    private String roomId;
-    private Long updatedBy;
-    private String notes;
-    private Date updatedAt;
-
-    public ConsultationNotes() {
-        this.updatedAt = new Date();
-    }
-
-    // Getters and setters
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public Long getUpdatedBy() { return updatedBy; }
-    public void setUpdatedBy(Long updatedBy) { this.updatedBy = updatedBy; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-
-    public Date getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
-}
-
-class ConsultationEvent {
-    private String eventType;
-    private Long consultationId;
-    private Long initiatedBy;
-    private String message;
-    private Long duration; // in seconds
-    private String notes;
-
-    public ConsultationEvent(String eventType, Long consultationId, Long initiatedBy) {
-        this.eventType = eventType;
-        this.consultationId = consultationId;
-        this.initiatedBy = initiatedBy;
-        this.message = getEventMessage(eventType);
-    }
-
-    private String getEventMessage(String eventType) {
-        switch (eventType) {
-            case "PATIENT_WAITING":
-                return "Patient en salle d'attente";
-            case "CONSULTATION_STARTED":
-                return "Consultation démarrée";
-            case "CONSULTATION_ENDED":
-                return "Consultation terminée";
-            default:
-                return "Événement de consultation";
-        }
-    }
-
-    // Getters and setters
-    public String getEventType() { return eventType; }
-    public void setEventType(String eventType) { this.eventType = eventType; }
-
-    public Long getConsultationId() { return consultationId; }
-    public void setConsultationId(Long consultationId) { this.consultationId = consultationId; }
-
-    public Long getInitiatedBy() { return initiatedBy; }
-    public void setInitiatedBy(Long initiatedBy) { this.initiatedBy = initiatedBy; }
-
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
-
-    public Long getDuration() { return duration; }
-    public void setDuration(Long duration) { this.duration = duration; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-}
-
-class ConsultationSummary {
-    private Long consultationId;
-    private Date date;
-    private String doctorName;
-    private ConsultationType consultationType;
-    private String notes;
-    private Long duration; // in seconds
-    private List<ConsultationChatMessage> chatHistory;
-    private String medicalNotes;
-    private List<String> prescription;
-
-    // Getters and setters
-    public Long getConsultationId() { return consultationId; }
-    public void setConsultationId(Long consultationId) { this.consultationId = consultationId; }
-
-    public Date getDate() { return date; }
-    public void setDate(Date date) { this.date = date; }
-
-    public String getDoctorName() { return doctorName; }
-    public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
-
-    public ConsultationType getConsultationType() { return consultationType; }
-    public void setConsultationType(ConsultationType consultationType) { this.consultationType = consultationType; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-
-    public Long getDuration() { return duration; }
-    public void setDuration(Long duration) { this.duration = duration; }
-
-    public List<ConsultationChatMessage> getChatHistory() { return chatHistory; }
-    public void setChatHistory(List<ConsultationChatMessage> chatHistory) { this.chatHistory = chatHistory; }
-
-    public String getMedicalNotes() { return medicalNotes; }
-    public void setMedicalNotes(String medicalNotes) { this.medicalNotes = medicalNotes; }
-
-    public List<String> getPrescription() { return prescription; }
-    public void setPrescription(List<String> prescription) { this.prescription = prescription; }
-}
-
-class TurnServer {
-    private String url;
-    private String username;
-    private String credential;
-
-    public TurnServer(String url, String username, String credential) {
-        this.url = url;
-        this.username = username;
-        this.credential = credential;
-    }
-
-    // Getters
-    public String getUrl() { return url; }
-    public String getUsername() { return username; }
-    public String getCredential() { return credential; }
-}
+// REMOVE ALL DTO CLASSES FROM HERE - THEY SHOULD BE IN THE DTO PACKAGE
